@@ -12,11 +12,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // Runtime connection (use the Supabase "Transaction" pooler, port 6543).
-  url       = env("DATABASE_URL")
-  // Direct connection (port 5432) used for `prisma db push` / migrations.
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  // Supabase connection string (Connect -> ORM -> Prisma). The transaction
+  // pooler (port 6543, ?pgbouncer=true) is ideal for serverless runtime.
+  url      = env("DATABASE_URL")
 }
 
 model User {
