@@ -114,7 +114,7 @@ export default function HomePage() {
                 className={`postit block min-h-[150px] ${index === 1 ? "md:mt-6" : ""}`}
               >
                 <p className="font-hand text-3xl leading-[0.98] text-ink/90">{p.text}</p>
-                <p className="mt-4 text-xs font-black text-ink/60">{p.author.name}</p>
+                <p className="mt-4 text-xs font-black text-ink/60">{p.author?.name ?? "Anonym"}</p>
               </Link>
             ))}
           </div>
@@ -179,9 +179,9 @@ function MemoryHero({
           <h2 className="display max-w-3xl break-words text-5xl leading-[0.86] sm:text-7xl">{headline}</h2>
           {post.context && <p className="font-hand text-4xl leading-none text-hotpink">{post.context}</p>}
           <div className="flex items-center gap-3 pt-2">
-            <Avatar name={post.author.name} url={post.author.avatarUrl} accent={post.author.accentColor} size={52} />
+            <Avatar name={post.author?.name ?? "Anonym"} url={post.author?.avatarUrl} accent={post.author?.accentColor} size={52} />
             <div className="leading-tight">
-              <p className="font-black">{post.author.name}</p>
+              <p className="font-black">{post.author?.name ?? "Anonym"}</p>
               <p className="text-sm font-bold text-ink/60">
                 {new Date(post.createdAt).toLocaleDateString("de-CH", { day: "2-digit", month: "short" })}
               </p>
@@ -195,12 +195,12 @@ function MemoryHero({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={mainImage.imageUrl} alt="" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
               <p className="mt-2 text-center font-hand text-2xl leading-tight text-ink/75">
-                {mainImage.text || mainImage.author.name}
+                {mainImage.text || mainImage.author?.name || "Anonym"}
               </p>
             </div>
           ) : (
             <div className="absolute right-0 top-0 grid aspect-square w-[72%] place-items-center rounded-full bg-white/30 blur-[0.2px]">
-              <Avatar name={post.author.name} url={post.author.avatarUrl} accent={post.author.accentColor} size={190} />
+              <Avatar name={post.author?.name ?? "Anonym"} url={post.author?.avatarUrl} accent={post.author?.accentColor} size={190} />
             </div>
           )}
           <div className="glass-card absolute bottom-0 left-0 max-w-[76%] p-5">
