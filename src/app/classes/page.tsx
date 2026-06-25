@@ -12,6 +12,7 @@ export default function ClassesPage() {
   const [joinCode, setJoinCode] = useState("");
   const [joinType, setJoinType] = useState<"STUDENT" | "TEACHER">("STUDENT");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
   // create fields
@@ -36,28 +37,40 @@ export default function ClassesPage() {
 
   async function join(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
-    const res = await fetch("/api/classes/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ joinCode, memberType: joinType }),
-    });
-    const d = await res.json();
-    if (res.ok) router.push(`/classes/${d.id}`);
-    else setError(d.error || "Fehler.");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/classes/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ joinCode, memberType: joinType }),
+      });
+      const d = await res.json();
+      if (res.ok) router.push(`/classes/${d.id}`);
+      else setError(d.error || "Fehler.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function createClass(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
-    const res = await fetch("/api/classes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, school, gradYear, memberType: createType }),
-    });
-    const d = await res.json();
-    if (res.ok) router.push(`/classes/${d.id}`);
-    else setError(d.error || "Fehler.");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, school, gradYear, memberType: createType }),
+      });
+      const d = await res.json();
+      if (res.ok) router.push(`/classes/${d.id}`);
+      else setError(d.error || "Fehler.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (classes === null) return <p className="text-muted">Lädt…</p>;
@@ -98,7 +111,7 @@ export default function ClassesPage() {
             <button type="button" onClick={() => setJoinType("STUDENT")} className={joinType === "STUDENT" ? "btn-primary" : "btn-soft"}>Schüler:in</button>
             <button type="button" onClick={() => setJoinType("TEACHER")} className={joinType === "TEACHER" ? "btn-primary" : "btn-soft"}>Lehrer:in</button>
           </div>
-          <button className="btn-accent w-full">Beitreten</button>
+          <button className="btn-accent w-full" disabled={busy}>{busy ? "…" : "Beitreten"}</button>
         </form>
       </section>
 
@@ -120,7 +133,7 @@ export default function ClassesPage() {
               <option value="TEACHER">Ich bin Lehrer:in</option>
             </select>
             <div className="flex gap-2">
-              <button className="btn-accent flex-1">Erstellen</button>
+              <button className="btn-accent flex-1" disabled={busy}>{busy ? "…" : "Erstellen"}</button>
               <button type="button" onClick={() => setShowCreate(false)} className="btn-soft">Abbrechen</button>
             </div>
           </form>

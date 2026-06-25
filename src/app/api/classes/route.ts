@@ -48,6 +48,14 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
+  // A user can be in at most one class. If they already are, return it instead
+  // of creating a second (also makes accidental double-submits harmless).
+  const existing = await prisma.membership.findFirst({ where: { userId } });
+  if (existing) {
+    const klass = await prisma.class.findUnique({ where: { id: existing.classId } });
+    return NextResponse.json({ id: existing.classId, joinCode: klass?.joinCode, already: true });
+  }
+
   const joinCode = await generateJoinCode();
   const created = await prisma.class.create({
     data: {

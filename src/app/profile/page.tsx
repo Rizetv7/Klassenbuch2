@@ -61,6 +61,18 @@ export default function ProfilePage() {
     router.refresh();
   }
 
+  async function leaveClass() {
+    if (!confirm("Deine Klasse verlassen?")) return;
+    const res = await fetch("/api/classes/leave", { method: "POST" });
+    const d = await res.json().catch(() => null);
+    if (res.ok) {
+      router.push("/classes");
+      router.refresh();
+    } else {
+      setMsg(d?.error || "Konnte Klasse nicht verlassen.");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="card p-6 flex flex-col items-center text-center">
@@ -86,11 +98,14 @@ export default function ProfilePage() {
       </div>
 
       <Link href="/classes" className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-        <span className="font-bold">Meine Klassen</span>
+        <span className="font-bold">Meine Klasse</span>
         <span className="text-muted">›</span>
       </Link>
 
-      <button onClick={logout} className="btn-soft w-full text-coral">Abmelden</button>
+      <div className="flex gap-2">
+        <button onClick={leaveClass} className="btn-soft flex-1 text-ink/70">Klasse verlassen</button>
+        <button onClick={logout} className="btn-soft flex-1 text-coral">Abmelden</button>
+      </div>
     </div>
   );
 }

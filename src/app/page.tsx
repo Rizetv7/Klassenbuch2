@@ -8,6 +8,7 @@ export default function HomePage() {
   const [me, setMe] = useState<{ name: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [memory, setMemory] = useState<Post | null>(null);
+  const [hasClass, setHasClass] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,12 +16,14 @@ export default function HomePage() {
       const meRes = await fetch("/api/auth/me").then((r) => r.json());
       setMe(meRes.user);
       if (meRes.user) {
-        const [feed, rnd] = await Promise.all([
+        const [feed, rnd, cls] = await Promise.all([
           fetch("/api/posts").then((r) => r.json()),
           fetch("/api/posts?random=1").then((r) => r.json()),
+          fetch("/api/classes").then((r) => r.json()),
         ]);
         setPosts(feed.posts ?? []);
         setMemory(rnd.posts?.[0] ?? null);
+        setHasClass((cls.classes ?? []).length > 0);
       }
       setLoading(false);
     })();
@@ -61,8 +64,17 @@ export default function HomePage() {
         <h2 className="text-xs font-bold uppercase tracking-wide text-ink/45">Heute neu</h2>
         {posts.length === 0 ? (
           <div className="card p-8 text-center text-muted">
-            <p className="mb-3">Noch nichts hier. Mach den Anfang!</p>
-            <Link href="/classes" className="btn-accent">Klasse beitreten</Link>
+            {hasClass ? (
+              <>
+                <p className="mb-3">Noch nichts in deiner Klasse. Mach den Anfang!</p>
+                <Link href="/classes" className="btn-accent">Zur Klasse</Link>
+              </>
+            ) : (
+              <>
+                <p className="mb-3">Du bist noch in keiner Klasse.</p>
+                <Link href="/classes" className="btn-accent">Klasse beitreten</Link>
+              </>
+            )}
           </div>
         ) : (
           posts.map((p) => (
