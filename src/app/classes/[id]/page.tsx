@@ -37,6 +37,7 @@ export default function ClassPage() {
     ? (search.get("tab") as Tab)
     : "Schüler";
   const [data, setData] = useState<ClassDetail | null>(null);
+  const [teacherCount, setTeacherCount] = useState(0);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [showManage, setShowManage] = useState(false);
   const [error, setError] = useState("");
@@ -49,14 +50,14 @@ export default function ClassPage() {
   }
   useEffect(() => {
     loadClass();
+    fetch(`/api/classes/${id}/teachers`).then((r) => r.json()).then((d) => setTeacherCount((d.teachers ?? []).length)).catch(() => {});
   }, [id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
   if (!data) return <p className="text-muted">Lädt…</p>;
 
   const canMod = data.myRole === "OWNER" || data.myRole === "MODERATOR";
-  const students = data.members.filter((m) => m.memberType === "STUDENT");
-  const teachers = data.members.filter((m) => m.memberType === "TEACHER");
+  const students = data.members;
 
   return (
     <div className="space-y-6">
@@ -69,8 +70,8 @@ export default function ClassPage() {
             {data.school && <p className="mt-3 text-sm font-black text-ink/60">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
           </div>
           <div className="grid grid-cols-3 gap-2 md:w-[330px]">
-            <Stat value={data.counts.students} label="Schüler" />
-            <Stat value={data.counts.teachers} label="Lehrpersonen" />
+            <Stat value={students.length} label="Schüler" />
+            <Stat value={teacherCount} label="Lehrpersonen" />
             <Stat value={data.counts.memories} label="Erinnerungen" />
           </div>
         </div>
@@ -94,7 +95,7 @@ export default function ClassPage() {
 
       {/* Content */}
       {tab === "Schüler" && <MemberGrid members={students} classId={id} empty="Noch keine Schüler:innen beigetreten." />}
-      {tab === "Lehrpersonen" && <TeacherGrid members={teachers} classId={id} />}
+      {tab === "Lehrpersonen" && <TeachersTab classId={id} />}
       {tab === "Projekte" && <ProjectsTab classId={id} />}
     </div>
   );
@@ -196,19 +197,64 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
   );
 }
 
-function TeacherGrid({ members, classId }: { members: Member[]; classId: string }) {
-  if (members.length === 0) return <p className="text-muted text-center py-6">Noch keine Lehrpersonen.</p>;
+type TeacherItem = { id: string; name: string; subject: string | null; avatarUrl: string | null; accentColor: string | null; postCount: number };
+
+function TeachersTab({ classId }: { classId: string }) {
+  const [teachers, setTeachers] = useState<TeacherItem[] | null>(null);
+  const [name, setName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  async function load() {
+    const d = await fetch(`/api/classes/${classId}/teachers`).then((r) => r.json());
+    setTeachers(d.teachers ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, [classId]);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || creating) return;
+    setCreating(true);
+    const res = await fetch(`/api/classes/${classId}/teachers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, subject }),
+    });
+    setCreating(false);
+    if (res.ok) {
+      setName("");
+      setSubject("");
+      load();
+    }
+  }
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {members.map((m) => (
-        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="glass-card flex items-center gap-3 p-4 transition hover:-translate-y-1">
-          <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={52} />
-          <div>
-            <p className="font-black">{m.displayName}</p>
-            <p className="text-xs font-bold text-muted">Lehrperson · {m.postCount} Zitate</p>
-          </div>
-        </Link>
-      ))}
+    <div className="space-y-4">
+      <form onSubmit={create} className="glass-card flex flex-col gap-2 p-3 sm:flex-row">
+        <input className="input" placeholder="Name der Lehrperson" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input sm:max-w-[40%]" placeholder="Fach (optional)" value={subject} onChange={(e) => setSubject(e.target.value)} />
+        <button className="btn-accent" disabled={creating}>Erstellen</button>
+      </form>
+
+      {teachers === null ? (
+        <p className="text-muted">Lädt…</p>
+      ) : teachers.length === 0 ? (
+        <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Lehrpersonen. Erstelle die erste!</div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {teachers.map((t) => (
+            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex items-center gap-3 p-4 transition hover:-translate-y-1">
+              <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={52} />
+              <div className="min-w-0">
+                <p className="font-black truncate">{t.name}</p>
+                <p className="text-xs font-bold text-muted">{t.subject ? `${t.subject} · ` : ""}{t.postCount} Beiträge</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

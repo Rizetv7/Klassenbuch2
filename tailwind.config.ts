@@ -53,10 +53,22 @@ const config: Config = {
           "60%": { transform: "scale(1.05)" },
           "100%": { transform: "scale(1)" },
         },
+        wiggle: {
+          "0%,100%": { transform: "rotate(0deg)" },
+          "25%": { transform: "rotate(-7deg)" },
+          "75%": { transform: "rotate(7deg)" },
+        },
+        "pop-in": {
+          "0%": { transform: "scale(0.6)", opacity: "0" },
+          "70%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.4s ease both",
         pop: "pop 0.25s ease",
+        wiggle: "wiggle 0.45s ease",
+        "pop-in": "pop-in 0.3s ease both",
       },
     },
   },

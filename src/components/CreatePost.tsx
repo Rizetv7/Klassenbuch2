@@ -5,23 +5,30 @@ import type { Post } from "./PostCard";
 import { uploadImageFile } from "@/lib/uploadImage";
 
 type Kind = "QUOTE" | "IMAGE" | "TEXT";
+type Person = { id: string; name: string };
 
-// Target: a person (subjectMembershipId) OR a project/topic (topicId).
+// Target: a student (subjectMembershipId), a teacher (teacherId) OR a project (topicId).
 export function CreatePost({
   classId,
   subjectMembershipId,
+  teacherId,
   topicId,
+  people,
   onCreated,
 }: {
   classId: string;
   subjectMembershipId?: string;
+  teacherId?: string;
   topicId?: string;
+  people?: Person[]; // for project quotes: who said it
   onCreated: (post: Post) => void;
 }) {
   const isTopic = !!topicId;
   const [kind, setKind] = useState<Kind>("QUOTE");
   const [text, setText] = useState("");
   const [context, setContext] = useState("");
+  const [saidBy, setSaidBy] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -38,7 +45,7 @@ export function CreatePost({
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classId, subjectMembershipId, topicId, ...body }),
+      body: JSON.stringify({ classId, subjectMembershipId, teacherId, topicId, anonymous, ...body }),
     });
     const d = await res.json().catch(() => null);
     if (!res.ok) throw new Error(d?.error || `Fehler beim Speichern (Status ${res.status}).`);
@@ -63,12 +70,14 @@ export function CreatePost({
         const post = await createPost({
           kind,
           text,
-          context: !isTopic ? context.trim() || null : null,
+          context: !isTopic && kind === "QUOTE" ? context.trim() || null : null,
+          saidByName: isTopic && kind === "QUOTE" ? saidBy.trim() || null : null,
         });
         onCreated(post);
       }
       setText("");
       setContext("");
+      setSaidBy("");
       pickFiles(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
@@ -126,7 +135,28 @@ export function CreatePost({
           {!isTopic && kind === "QUOTE" && (
             <input className="input mt-2" placeholder="Kontext (optional, z. B. vor der Prüfung)" value={context} onChange={(e) => setContext(e.target.value)} />
           )}
+          {isTopic && kind === "QUOTE" && (
+            <div className="mt-2">
+              {people && people.length > 0 ? (
+                <select className="input" value={saidBy} onChange={(e) => setSaidBy(e.target.value)}>
+                  <option value="">Wer hat&apos;s gesagt? (optional)</option>
+                  {people.map((p) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input className="input" placeholder="Wer hat's gesagt? (optional)" value={saidBy} onChange={(e) => setSaidBy(e.target.value)} />
+              )}
+            </div>
+          )}
         </div>
+      )}
+
+      {kind !== "IMAGE" && (
+        <label className="relative z-10 mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-bold text-ink/70">
+          <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-4 w-4 accent-hotpink" />
+          Anonym posten (dein Name wird nicht angezeigt)
+        </label>
       )}
 
       {error && <p className="relative z-10 mt-2 break-words text-sm font-black text-coral">{error}</p>}

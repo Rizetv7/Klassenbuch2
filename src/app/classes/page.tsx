@@ -10,7 +10,6 @@ export default function ClassesPage() {
   const router = useRouter();
   const [classes, setClasses] = useState<ClassItem[] | null>(null);
   const [joinCode, setJoinCode] = useState("");
-  const [joinType, setJoinType] = useState<"STUDENT" | "TEACHER">("STUDENT");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -19,7 +18,6 @@ export default function ClassesPage() {
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
   const [gradYear, setGradYear] = useState("");
-  const [createType, setCreateType] = useState<"STUDENT" | "TEACHER">("STUDENT");
 
   useEffect(() => {
     (async () => {
@@ -44,7 +42,7 @@ export default function ClassesPage() {
       const res = await fetch("/api/classes/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ joinCode, memberType: joinType }),
+        body: JSON.stringify({ joinCode }),
       });
       const d = await res.json();
       if (res.ok) router.push(`/classes/${d.id}`);
@@ -63,7 +61,7 @@ export default function ClassesPage() {
       const res = await fetch("/api/classes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, school, gradYear, memberType: createType }),
+        body: JSON.stringify({ name, school, gradYear }),
       });
       const d = await res.json();
       if (res.ok) router.push(`/classes/${d.id}`);
@@ -125,10 +123,6 @@ export default function ClassesPage() {
             onChange={(e) => setJoinCode(e.target.value)}
             required
           />
-          <div className="flex gap-2 justify-center text-sm">
-            <button type="button" onClick={() => setJoinType("STUDENT")} className={joinType === "STUDENT" ? "btn-primary" : "btn-soft"}>Schüler:in</button>
-            <button type="button" onClick={() => setJoinType("TEACHER")} className={joinType === "TEACHER" ? "btn-primary" : "btn-soft"}>Lehrer:in</button>
-          </div>
           <button className="btn-accent w-full" disabled={busy}>{busy ? "…" : "Beitreten"}</button>
         </form>
         {error && <p className="relative z-10 mt-3 text-sm font-black text-coral">{error}</p>}
@@ -150,10 +144,6 @@ export default function ClassesPage() {
             <input className="input" placeholder="Klassenname (z. B. M5i)" value={name} onChange={(e) => setName(e.target.value)} required />
             <input className="input" placeholder="Schule (optional)" value={school} onChange={(e) => setSchool(e.target.value)} />
             <input className="input" placeholder="Abschlussjahr (optional)" value={gradYear} onChange={(e) => setGradYear(e.target.value)} />
-            <select className="input" value={createType} onChange={(e) => setCreateType(e.target.value as "STUDENT" | "TEACHER")}>
-              <option value="STUDENT">Ich bin Schüler:in</option>
-              <option value="TEACHER">Ich bin Lehrer:in</option>
-            </select>
             <div className="flex gap-2">
               <button className="btn-accent flex-1" disabled={busy}>{busy ? "…" : "Erstellen"}</button>
               <button type="button" onClick={() => setShowCreate(false)} className="btn-soft">Abbrechen</button>

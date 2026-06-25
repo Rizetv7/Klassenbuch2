@@ -11,11 +11,14 @@ export type Post = {
   kind: string;
   text: string | null;
   context?: string | null;
+  saidByName?: string | null;
+  anonymous?: boolean;
   imageUrl: string | null;
   createdAt: string;
-  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null };
+  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null } | null;
   class: { id: string; name: string };
-  subject: { id: string; displayName: string; memberType: string } | null;
+  subject: { id: string; displayName: string; memberType: string; avatarUrl: string | null; accentColor?: string | null } | null;
+  teacher: { id: string; name: string; subject: string | null; avatarUrl: string | null; accentColor?: string | null } | null;
   topic: { id: string; name: string } | null;
   likeCount: number;
   commentCount: number;
@@ -38,19 +41,6 @@ function timeAgo(iso: string): string {
   if (h < 24) return `vor ${h} Std.`;
   const d = Math.floor(h / 24);
   return d < 7 ? `vor ${d} T.` : new Date(iso).toLocaleDateString("de-CH");
-}
-
-// "hat ein Zitat über Lena gepostet" / "hat ein Bild im Projekt Ausflug gepostet"
-function contextLine(post: Post): string {
-  if (post.topic) {
-    const what = post.kind === "IMAGE" ? "ein Bild" : post.kind === "TEXT" ? "eine Notiz" : "ein Zitat";
-    return `hat ${what} im Projekt „${post.topic.name}“ gepostet`;
-  }
-  if (post.kind === "IMAGE")
-    return post.subject ? `hat ein Bild mit ${post.subject.displayName} gepostet` : "hat ein Bild gepostet";
-  const isTeacher = post.subject?.memberType === "TEACHER";
-  const verb = isTeacher ? "ein Lehrerzitat" : "ein Zitat";
-  return post.subject ? `hat ${verb} über ${post.subject.displayName} gepostet` : `hat ${verb} gepostet`;
 }
 
 export function PostCard({
@@ -122,31 +112,46 @@ export function PostCard({
     if (res.ok) onDeleted?.(post.id);
   }
 
+  // Who/what the post is about (shown prominently in the header).
+  const about = post.subject
+    ? {
+        name: post.subject.displayName,
+        avatarUrl: post.subject.avatarUrl,
+        accent: post.subject.accentColor,
+        label: post.subject.memberType === "TEACHER" ? "Lehrperson" : "Schüler:in",
+        href: `/classes/${post.class.id}/members/${post.subject.id}`,
+      }
+    : post.teacher
+      ? {
+          name: post.teacher.name,
+          avatarUrl: post.teacher.avatarUrl,
+          accent: post.teacher.accentColor,
+          label: post.teacher.subject || "Lehrperson",
+          href: `/classes/${post.class.id}/teachers/${post.teacher.id}`,
+        }
+      : post.topic
+        ? { name: post.topic.name, avatarUrl: null, accent: null, label: "Projekt", href: `/classes/${post.class.id}/topics/${post.topic.id}` }
+        : null;
+
+  const authorName = post.anonymous || !post.author ? "Anonym" : post.author.name;
+  const saidBy = post.kind === "QUOTE" ? (post.subject?.displayName || post.teacher?.name || post.saidByName || null) : null;
+
   return (
     <article className="post-card animate-fade-up">
-      {/* header */}
+      {/* header: who/what it is about */}
       <div className="relative z-10 flex items-center gap-3">
-        <Link href={`/profile`} className="shrink-0">
-          <Avatar name={post.author.name} url={post.author.avatarUrl} accent={post.author.accentColor} size={46} />
-        </Link>
-        <div className="flex-1 min-w-0 leading-tight">
-          <p className="text-sm">
-            <span className="font-black">{post.author.name}</span>{" "}
-            <span className="text-muted">{contextLine(post)}</span>
-          </p>
-          <p className="text-xs font-bold text-muted">
-            {showContext && (
-              <>
-                <Link href={`/classes/${post.class.id}`} className="hover:underline">
-                  {post.class.name}
-                </Link>
-                {" · "}
-              </>
-            )}
-            {timeAgo(post.createdAt)}
-          </p>
-        </div>
-        <button onClick={deletePost} title="Löschen" className="rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral">
+        {about ? (
+          <Link href={about.href} className="flex min-w-0 items-center gap-3 group/head">
+            <Avatar name={about.name} url={about.avatarUrl} accent={about.accent} size={46} />
+            <div className="min-w-0 leading-tight">
+              <p className="font-black truncate group-hover/head:underline">{about.name}</p>
+              <p className="text-xs font-bold text-muted">{about.label}</p>
+            </div>
+          </Link>
+        ) : (
+          <div className="font-black">Beitrag</div>
+        )}
+        <button onClick={deletePost} title="Löschen" className="ml-auto rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral hover:rotate-90">
           <IconClose size={16} />
         </button>
       </div>
@@ -156,6 +161,7 @@ export function PostCard({
         {post.kind === "QUOTE" && post.text && (
           <div className="rounded-[30px] border border-white/50 bg-white/30 p-5 sm:p-7">
             <p className="quote-big">“{post.text}”</p>
+            {saidBy && <p className="mt-2 text-sm font-black text-ink/70">— {saidBy}</p>}
           </div>
         )}
         {post.kind === "TEXT" && post.text && (
@@ -173,26 +179,25 @@ export function PostCard({
             </div>
           </div>
         )}
-        {(post.subject || post.topic) && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {post.subject && (
-              <Link href={`/classes/${post.class.id}/members/${post.subject.id}`} className="chip">
-                {post.subject.memberType === "TEACHER" ? "Lehrer:in" : "Schüler:in"} · {post.subject.displayName}
-              </Link>
-            )}
-            {post.topic && (
-              <Link href={`/classes/${post.class.id}/topics/${post.topic.id}`} className="chip">
-                Projekt · {post.topic.name}
-              </Link>
-            )}
-          </div>
-        )}
       </div>
 
+      {/* footer: small attribution */}
+      <p className="relative z-10 mt-3 text-xs font-bold text-muted">
+        von <span className="text-ink/70">{authorName}</span>
+        {showContext && (
+          <>
+            {" · "}
+            <Link href={`/classes/${post.class.id}`} className="hover:underline">{post.class.name}</Link>
+          </>
+        )}
+        {" · "}
+        {timeAgo(post.createdAt)}
+      </p>
+
       {/* actions */}
-      <div className="soft-divider relative z-10 mt-4 flex items-center gap-5 pt-3 text-sm font-black">
-        <button onClick={toggleLike} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition active:scale-95">
-          <IconHeart size={19} filled={liked} className={liked ? "text-coral animate-pop" : "text-ink/60"} />
+      <div className="soft-divider relative z-10 mt-3 flex items-center gap-5 pt-3 text-sm font-black">
+        <button onClick={toggleLike} className="group/like flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition active:scale-95">
+          <IconHeart size={19} filled={liked} className={`${liked ? "text-coral animate-pop" : "text-ink/60"} group-hover/like:animate-wiggle`} />
           <span className="text-ink/70">{likeCount}</span>
         </button>
         <button onClick={toggleComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition hover:text-ink">

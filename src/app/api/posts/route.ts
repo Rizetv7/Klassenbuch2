@@ -20,6 +20,7 @@ export async function GET(req: Request) {
   const sort = url.searchParams.get("sort"); // "popular" | "recent"
   const random = url.searchParams.get("random"); // "1" -> a single random post
   const subjectMembershipId = url.searchParams.get("subjectMembershipId");
+  const teacherId = url.searchParams.get("teacherId");
   const topicId = url.searchParams.get("topicId");
   const limit = Math.min(Number(url.searchParams.get("limit")) || 30, 100);
 
@@ -42,6 +43,7 @@ export async function GET(req: Request) {
 
   if (kind === "QUOTE" || kind === "IMAGE" || kind === "TEXT") where.kind = kind;
   if (subjectMembershipId) where.subjectMembershipId = subjectMembershipId;
+  if (teacherId) where.teacherId = teacherId;
   if (topicId) where.topicId = topicId;
 
   // Random "memory of the day": pick one random matching post.
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { classId, kind, text, context, imageUrl, subjectMembershipId, topicId } = body;
+  const { classId, kind, text, context, saidByName, anonymous, imageUrl, subjectMembershipId, teacherId, topicId } = body;
 
   if (!classId) return NextResponse.json({ error: "classId fehlt." }, { status: 400 });
 
@@ -93,8 +95,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Text fehlt." }, { status: 400 });
   }
 
-  // A post targets either a person (subjectMembershipId) or a topic (topicId).
+  // A post targets a student (subjectMembershipId), a teacher (teacherId)
+  // or a topic/project (topicId).
   let subjectId: string | null = null;
+  let teachId: string | null = null;
   let topId: string | null = null;
   if (subjectMembershipId) {
     const subject = await prisma.membership.findUnique({ where: { id: subjectMembershipId } });
@@ -102,6 +106,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Person gehört nicht zur Klasse." }, { status: 400 });
     }
     subjectId = subject.id;
+  } else if (teacherId) {
+    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+    if (!teacher || teacher.classId !== classId) {
+      return NextResponse.json({ error: "Lehrperson gehört nicht zur Klasse." }, { status: 400 });
+    }
+    teachId = teacher.id;
   } else if (topicId) {
     const topic = await prisma.topic.findUnique({ where: { id: topicId } });
     if (!topic || topic.classId !== classId) {
@@ -109,7 +119,7 @@ export async function POST(req: Request) {
     }
     topId = topic.id;
   } else {
-    return NextResponse.json({ error: "Ziel (Person oder Projekt) fehlt." }, { status: 400 });
+    return NextResponse.json({ error: "Ziel fehlt." }, { status: 400 });
   }
 
   const post = await prisma.post.create({
@@ -120,8 +130,11 @@ export async function POST(req: Request) {
       kind: kindValue,
       text: text ? String(text).trim() : null,
       context: context ? String(context).trim() : null,
+      saidByName: saidByName ? String(saidByName).trim() : null,
+      anonymous: !!anonymous,
       imageUrl: imageUrl || null,
       subjectMembershipId: subjectId,
+      teacherId: teachId,
       topicId: topId,
     },
   });
