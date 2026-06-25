@@ -16,6 +16,7 @@ export type Post = {
   author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null };
   class: { id: string; name: string };
   subject: { id: string; displayName: string; memberType: string } | null;
+  topic: { id: string; name: string } | null;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
@@ -39,9 +40,12 @@ function timeAgo(iso: string): string {
   return d < 7 ? `vor ${d} T.` : new Date(iso).toLocaleDateString("de-CH");
 }
 
-// "hat ein Zitat über Lena gepostet" etc.
+// "hat ein Zitat über Lena gepostet" / "hat ein Bild im Projekt Ausflug gepostet"
 function contextLine(post: Post): string {
-  if (post.board === "POSTIT") return "hat ein Post-it gepinnt";
+  if (post.topic) {
+    const what = post.kind === "IMAGE" ? "ein Bild" : post.kind === "TEXT" ? "eine Notiz" : "ein Zitat";
+    return `hat ${what} im Projekt „${post.topic.name}" gepostet`;
+  }
   if (post.kind === "IMAGE")
     return post.subject ? `hat ein Bild mit ${post.subject.displayName} gepostet` : "hat ein Bild gepostet";
   const isTeacher = post.subject?.memberType === "TEACHER";
@@ -168,6 +172,13 @@ export function PostCard({
           <div className="mt-3">
             <Link href={`/classes/${post.class.id}/members/${post.subject.id}`} className="chip">
               {post.subject.memberType === "TEACHER" ? "Lehrer:in" : "Schüler:in"} · {post.subject.displayName}
+            </Link>
+          </div>
+        )}
+        {post.topic && (
+          <div className="mt-3">
+            <Link href={`/classes/${post.class.id}/topics/${post.topic.id}`} className="chip">
+              Projekt · {post.topic.name}
             </Link>
           </div>
         )}

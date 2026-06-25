@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type ClassItem = {
-  id: string;
-  name: string;
-  description: string | null;
-  joinCode: string;
-  role: string;
-  memberCount: number;
-  postCount: number;
-};
+type ClassItem = { id: string; name: string; role: string; memberCount: number; postCount: number };
 
 export default function ClassesPage() {
   const router = useRouter();
@@ -28,13 +20,18 @@ export default function ClassesPage() {
   const [gradYear, setGradYear] = useState("");
   const [createType, setCreateType] = useState<"STUDENT" | "TEACHER">("STUDENT");
 
-  async function load() {
-    const res = await fetch("/api/classes");
-    if (res.status === 401) return router.push("/login");
-    setClasses((await res.json()).classes);
-  }
   useEffect(() => {
-    load();
+    (async () => {
+      const res = await fetch("/api/classes");
+      if (res.status === 401) return router.push("/login");
+      const list: ClassItem[] = (await res.json()).classes ?? [];
+      // Already in exactly one class -> go straight there.
+      if (list.length === 1) {
+        router.replace(`/classes/${list[0].id}`);
+        return;
+      }
+      setClasses(list);
+    })();
   }, []);
 
   async function join(e: React.FormEvent) {
@@ -63,9 +60,29 @@ export default function ClassesPage() {
     else setError(d.error || "Fehler.");
   }
 
+  if (classes === null) return <p className="text-muted">Lädt…</p>;
+
+  // User already in classes (more than one) -> let them pick.
+  if (classes.length > 0) {
+    return (
+      <div className="space-y-3">
+        <h1 className="display text-3xl">Deine Klassen</h1>
+        {classes.map((c) => (
+          <Link key={c.id} href={`/classes/${c.id}`} className="card p-4 flex items-center justify-between hover:shadow-soft transition">
+            <div>
+              <h3 className="font-extrabold">{c.name}</h3>
+              <p className="text-xs text-muted">{c.memberCount} Mitglieder · {c.postCount} Erinnerungen</p>
+            </div>
+            <span className="text-ink/40">›</span>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
+  // No class yet -> join or create.
   return (
     <div className="space-y-6">
-      {/* Join — prominent */}
       <section className="card p-5 text-center">
         <h1 className="display text-3xl mb-1">Tritt deiner Klasse bei</h1>
         <p className="text-muted text-sm mb-4">Gib den Code ein, den du bekommen hast.</p>
@@ -87,27 +104,6 @@ export default function ClassesPage() {
 
       {error && <p className="text-sm text-coral font-bold text-center">{error}</p>}
 
-      {/* My classes */}
-      {classes && classes.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="font-extrabold">Meine Klassen</h2>
-          {classes.map((c) => (
-            <Link key={c.id} href={`/classes/${c.id}`} className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-              <div>
-                <h3 className="font-extrabold">{c.name}</h3>
-                <p className="text-xs text-muted">
-                  {c.memberCount} Mitglieder · {c.postCount} Erinnerungen
-                  {c.role === "OWNER" && " · Ersteller:in"}
-                  {c.role === "MODERATOR" && " · Mod"}
-                </p>
-              </div>
-              <span className="text-xs font-mono chip">{c.joinCode}</span>
-            </Link>
-          ))}
-        </section>
-      )}
-
-      {/* Create — subtle */}
       <section>
         {!showCreate ? (
           <button onClick={() => setShowCreate(true)} className="text-sm text-muted underline w-full text-center">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Post } from "./PostCard";
 
-type Member = { id: string; displayName: string; memberType: string };
+type Kind = "QUOTE" | "IMAGE" | "TEXT";
 
 async function uploadOne(file: File): Promise<string> {
   const fd = new FormData();
@@ -23,32 +23,27 @@ async function uploadOne(file: File): Promise<string> {
   return data.url;
 }
 
+// Target: a person (subjectMembershipId) OR a project/topic (topicId).
 export function CreatePost({
   classId,
-  board,
-  members,
-  defaultSubjectId,
-  defaultKind = "QUOTE",
+  subjectMembershipId,
+  topicId,
   onCreated,
 }: {
   classId: string;
-  board: "YEARBOOK" | "POSTIT";
-  members?: Member[];
-  defaultSubjectId?: string;
-  defaultKind?: "QUOTE" | "IMAGE";
+  subjectMembershipId?: string;
+  topicId?: string;
   onCreated: (post: Post) => void;
 }) {
-  const [kind, setKind] = useState<"QUOTE" | "IMAGE">(defaultKind);
+  const isTopic = !!topicId;
+  const [kind, setKind] = useState<Kind>("QUOTE");
   const [text, setText] = useState("");
   const [context, setContext] = useState("");
-  const [subjectId, setSubjectId] = useState(defaultSubjectId ?? "");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
-
-  const needsSubject = board === "YEARBOOK" && !defaultSubjectId;
 
   function pickFiles(list: FileList | null) {
     const arr = list ? Array.from(list) : [];
@@ -60,7 +55,7 @@ export function CreatePost({
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ classId, subjectMembershipId, topicId, ...body }),
     });
     const d = await res.json().catch(() => null);
     if (!res.ok) throw new Error(d?.error || `Fehler beim Speichern (Status ${res.status}).`);
@@ -70,36 +65,22 @@ export function CreatePost({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (needsSubject && !subjectId) return setError("Bitte eine Person auswählen.");
-    const subjectMembershipId = board === "YEARBOOK" ? defaultSubjectId ?? subjectId : null;
     setBusy(true);
     try {
       if (kind === "IMAGE") {
         if (files.length === 0) throw new Error("Bitte mindestens ein Bild auswählen.");
-        // one post per image (multi-upload)
         for (let i = 0; i < files.length; i++) {
           setProgress(files.length > 1 ? `Lädt ${i + 1}/${files.length}…` : "Lädt…");
           const url = await uploadOne(files[i]);
-          const post = await createPost({
-            classId,
-            board,
-            kind: "IMAGE",
-            text: text.trim() || null,
-            context: context.trim() || null,
-            imageUrl: url,
-            subjectMembershipId,
-          });
+          const post = await createPost({ kind: "IMAGE", text: text.trim() || null, imageUrl: url });
           onCreated(post);
         }
       } else {
         if (!text.trim()) throw new Error("Bitte etwas schreiben.");
         const post = await createPost({
-          classId,
-          board,
-          kind: "QUOTE",
+          kind,
           text,
-          context: context.trim() || null,
-          subjectMembershipId,
+          context: !isTopic ? context.trim() || null : null,
         });
         onCreated(post);
       }
@@ -114,30 +95,19 @@ export function CreatePost({
     }
   }
 
-  return (
-    <form onSubmit={submit} className={board === "POSTIT" ? "postit relative" : "card p-4"}>
-      <div className="flex gap-2 mb-3">
-        <button type="button" onClick={() => setKind("QUOTE")} className={kind === "QUOTE" ? "btn-primary" : "btn-soft"}>
-          {board === "POSTIT" ? "Notiz" : "Zitat"}
-        </button>
-        <button type="button" onClick={() => setKind("IMAGE")} className={kind === "IMAGE" ? "btn-primary" : "btn-soft"}>
-          Bild
-        </button>
-      </div>
+  const Btn = ({ k, label }: { k: Kind; label: string }) => (
+    <button type="button" onClick={() => setKind(k)} className={kind === k ? "btn-primary" : "btn-soft"}>
+      {label}
+    </button>
+  );
 
-      {needsSubject && members && (
-        <div className="mb-3">
-          <label className="label">Über wen?</label>
-          <select className="input" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
-            <option value="">— Person wählen —</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.displayName} {m.memberType === "TEACHER" ? "(Lehrer:in)" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+  return (
+    <form onSubmit={submit} className="card p-4">
+      <div className="flex gap-2 mb-3 flex-wrap">
+        <Btn k="QUOTE" label="Zitat" />
+        <Btn k="IMAGE" label="Bild" />
+        {isTopic && <Btn k="TEXT" label="Notiz" />}
+      </div>
 
       {kind === "IMAGE" ? (
         <div className="space-y-2">
@@ -163,11 +133,11 @@ export function CreatePost({
         <>
           <textarea
             className="input min-h-[80px]"
-            placeholder={board === "POSTIT" ? "Schreibe etwas auf den Zettel…" : "Zitat eingeben…"}
+            placeholder={kind === "TEXT" ? "Notiz / Post-it…" : "Zitat eingeben…"}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          {board === "YEARBOOK" && (
+          {!isTopic && kind === "QUOTE" && (
             <input className="input mt-2" placeholder="Kontext (optional, z. B. vor der Prüfung)" value={context} onChange={(e) => setContext(e.target.value)} />
           )}
         </>
@@ -177,9 +147,7 @@ export function CreatePost({
 
       <div className="mt-3 flex items-center justify-end gap-3">
         {progress && <span className="text-xs text-muted">{progress}</span>}
-        <button className="btn-accent" disabled={busy}>
-          {busy ? "Speichert…" : "Posten"}
-        </button>
+        <button className="btn-accent" disabled={busy}>{busy ? "Speichert…" : "Posten"}</button>
       </div>
     </form>
   );

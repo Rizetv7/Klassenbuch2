@@ -32,6 +32,7 @@ model User {
   comments    Comment[]
   likes       Like[]
   ownedClasses Class[]     @relation("ClassOwner")
+  topics      Topic[]      @relation("TopicCreator")
 }
 
 model Class {
@@ -47,6 +48,24 @@ model Class {
   owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   memberships Membership[]
   posts       Post[]
+  topics      Topic[]
+}
+
+// A class-wide collection / project (e.g. "Ausflug", "Maturaball"). Holds
+// posts (images, quotes, notes) that are general to the class rather than
+// tied to one person.
+model Topic {
+  id          String   @id @default(cuid())
+  classId     String
+  name        String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator User  @relation("TopicCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  posts   Post[]
+
+  @@index([classId])
 }
 
 model Membership {
@@ -70,9 +89,10 @@ model Post {
   id                 String   @id @default(cuid())
   classId            String
   authorId           String
-  subjectMembershipId String?  // person the post is about (yearbook). null for post-it board
-  board              String   @default("YEARBOOK") // YEARBOOK | POSTIT
-  kind               String   @default("QUOTE")    // QUOTE | IMAGE | TEXT
+  subjectMembershipId String?  // person the post is about (student/teacher page)
+  topicId            String?   // topic/project the post belongs to
+  board              String   @default("YEARBOOK") // YEARBOOK | TOPIC
+  kind               String   @default("QUOTE")    // QUOTE | IMAGE | TEXT (note)
   text               String?
   context            String?  // optional context, e.g. "vor der Matheprüfung"
   imageUrl           String?
@@ -81,11 +101,13 @@ model Post {
   class    Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
   author   User        @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   subject  Membership? @relation("PostSubject", fields: [subjectMembershipId], references: [id], onDelete: Cascade)
+  topic    Topic?      @relation(fields: [topicId], references: [id], onDelete: Cascade)
   comments Comment[]
   likes    Like[]
 
   @@index([classId])
   @@index([subjectMembershipId])
+  @@index([topicId])
 }
 
 model Comment {

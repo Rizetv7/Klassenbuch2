@@ -60,7 +60,7 @@ export default function MemberPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          <CreatePost classId={id} board="YEARBOOK" defaultSubjectId={membershipId} onCreated={(p) => { setPosts((ps) => [p, ...ps]); setShowAdd(false); }} />
+          <CreatePost classId={id} subjectMembershipId={membershipId} onCreated={(p) => { setPosts((ps) => [p, ...ps]); setShowAdd(false); }} />
           <button onClick={() => setShowAdd(false)} className="text-sm text-muted underline w-full text-center">Abbrechen</button>
         </div>
       )}

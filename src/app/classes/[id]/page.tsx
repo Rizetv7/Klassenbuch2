@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
-import { PostCard, type Post } from "@/components/PostCard";
 
 type Member = {
   id: string;
@@ -27,7 +26,7 @@ type ClassDetail = {
   members: Member[];
 };
 
-const TABS = ["Schüler", "Lehrpersonen", "Zitate", "Bilder", "Best Of"] as const;
+const TABS = ["Schüler", "Lehrpersonen", "Projekte"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ClassPage() {
@@ -39,8 +38,6 @@ export default function ClassPage() {
     : "Schüler";
   const [data, setData] = useState<ClassDetail | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [postsLoading, setPostsLoading] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const [error, setError] = useState("");
 
@@ -53,21 +50,6 @@ export default function ClassPage() {
   useEffect(() => {
     loadClass();
   }, [id]);
-
-  useEffect(() => {
-    if (tab === "Schüler" || tab === "Lehrpersonen") return;
-    setPostsLoading(true);
-    const q =
-      tab === "Zitate"
-        ? `board=YEARBOOK&kind=QUOTE`
-        : tab === "Bilder"
-          ? `board=YEARBOOK&kind=IMAGE`
-          : `sort=popular`;
-    fetch(`/api/posts?classId=${id}&${q}`)
-      .then((r) => r.json())
-      .then((d) => setPosts(d.posts ?? []))
-      .finally(() => setPostsLoading(false));
-  }, [tab, id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
   if (!data) return <p className="text-muted">Lädt…</p>;
@@ -87,12 +69,11 @@ export default function ClassPage() {
           <span className="chip">{data.counts.teachers} Lehrpersonen</span>
           <span className="chip">{data.counts.memories} Erinnerungen</span>
         </div>
-        <div className="mt-4 flex gap-2">
-          <Link href={`/classes/${id}/postit`} className="btn-soft text-sm">Pinnwand</Link>
-          {canMod && (
+        {canMod && (
+          <div className="mt-4">
             <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">Verwalten</button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {showManage && canMod && <ManagePanel data={data} onChange={loadClass} />}
@@ -109,15 +90,59 @@ export default function ClassPage() {
       {/* Content */}
       {tab === "Schüler" && <MemberGrid members={students} classId={id} empty="Noch keine Schüler:innen beigetreten." />}
       {tab === "Lehrpersonen" && <TeacherGrid members={teachers} classId={id} />}
-      {(tab === "Zitate" || tab === "Bilder" || tab === "Best Of") && (
-        <div className="space-y-3">
-          {postsLoading ? (
-            <p className="text-muted">Lädt…</p>
-          ) : posts.length === 0 ? (
-            <p className="text-muted text-center py-6">Noch nichts hier.</p>
-          ) : (
-            posts.map((p) => <PostCard key={p.id} post={p} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />)
-          )}
+      {tab === "Projekte" && <ProjectsTab classId={id} />}
+    </div>
+  );
+}
+
+function ProjectsTab({ classId }: { classId: string }) {
+  const [topics, setTopics] = useState<{ id: string; name: string; postCount: number }[] | null>(null);
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  async function load() {
+    const d = await fetch(`/api/classes/${classId}/topics`).then((r) => r.json());
+    setTopics(d.topics ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, [classId]);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setCreating(true);
+    const res = await fetch(`/api/classes/${classId}/topics`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    setCreating(false);
+    if (res.ok) {
+      setName("");
+      load();
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <form onSubmit={create} className="flex gap-2">
+        <input className="input" placeholder="Neues Projekt (z. B. Ausflug, Maturaball)" value={name} onChange={(e) => setName(e.target.value)} />
+        <button className="btn-accent" disabled={creating}>Erstellen</button>
+      </form>
+
+      {topics === null ? (
+        <p className="text-muted">Lädt…</p>
+      ) : topics.length === 0 ? (
+        <p className="text-muted text-center py-6">Noch keine Projekte. Erstelle das erste!</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {topics.map((t) => (
+            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="card p-4 flex items-center justify-between hover:shadow-soft transition">
+              <span className="font-extrabold">{t.name}</span>
+              <span className="chip">{t.postCount} Beiträge</span>
+            </Link>
+          ))}
         </div>
       )}
     </div>
