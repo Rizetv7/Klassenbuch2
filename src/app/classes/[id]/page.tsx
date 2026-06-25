@@ -102,7 +102,7 @@ export default function ClassPage() {
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-[24px] border border-white/60 bg-white/30 p-3 text-center backdrop-blur-md">
+    <div className="rounded-[24px] border border-white/50 bg-white/20 p-3 text-center">
       <p className="display text-4xl leading-none">{value}</p>
       <p className="mt-1 text-[11px] font-black text-ink/60">{label}</p>
     </div>
@@ -241,7 +241,7 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
       </div>
       <div className="space-y-1.5">
         {data.members.filter((m) => m.role !== "OWNER").map((m) => (
-          <div key={m.id} className="flex items-center gap-2 rounded-[22px] border border-white/50 bg-white/40 px-3 py-2 text-sm">
+          <div key={m.id} className="flex items-center gap-2 rounded-[22px] border border-white/40 bg-white/20 px-3 py-2 text-sm">
             <span className="flex-1 truncate">{m.displayName}</span>
             {data.myRole === "OWNER" && (
               <button onClick={() => moderate(m.id, { role: m.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="text-xs underline text-ink/70">

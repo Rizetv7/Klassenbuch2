@@ -210,7 +210,7 @@ export function PostCard({
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2 text-sm group">
                 <Avatar name={c.author.name} url={c.author.avatarUrl} accent={c.author.accentColor} size={28} />
-                <div className="flex-1 rounded-[20px] border border-white/50 bg-white/40 px-3 py-2">
+                <div className="flex-1 rounded-[20px] border border-white/40 bg-white/20 px-3 py-2">
                   <span className="font-black">{c.author.name}</span> <span>{c.text}</span>
                 </div>
                 <button

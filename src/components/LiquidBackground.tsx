@@ -2,114 +2,50 @@
 
 import { useEffect, useRef } from "react";
 
-// Full-screen animated liquid gradient. It renders only soft color fields:
-// no bows, no text, no icons, no UI elements, no decorative objects.
+type Blob = {
+  color: string;
+  x: number;
+  y: number;
+  radius: number;
+  alpha: number;
+  drift: number;
+  phase: number;
+};
 
-const FRAG = `
-precision highp float;
-uniform vec2 uRes;
-uniform float uTime;
+const BLOBS: Blob[] = [
+  { color: "#ec35d6", x: 0.22, y: 0.90, radius: 0.58, alpha: 0.76, drift: 0.31, phase: 4.8 },
+  { color: "#ff2fbf", x: 0.56, y: 1.00, radius: 0.68, alpha: 0.84, drift: 0.26, phase: 0.9 },
+  { color: "#ff6ad5", x: 0.92, y: 0.88, radius: 0.54, alpha: 0.58, drift: 0.35, phase: 5.6 },
+  { color: "#ff6ad5", x: 0.56, y: 0.58, radius: 0.46, alpha: 0.42, drift: 0.30, phase: 2.1 },
+  { color: "#b9a7ff", x: 0.44, y: 0.48, radius: 0.66, alpha: 0.66, drift: 0.36, phase: 1.1 },
+  { color: "#f8f1df", x: 0.50, y: 0.38, radius: 0.54, alpha: 0.58, drift: 0.28, phase: 3.3 },
+  { color: "#ffc4a3", x: 0.68, y: 0.30, radius: 0.48, alpha: 0.50, drift: 0.34, phase: 5.1 },
+  { color: "#ffd2a1", x: 0.94, y: 0.24, radius: 0.64, alpha: 0.72, drift: 0.38, phase: 4.2 },
+  { color: "#f8f1df", x: 0.82, y: 0.08, radius: 0.66, alpha: 0.78, drift: 0.42, phase: 2.6 },
+  { color: "#72eadf", x: 0.22, y: 0.22, radius: 0.64, alpha: 0.70, drift: 0.46, phase: 1.7 },
+  { color: "#28d9f2", x: 0.04, y: 0.12, radius: 0.78, alpha: 0.92, drift: 0.55, phase: 0.2 },
+];
 
-vec2 hash22(vec2 p){
-  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
+function drawBlob(ctx: CanvasRenderingContext2D, blob: Blob, w: number, h: number, t: number) {
+  const size = Math.max(w, h);
+  const wobbleX = Math.sin(t * blob.drift + blob.phase) * 0.055 + Math.sin(t * 0.13 + blob.phase * 2.1) * 0.026;
+  const wobbleY = Math.cos(t * blob.drift * 0.82 + blob.phase) * 0.050 + Math.sin(t * 0.17 + blob.phase * 1.7) * 0.024;
+  const pulse = 1 + Math.sin(t * 0.22 + blob.phase) * 0.045 + Math.cos(t * 0.11 + blob.phase * 1.9) * 0.025;
+  const x = (blob.x + wobbleX) * w;
+  const y = (blob.y + wobbleY) * h;
+  const r = blob.radius * size * pulse;
+
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
+  gradient.addColorStop(0, blob.color);
+  gradient.addColorStop(0.42, blob.color);
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.globalAlpha = blob.alpha;
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
 }
-float gnoise(vec2 p){
-  vec2 i = floor(p); vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  float a = dot(hash22(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
-  float b = dot(hash22(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
-  float c = dot(hash22(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
-  float d = dot(hash22(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-float fbm(vec2 p){
-  float v = 0.0, a = 0.58;
-  for (int i = 0; i < 4; i++){ v += a * gnoise(p); p = p * 2.0 + 17.3; a *= 0.5; }
-  return v;
-}
-
-// gaussian-weighted color blob
-void blob(inout vec3 col, inout float w, vec2 uv, vec2 c, float r, vec3 color, float strength){
-  float d = distance(uv, c);
-  float wi = exp(-(d * d) / (2.0 * r * r)) * strength;
-  col += wi * color; w += wi;
-}
-
-void main(){
-  vec2 uv = gl_FragCoord.xy / uRes;
-  vec2 p = uv * vec2(uRes.x / uRes.y, 1.0);
-  float t = uTime * 0.038;
-
-  // organic domain warp (ink-in-water motion)
-  vec2 q = vec2(fbm(p * 1.18 + vec2(0.0, t)), fbm(p * 1.18 + vec2(5.2, 1.3) - t * 0.82));
-  vec2 r = vec2(fbm(p * 1.05 + 2.1 * q + vec2(1.7, 9.2) + t * 0.76),
-                fbm(p * 1.05 + 2.1 * q + vec2(8.3, 2.8) - t * 0.68));
-  vec2 wuv = uv + 0.19 * r + 0.06 * q;
-
-  vec3 col = vec3(0.0); float w = 0.0;
-
-  // upper-left: cyan / aqua
-  blob(col, w, wuv, vec2(0.02, 0.94), 0.66, vec3(0.157, 0.851, 0.949), 2.28);
-  blob(col, w, wuv, vec2(-0.07, 0.66), 0.56, vec3(0.447, 0.918, 0.875), 1.70);
-  blob(col, w, wuv, vec2(0.30, 0.79), 0.46, vec3(0.725, 0.655, 1.000), 1.06);
-  blob(col, w, wuv, vec2(0.12, 0.56), 0.44, vec3(0.447, 0.918, 0.875), 0.94);
-  blob(col, w, wuv, vec2(0.16, 0.72), 0.62, vec3(0.157, 0.851, 0.949), 1.34);
-  // upper-right: peach / cream / soft orange
-  blob(col, w, wuv, vec2(0.94, 0.96), 0.64, vec3(0.973, 0.945, 0.875), 1.92);
-  blob(col, w, wuv, vec2(0.78, 0.84), 0.54, vec3(1.000, 0.769, 0.639), 1.62);
-  blob(col, w, wuv, vec2(1.04, 0.68), 0.50, vec3(1.000, 0.824, 0.631), 1.28);
-  blob(col, w, wuv, vec2(0.88, 0.54), 0.46, vec3(1.000, 0.824, 0.631), 0.86);
-  blob(col, w, wuv, vec2(0.70, 0.66), 0.56, vec3(0.973, 0.945, 0.875), 1.12);
-  // middle: lavender + milky white + pink
-  blob(col, w, wuv, vec2(0.48, 0.54), 0.48, vec3(0.725, 0.655, 1.000), 0.98);
-  blob(col, w, wuv, vec2(0.48, 0.48), 0.32, vec3(0.973, 0.945, 0.875), 0.72);
-  blob(col, w, wuv, vec2(0.55, 0.38), 0.42, vec3(1.000, 0.416, 0.835), 0.80);
-  // bottom: dominant hot pink / magenta
-  blob(col, w, wuv, vec2(0.50, -0.11), 0.48, vec3(1.000, 0.184, 0.749), 1.76);
-  blob(col, w, wuv, vec2(0.16, 0.00), 0.36, vec3(0.925, 0.208, 0.839), 1.22);
-  blob(col, w, wuv, vec2(0.86, 0.00), 0.38, vec3(1.000, 0.416, 0.835), 1.14);
-  blob(col, w, wuv, vec2(0.56, 0.14), 0.28, vec3(1.000, 0.184, 0.749), 0.72);
-
-  // soft base so nothing goes dark
-  blob(col, w, wuv, vec2(0.5, 0.5), 1.4, vec3(0.97, 0.92, 0.93), 0.35);
-
-  col /= max(w, 0.0001);
-
-  // Wobbly regional color pressure keeps the composition intentional while
-  // still behaving like liquid instead of a static multicolor split.
-  float bandNoise = fbm(uv * 1.7 + r * 1.8 + vec2(t * 0.18, -t * 0.12));
-  float topMask = smoothstep(0.20, 0.86, uv.y + bandNoise * 0.18);
-  float bottomMask = smoothstep(0.52, 0.02, uv.y + bandNoise * 0.12);
-  float sideMix = smoothstep(0.22, 0.82, uv.x + fbm(uv * 1.2 + vec2(4.0, t * 0.15)) * 0.14);
-  vec3 topColor = mix(vec3(0.157, 0.851, 0.949), vec3(1.000, 0.824, 0.631), sideMix);
-  topColor = mix(topColor, vec3(0.973, 0.945, 0.875), smoothstep(0.50, 0.92, sideMix) * 0.38);
-  col = mix(col, topColor, topMask * 0.52);
-  float leftPool = (1.0 - smoothstep(0.04, 0.64, uv.x + bandNoise * 0.13))
-    * smoothstep(0.18, 0.82, uv.y + bandNoise * 0.16);
-  float rightPool = smoothstep(0.42, 0.98, uv.x + bandNoise * 0.12)
-    * smoothstep(0.28, 0.88, uv.y + bandNoise * 0.14);
-  col = mix(col, vec3(0.560, 0.930, 0.900), leftPool * 0.76);
-  col = mix(col, vec3(1.000, 0.835, 0.710), rightPool * 0.52);
-  col = mix(col, vec3(1.000, 0.184, 0.749), bottomMask * 0.16);
-
-  // candy saturation without crushing the cream highlights
-  float l = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(vec3(l), col, 1.22);
-  col = mix(col, smoothstep(0.0, 1.0, col), 0.18);
-
-  // subtle film grain so it feels alive
-  float g = fract(sin(dot(gl_FragCoord.xy + t, vec2(12.9898, 78.233))) * 43758.5453);
-  col += (g - 0.5) * 0.025;
-
-  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 0.74);
-}
-`;
-
-const VERT = `
-attribute vec2 aPos;
-void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }
-`;
 
 export function LiquidBackground() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -117,73 +53,84 @@ export function LiquidBackground() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: true });
-    if (!gl) return; // CSS fallback gradient stays visible
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
 
-    const compile = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    };
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const scale = window.devicePixelRatio > 1.5 ? 0.24 : 0.30;
+    let width = 1;
+    let height = 1;
 
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, "aPos");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-    const uRes = gl.getUniformLocation(prog, "uRes");
-    const uTime = gl.getUniformLocation(prog, "uTime");
-
-    const SCALE = 0.36; // low res creates the soft blur and keeps it smooth
     const resize = () => {
-      const w = Math.max(1, Math.floor(window.innerWidth * SCALE));
-      const h = Math.max(1, Math.floor(window.innerHeight * SCALE));
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        gl.viewport(0, 0, w, h);
+      width = Math.max(1, Math.floor(window.innerWidth * scale));
+      height = Math.max(1, Math.floor(window.innerHeight * scale));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
       }
     };
-    resize();
-    window.addEventListener("resize", resize);
 
+    const render = (time: number) => {
+      resize();
+      const t = time / 1000;
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      const base = ctx.createLinearGradient(0, 0, width, height);
+      base.addColorStop(0, "#72eadf");
+      base.addColorStop(0.26, "#f8f1df");
+      base.addColorStop(0.52, "#b9a7ff");
+      base.addColorStop(0.76, "#ff6ad5");
+      base.addColorStop(1, "#ff2fbf");
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.globalCompositeOperation = "source-over";
+      for (const blob of BLOBS) drawBlob(ctx, blob, width, height, t);
+
+      ctx.globalCompositeOperation = "soft-light";
+      ctx.globalAlpha = 0.18;
+      for (let i = 0; i < 5; i++) {
+        const y = (Math.sin(t * 0.08 + i * 1.7) * 0.16 + 0.46 + i * 0.06) * height;
+        const grd = ctx.createLinearGradient(0, y - height * 0.12, width, y + height * 0.12);
+        grd.addColorStop(0, "rgba(255,255,255,0)");
+        grd.addColorStop(0.5, i % 2 ? "#f8f1df" : "#b9a7ff");
+        grd.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, y - height * 0.18, width, height * 0.36);
+      }
+    };
+
+    resize();
     let raf = 0;
-    const start = performance.now();
-    let last = 0;
-    const FRAME_MS = 1000 / 30; // cap at ~30 FPS to save GPU/battery
     let running = true;
+    let last = 0;
+    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 18;
+
     const loop = (now: number) => {
       if (!running) return;
-      raf = requestAnimationFrame(loop);
-      if (now - last < FRAME_MS) return;
+      raf = window.requestAnimationFrame(loop);
+      if (now - last < frameMs) return;
       last = now;
-      resize();
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, (performance.now() - start) / 1000);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      render(now);
     };
-    raf = requestAnimationFrame(loop);
 
-    const onVis = () => {
+    render(performance.now());
+    raf = window.requestAnimationFrame(loop);
+    window.addEventListener("resize", resize);
+
+    const onVisibility = () => {
       running = !document.hidden;
-      if (running) raf = requestAnimationFrame(loop);
-      else cancelAnimationFrame(raf);
+      if (running) raf = window.requestAnimationFrame(loop);
+      else window.cancelAnimationFrame(raf);
     };
-    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       running = false;
-      cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      document.removeEventListener("visibilitychange", onVis);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 

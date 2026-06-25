@@ -95,7 +95,7 @@ export function CreatePost({
       {kind === "IMAGE" ? (
         <div className="relative z-10 space-y-3">
           <label className="block">
-            <span className="flex min-h-[130px] w-full cursor-pointer flex-col items-center justify-center rounded-[30px] border border-dashed border-white/60 bg-white/30 px-5 py-6 text-center transition hover:bg-white/40">
+            <span className="flex min-h-[130px] w-full cursor-pointer flex-col items-center justify-center rounded-[30px] border border-dashed border-white/50 bg-white/20 px-5 py-6 text-center transition hover:bg-white/30">
               <span className="display text-4xl leading-none">Bilder</span>
               <span className="mt-1 text-sm font-black text-ink/60">
                 {files.length > 0 ? `${files.length} Bild(er) gewählt — ändern` : "Bilder auswählen"}

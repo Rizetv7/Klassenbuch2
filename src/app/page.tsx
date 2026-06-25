@@ -50,7 +50,7 @@ export default function HomePage() {
         <section className="hero-frame min-h-[460px] p-5 sm:p-7">
           <div className="relative z-10 flex h-full flex-col justify-between gap-5">
             <div className="space-y-5">
-              <div className="inline-flex rounded-full border border-white/60 bg-white/40 px-4 py-2 text-sm font-black text-ink/80 backdrop-blur-md">
+              <div className="inline-flex rounded-full border border-white/50 bg-white/20 px-4 py-2 text-sm font-black text-ink/80">
                 Public class memory
               </div>
               <h2 className="display max-w-lg text-4xl leading-[0.88] sm:text-5xl">
