@@ -41,17 +41,32 @@ export default function MemberPage() {
   const isTeacher = member.memberType === "TEACHER";
   const shown = posts.filter((p) => (tab === "Alle" ? true : tab === "Zitate" ? p.kind === "QUOTE" : p.kind === "IMAGE"));
   const firstName = member.displayName.split(" ")[0];
+  const cover = posts.find((p) => p.imageUrl);
+  const heroQuote = posts.find((p) => p.kind === "QUOTE" && p.text);
 
   return (
-    <div className="space-y-4">
-      <Link href={`/classes/${id}`} className="text-sm text-muted">← {className}</Link>
+    <div className="space-y-6">
+      <Link href={`/classes/${id}`} className="text-sm font-black text-ink/60">← {className}</Link>
 
       {/* Hero */}
-      <div className="card p-6 flex flex-col items-center text-center">
-        <Avatar name={member.displayName} url={member.avatarUrl} accent={member.accentColor} size={96} />
-        <h1 className="display text-4xl mt-3">{member.displayName}</h1>
-        <p className="text-muted text-sm">{isTeacher ? "Lehrperson" : "Schüler:in"} · {posts.length} Beiträge</p>
-      </div>
+      <section className="hero-frame min-h-[380px] p-5 sm:p-7">
+        {cover?.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-24" />
+        )}
+        <div className="relative z-10 grid gap-5 sm:grid-cols-[auto_1fr] sm:items-center">
+          <div className="polaroid mx-auto w-44 sm:w-52">
+            <Avatar name={member.displayName} url={member.avatarUrl} accent={member.accentColor} size={176} ring={false} />
+            <p className="mt-2 text-center font-hand text-3xl leading-none text-ink/75">{firstName}</p>
+          </div>
+          <div className="glass-card p-5">
+            <p className="section-label mb-2">{isTeacher ? "Lehrperson" : "Schüler:in"}</p>
+            <h1 className="display break-words text-6xl leading-[0.86] sm:text-7xl">{member.displayName}</h1>
+            {heroQuote?.text && <p className="mt-5 font-hand text-4xl leading-[0.95] text-hotpink">{heroQuote.text}</p>}
+            <p className="mt-4 text-sm font-black text-ink/60">{posts.length} Beiträge</p>
+          </div>
+        </div>
+      </section>
 
       {/* Add */}
       {!showAdd ? (
@@ -73,9 +88,9 @@ export default function MemberPage() {
       </div>
 
       {/* Posts */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {shown.length === 0 ? (
-          <p className="text-muted text-center py-6">Noch nichts über {firstName}. Mach den Anfang!</p>
+          <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch nichts über {firstName}. Mach den Anfang!</div>
         ) : (
           shown.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />

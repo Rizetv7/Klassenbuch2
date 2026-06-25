@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconHome, IconUsers, IconUser } from "./Icons";
 
-// Deterministic accent color from a name/id — within the violet/pink/blue
-// scheme — for the ring around each round avatar.
-const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
+const ACCENTS = ["#ff2fbf", "#ec35d6", "#28d9f2", "#72eadf", "#b9a7ff", "#ffc4a3"];
 export function deriveAccent(seed: string): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -37,7 +35,7 @@ export function Avatar({
 
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/80 font-extrabold text-ink/70"
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/70 font-black text-ink/75"
       style={{ width: size, height: size, fontSize: size * 0.38, ...ringStyle }}
     >
       {url ? (
@@ -78,15 +76,15 @@ function TopNav() {
   const isActive = useActive();
   return (
     <header className="sticky top-0 z-30 hidden lg:block">
-      <div className="surface mx-auto mt-4 flex max-w-5xl items-center gap-2 rounded-full px-4 py-2">
-        <Link href="/" className="display mr-2 text-xl">Klassenbuch</Link>
+      <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
+        <Link href="/" className="display mr-2 text-2xl leading-none">Klassenbuch</Link>
         <nav className="ml-auto flex items-center gap-1">
           {ITEMS.map((it) => (
             <Link
               key={it.href}
               href={it.href}
-              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                isActive(it.href) ? "bg-ink text-white" : "text-ink/60 hover:text-ink"
+              className={`rounded-full px-4 py-2 text-sm font-black transition ${
+                isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/70 hover:bg-white/40 hover:text-ink"
               }`}
             >
               {it.label}
@@ -108,11 +106,11 @@ function BottomNav() {
             <Link
               key={it.href}
               href={it.href}
-              className={`flex flex-col items-center gap-0.5 rounded-2xl px-4 py-1 text-[11px] font-bold transition ${
-                isActive(it.href) ? "text-ink" : "text-ink/40"
+              className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition ${
+                isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/50"
               }`}
             >
-              <it.Icon size={22} className={isActive(it.href) ? "scale-110 transition" : "transition"} />
+              <it.Icon size={21} className="transition" />
               {it.label}
             </Link>
           ))}

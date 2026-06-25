@@ -13,12 +13,25 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const topics = await prisma.topic.findMany({
     where: { classId: params.id },
-    include: { _count: { select: { posts: true } } },
+    include: {
+      _count: { select: { posts: true } },
+      posts: {
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        select: { kind: true, imageUrl: true, text: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json({
-    topics: topics.map((t) => ({ id: t.id, name: t.name, postCount: t._count.posts })),
+    topics: topics.map((t) => ({
+      id: t.id,
+      name: t.name,
+      postCount: t._count.posts,
+      coverImageUrl: t.posts.find((p) => p.kind === "IMAGE" && p.imageUrl)?.imageUrl ?? null,
+      latestText: t.posts.find((p) => p.text)?.text ?? null,
+    })),
   });
 }
 

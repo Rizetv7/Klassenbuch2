@@ -74,19 +74,19 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-6 flex flex-col items-center text-center">
+      <div className="hero-frame flex flex-col items-center p-6 text-center">
         <label className="cursor-pointer relative">
           <Avatar name={name || "?"} url={avatarUrl} accent={accent} size={100} />
-          <span className="absolute -bottom-1 -right-1 bg-ink text-white rounded-full w-8 h-8 grid place-items-center">
+          <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
             <IconPencil size={16} />
           </span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
         </label>
-        <h1 className="display text-4xl mt-3">{name}</h1>
+        <h1 className="display relative z-10 mt-3 break-words text-6xl leading-[0.86]">{name}</h1>
         {msg && <p className="text-sm text-muted mt-1">{msg}</p>}
       </div>
 
-      <div className="card p-5 space-y-3">
+      <div className="glass-card p-5 space-y-3">
         <div>
           <label className="label">Anzeigename</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -96,8 +96,8 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      <Link href="/classes" className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-        <span className="font-bold">Meine Klasse</span>
+      <Link href="/classes" className="glass-card p-4 flex items-center justify-between hover:shadow-soft transition">
+        <span className="font-black">Meine Klasse</span>
         <span className="text-muted">›</span>
       </Link>
 

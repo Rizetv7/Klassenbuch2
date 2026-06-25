@@ -38,11 +38,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex flex-col justify-center max-w-sm mx-auto">
       <div className="text-center mb-6">
-        <h1 className="display text-4xl">Klassenbuch</h1>
-        <p className="text-muted text-sm">Euer digitales Erinnerungsbuch</p>
+        <p className="section-label mb-2">Zurück ins Buch</p>
+        <h1 className="display text-6xl leading-[0.86]">Klassenbuch</h1>
+        <p className="text-muted text-sm font-bold">Euer digitales Erinnerungsbuch</p>
       </div>
 
-      <form onSubmit={submit} className="card p-6 space-y-3">
+      <form onSubmit={submit} className="glass-panel p-6 space-y-3">
         <div>
           <label className="label">Name</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Isai Graf" required />
@@ -51,7 +52,7 @@ export default function LoginPage() {
           <label className="label">Passwort</label>
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        {error && <p className="text-sm text-coral font-bold">{error}</p>}
+        {error && <p className="text-sm text-coral font-black">{error}</p>}
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Anmelden…" : "Anmelden"}
         </button>

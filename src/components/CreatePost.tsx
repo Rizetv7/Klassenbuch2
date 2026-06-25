@@ -85,27 +85,30 @@ export function CreatePost({
   );
 
   return (
-    <form onSubmit={submit} className="card p-4">
-      <div className="flex gap-2 mb-3 flex-wrap">
+    <form onSubmit={submit} className="glass-panel p-4 sm:p-5">
+      <div className="relative z-10 mb-4 flex flex-wrap gap-2">
         <Btn k="QUOTE" label="Zitat" />
         <Btn k="IMAGE" label="Bild" />
         {isTopic && <Btn k="TEXT" label="Notiz" />}
       </div>
 
       {kind === "IMAGE" ? (
-        <div className="space-y-2">
+        <div className="relative z-10 space-y-3">
           <label className="block">
-            <span className="btn-soft cursor-pointer w-full">
-              {files.length > 0 ? `${files.length} Bild(er) gewählt — ändern` : "Bilder auswählen"}
+            <span className="flex min-h-[130px] w-full cursor-pointer flex-col items-center justify-center rounded-[30px] border border-dashed border-white/60 bg-white/30 px-5 py-6 text-center transition hover:bg-white/40">
+              <span className="display text-4xl leading-none">Bilder</span>
+              <span className="mt-1 text-sm font-black text-ink/60">
+                {files.length > 0 ? `${files.length} Bild(er) gewählt — ändern` : "Bilder auswählen"}
+              </span>
             </span>
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickFiles(e.target.files)} />
           </label>
           {previews.length > 0 && (
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap justify-center gap-2">
               {previews.map((src, i) => (
-                <div key={i} className="polaroid w-28">
+                <div key={i} className={`polaroid w-28 ${i % 2 ? "rotate-2" : "-rotate-1"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="w-full h-24 object-cover" />
+                  <img src={src} alt="" className="h-24 w-full rounded-[18px] object-cover" />
                 </div>
               ))}
             </div>
@@ -113,9 +116,9 @@ export function CreatePost({
           <input className="input" placeholder="Beschreibung (optional)" value={text} onChange={(e) => setText(e.target.value)} />
         </div>
       ) : (
-        <>
+        <div className="relative z-10">
           <textarea
-            className="input min-h-[80px]"
+            className="input min-h-[118px]"
             placeholder={kind === "TEXT" ? "Notiz / Post-it…" : "Zitat eingeben…"}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -123,12 +126,12 @@ export function CreatePost({
           {!isTopic && kind === "QUOTE" && (
             <input className="input mt-2" placeholder="Kontext (optional, z. B. vor der Prüfung)" value={context} onChange={(e) => setContext(e.target.value)} />
           )}
-        </>
+        </div>
       )}
 
-      {error && <p className="text-sm text-coral font-bold mt-2 break-words">{error}</p>}
+      {error && <p className="relative z-10 mt-2 break-words text-sm font-black text-coral">{error}</p>}
 
-      <div className="mt-3 flex items-center justify-end gap-3">
+      <div className="relative z-10 mt-4 flex items-center justify-end gap-3">
         {progress && <span className="text-xs text-muted">{progress}</span>}
         <button className="btn-accent" disabled={busy}>{busy ? "Speichert…" : "Posten"}</button>
       </div>

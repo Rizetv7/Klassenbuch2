@@ -44,7 +44,7 @@ function timeAgo(iso: string): string {
 function contextLine(post: Post): string {
   if (post.topic) {
     const what = post.kind === "IMAGE" ? "ein Bild" : post.kind === "TEXT" ? "eine Notiz" : "ein Zitat";
-    return `hat ${what} im Projekt „${post.topic.name}" gepostet`;
+    return `hat ${what} im Projekt „${post.topic.name}“ gepostet`;
   }
   if (post.kind === "IMAGE")
     return post.subject ? `hat ein Bild mit ${post.subject.displayName} gepostet` : "hat ein Bild gepostet";
@@ -123,18 +123,18 @@ export function PostCard({
   }
 
   return (
-    <article className="card p-4 animate-fade-up">
+    <article className="post-card animate-fade-up">
       {/* header */}
-      <div className="flex items-center gap-3">
+      <div className="relative z-10 flex items-center gap-3">
         <Link href={`/profile`} className="shrink-0">
-          <Avatar name={post.author.name} url={post.author.avatarUrl} accent={post.author.accentColor} size={42} />
+          <Avatar name={post.author.name} url={post.author.avatarUrl} accent={post.author.accentColor} size={46} />
         </Link>
         <div className="flex-1 min-w-0 leading-tight">
           <p className="text-sm">
-            <span className="font-extrabold">{post.author.name}</span>{" "}
+            <span className="font-black">{post.author.name}</span>{" "}
             <span className="text-muted">{contextLine(post)}</span>
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-xs font-bold text-muted">
             {showContext && (
               <>
                 <Link href={`/classes/${post.class.id}`} className="hover:underline">
@@ -146,52 +146,56 @@ export function PostCard({
             {timeAgo(post.createdAt)}
           </p>
         </div>
-        <button onClick={deletePost} title="Löschen" className="text-ink/25 hover:text-coral px-1">
+        <button onClick={deletePost} title="Löschen" className="rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral">
           <IconClose size={16} />
         </button>
       </div>
 
       {/* body */}
-      <div className="mt-3">
-        {post.kind === "QUOTE" && post.text && <p className="quote-big">{`„${post.text}"`}</p>}
+      <div className="relative z-10 mt-4">
+        {post.kind === "QUOTE" && post.text && (
+          <div className="rounded-[30px] border border-white/50 bg-white/30 p-5 sm:p-7">
+            <p className="quote-big">“{post.text}”</p>
+          </div>
+        )}
         {post.kind === "TEXT" && post.text && (
-          <div className="inline-block rounded-md bg-[#fff3a8] px-4 py-3 font-hand text-xl leading-snug text-ink/90 whitespace-pre-wrap shadow-[0_8px_18px_-12px_rgba(80,60,140,0.4)]">
+          <div className="postit inline-block max-w-full whitespace-pre-wrap font-hand text-3xl leading-[0.98] text-ink/90">
             {post.text}
           </div>
         )}
-        {post.context && <p className="text-xs text-muted mt-1 italic">{post.context}</p>}
+        {post.context && <p className="mt-2 font-hand text-2xl leading-none text-hotpink">{post.context}</p>}
         {post.imageUrl && (
-          <div className="mt-1 flex justify-center">
-            <div className="polaroid max-w-[85%]">
+          <div className="mt-2 flex justify-center">
+            <div className="polaroid w-full max-w-3xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.imageUrl} alt="" className="w-full max-h-96 object-cover" />
-              {post.text && <p className="font-hand text-lg text-center mt-1 text-ink/80">{post.text}</p>}
+              <img src={post.imageUrl} alt="" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
+              {post.text && <p className="mt-2 text-center font-hand text-3xl leading-tight text-ink/80">{post.text}</p>}
             </div>
           </div>
         )}
-        {post.subject && (
-          <div className="mt-3">
-            <Link href={`/classes/${post.class.id}/members/${post.subject.id}`} className="chip">
-              {post.subject.memberType === "TEACHER" ? "Lehrer:in" : "Schüler:in"} · {post.subject.displayName}
-            </Link>
-          </div>
-        )}
-        {post.topic && (
-          <div className="mt-3">
-            <Link href={`/classes/${post.class.id}/topics/${post.topic.id}`} className="chip">
-              Projekt · {post.topic.name}
-            </Link>
+        {(post.subject || post.topic) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {post.subject && (
+              <Link href={`/classes/${post.class.id}/members/${post.subject.id}`} className="chip">
+                {post.subject.memberType === "TEACHER" ? "Lehrer:in" : "Schüler:in"} · {post.subject.displayName}
+              </Link>
+            )}
+            {post.topic && (
+              <Link href={`/classes/${post.class.id}/topics/${post.topic.id}`} className="chip">
+                Projekt · {post.topic.name}
+              </Link>
+            )}
           </div>
         )}
       </div>
 
       {/* actions */}
-      <div className="mt-3 flex items-center gap-5 text-sm font-bold">
-        <button onClick={toggleLike} className="flex items-center gap-1.5 transition active:scale-90">
-          <IconHeart size={19} filled={liked} className={liked ? "text-coral animate-pop" : "text-ink/55"} />
+      <div className="soft-divider relative z-10 mt-4 flex items-center gap-5 pt-3 text-sm font-black">
+        <button onClick={toggleLike} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition active:scale-95">
+          <IconHeart size={19} filled={liked} className={liked ? "text-coral animate-pop" : "text-ink/60"} />
           <span className="text-ink/70">{likeCount}</span>
         </button>
-        <button onClick={toggleComments} className="flex items-center gap-1.5 text-ink/55">
+        <button onClick={toggleComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition hover:text-ink">
           <IconComment size={19} />
           <span className="text-ink/70">{commentCount}</span>
         </button>
@@ -199,15 +203,15 @@ export function PostCard({
 
       {/* comments */}
       {open && (
-        <div className="mt-3 border-t border-black/5 pt-3 space-y-3">
+        <div className="soft-divider relative z-10 mt-3 space-y-3 pt-3">
           {comments === null ? (
             <p className="text-sm text-muted">Lädt…</p>
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2 text-sm group">
                 <Avatar name={c.author.name} url={c.author.avatarUrl} accent={c.author.accentColor} size={28} />
-                <div className="flex-1 bg-paper/60 rounded-2xl px-3 py-2">
-                  <span className="font-bold">{c.author.name}</span> <span>{c.text}</span>
+                <div className="flex-1 rounded-[20px] border border-white/50 bg-white/40 px-3 py-2">
+                  <span className="font-black">{c.author.name}</span> <span>{c.text}</span>
                 </div>
                 <button
                   onClick={() => deleteComment(c.id)}

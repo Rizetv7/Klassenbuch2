@@ -59,18 +59,23 @@ export default function ClassPage() {
   const teachers = data.members.filter((m) => m.memberType === "TEACHER");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Banner */}
-      <div className="card p-6">
-        <h1 className="display text-4xl">{data.name}</h1>
-        {data.school && <p className="text-muted text-sm">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
-        <div className="flex gap-2 mt-3 flex-wrap text-xs">
-          <span className="chip">{data.counts.students} Schüler</span>
-          <span className="chip">{data.counts.teachers} Lehrpersonen</span>
-          <span className="chip">{data.counts.memories} Erinnerungen</span>
+      <div className="hero-frame p-5 sm:p-7">
+        <div className="relative z-10 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="section-label mb-2">Klasse</p>
+            <h1 className="display break-words text-6xl leading-[0.86] sm:text-7xl">{data.name}</h1>
+            {data.school && <p className="mt-3 text-sm font-black text-ink/60">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
+          </div>
+          <div className="grid grid-cols-3 gap-2 md:w-[330px]">
+            <Stat value={data.counts.students} label="Schüler" />
+            <Stat value={data.counts.teachers} label="Lehrpersonen" />
+            <Stat value={data.counts.memories} label="Erinnerungen" />
+          </div>
         </div>
         {canMod && (
-          <div className="mt-4">
+          <div className="relative z-10 mt-5">
             <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">Verwalten</button>
           </div>
         )}
@@ -95,8 +100,17 @@ export default function ClassPage() {
   );
 }
 
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-[24px] border border-white/60 bg-white/30 p-3 text-center backdrop-blur-md">
+      <p className="display text-4xl leading-none">{value}</p>
+      <p className="mt-1 text-[11px] font-black text-ink/60">{label}</p>
+    </div>
+  );
+}
+
 function ProjectsTab({ classId }: { classId: string }) {
-  const [topics, setTopics] = useState<{ id: string; name: string; postCount: number }[] | null>(null);
+  const [topics, setTopics] = useState<{ id: string; name: string; postCount: number; coverImageUrl: string | null; latestText: string | null }[] | null>(null);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
 
@@ -125,8 +139,8 @@ function ProjectsTab({ classId }: { classId: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      <form onSubmit={create} className="flex gap-2">
+    <div className="space-y-4">
+      <form onSubmit={create} className="glass-card flex flex-col gap-3 p-3 sm:flex-row">
         <input className="input" placeholder="Neues Projekt (z. B. Ausflug, Maturaball)" value={name} onChange={(e) => setName(e.target.value)} />
         <button className="btn-accent" disabled={creating}>Erstellen</button>
       </form>
@@ -134,13 +148,29 @@ function ProjectsTab({ classId }: { classId: string }) {
       {topics === null ? (
         <p className="text-muted">Lädt…</p>
       ) : topics.length === 0 ? (
-        <p className="text-muted text-center py-6">Noch keine Projekte. Erstelle das erste!</p>
+        <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Projekte. Erstelle das erste!</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {topics.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-              <span className="font-extrabold">{t.name}</span>
-              <span className="chip">{t.postCount} Beiträge</span>
+            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden transition hover:-translate-y-1">
+              <div className="project-cover h-48 rounded-b-none border-0">
+                {t.coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+                ) : (
+                  <div className="grid h-full place-items-center px-6 text-center">
+                    <span className="display text-6xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>
+                  </div>
+                )}
+              </div>
+              <div className="relative z-10 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="display break-words text-5xl leading-[0.88]">{t.name}</h3>
+                  <span className="chip shrink-0">{t.postCount}</span>
+                </div>
+                {t.latestText && <p className="mt-4 font-hand text-3xl leading-[0.98] text-hotpink">{t.latestText}</p>}
+                <p className="mt-5 text-xs font-black uppercase text-ink/50">Projekt öffnen</p>
+              </div>
             </Link>
           ))}
         </div>
@@ -152,14 +182,14 @@ function ProjectsTab({ classId }: { classId: string }) {
 function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {members.map((m) => (
-        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="flex flex-col items-center text-center gap-1.5 group">
-          <div className="group-hover:-translate-y-0.5 transition">
+        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="glass-card group flex min-h-[178px] flex-col items-center justify-center gap-2 p-4 text-center transition hover:-translate-y-1">
+          <div className="transition group-hover:scale-[1.04]">
             <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={72} />
           </div>
-          <span className="text-sm font-bold leading-tight">{m.displayName.split(" ")[0]}</span>
-          <span className="text-xs text-muted">{m.postCount} Beiträge</span>
+          <span className="text-base font-black leading-tight">{m.displayName.split(" ")[0]}</span>
+          <span className="chip">{m.postCount} Beiträge</span>
         </Link>
       ))}
     </div>
@@ -169,13 +199,13 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
 function TeacherGrid({ members, classId }: { members: Member[]; classId: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">Noch keine Lehrpersonen.</p>;
   return (
-    <div className="grid sm:grid-cols-3 gap-3">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {members.map((m) => (
-        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="card p-4 flex items-center gap-3 hover:shadow-soft transition">
+        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="glass-card flex items-center gap-3 p-4 transition hover:-translate-y-1">
           <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={52} />
           <div>
-            <p className="font-extrabold">{m.displayName}</p>
-            <p className="text-xs text-muted">Lehrperson · {m.postCount} Zitate</p>
+            <p className="font-black">{m.displayName}</p>
+            <p className="text-xs font-bold text-muted">Lehrperson · {m.postCount} Zitate</p>
           </div>
         </Link>
       ))}
@@ -204,14 +234,14 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
     if (res.ok) router.push("/classes");
   }
   return (
-    <div className="card p-4 space-y-3 bg-paper/40">
+    <div className="glass-card space-y-3 p-4">
       <div className="flex items-center justify-between">
         <span className="font-extrabold text-sm">Einladungs-Code</span>
         <span className="font-mono font-bold text-lg">{data.joinCode}</span>
       </div>
       <div className="space-y-1.5">
         {data.members.filter((m) => m.role !== "OWNER").map((m) => (
-          <div key={m.id} className="flex items-center gap-2 text-sm bg-white rounded-2xl px-3 py-2">
+          <div key={m.id} className="flex items-center gap-2 rounded-[22px] border border-white/50 bg-white/40 px-3 py-2 text-sm">
             <span className="flex-1 truncate">{m.displayName}</span>
             {data.myRole === "OWNER" && (
               <button onClick={() => moderate(m.id, { role: m.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="text-xs underline text-ink/70">
