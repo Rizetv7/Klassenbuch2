@@ -46,14 +46,13 @@ export async function POST(req: Request) {
   // --- Production path: Supabase Storage ---
   if (supabaseUrl && serviceKey) {
     const base = supabaseUrl.replace(/\/+$/, ""); // strip trailing slash
+    // Supabase's gateway requires BOTH the apikey header and the Bearer token.
+    const authHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
     const doUpload = () =>
       fetch(`${base}/storage/v1/object/${BUCKET}/${filename}`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${serviceKey}`,
-          "Content-Type": file.type,
-          "x-upsert": "true",
-        },
+        headers: { ...authHeaders, "Content-Type": file.type, "x-upsert": "true" },
         body: bytes,
       });
 
@@ -64,13 +63,13 @@ export async function POST(req: Request) {
       if (!uploadRes.ok && (uploadRes.status === 400 || uploadRes.status === 404)) {
         await fetch(`${base}/storage/v1/bucket`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          headers: { ...authHeaders, "Content-Type": "application/json" },
           body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
         }).catch(() => null);
         // make sure it is public even if it already existed as private
         await fetch(`${base}/storage/v1/bucket/${BUCKET}`, {
           method: "PUT",
-          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          headers: { ...authHeaders, "Content-Type": "application/json" },
           body: JSON.stringify({ public: true }),
         }).catch(() => null);
         uploadRes = await doUpload();
