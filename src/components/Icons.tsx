@@ -97,3 +97,13 @@ export function IconPencil({ className, size }: P) {
     </svg>
   );
 }
+
+export function IconDownload({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 4v10" />
+      <path d="m7.5 10 4.5 4.5L16.5 10" />
+      <path d="M5 19h14" />
+    </svg>
+  );
+}
