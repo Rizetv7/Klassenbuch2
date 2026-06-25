@@ -25,28 +25,23 @@ export default function PostitBoardPage() {
   }, [id]);
 
   return (
-    <div className="space-y-5">
-      <Link href={`/classes/${id}`} className="text-sm text-brand-600">← {className}</Link>
-      <h1 className="text-2xl font-bold">📌 Pinnwand</h1>
-      <p className="text-gray-500 text-sm">
-        Notizen und Bilder für alle — wie Post-its an der Wand.
-      </p>
+    <div className="space-y-4">
+      <Link href={`/classes/${id}`} className="text-sm text-muted">← {className}</Link>
+      <header>
+        <h1 className="font-hand text-4xl">📌 Pinnwand</h1>
+        <p className="text-muted text-sm">Notizen, Insider & Sprüche für alle — wie Post-its an der Wand.</p>
+      </header>
 
       <CreatePost classId={id} board="POSTIT" onCreated={(p) => setPosts((ps) => [p, ...ps])} />
 
       {loading ? (
-        <p className="text-gray-400">Lädt…</p>
+        <p className="text-muted">Lädt…</p>
       ) : posts.length === 0 ? (
-        <p className="text-gray-400 text-center py-6">Noch nichts angepinnt.</p>
+        <p className="text-muted text-center py-6">Noch nichts angepinnt.</p>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {posts.map((p) => (
-            <PostCard
-              key={p.id}
-              post={p}
-              showContext={false}
-              onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))}
-            />
+            <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />
           ))}
         </div>
       )}

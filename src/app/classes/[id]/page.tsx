@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
+import { PostCard, type Post } from "@/components/PostCard";
 
 type Member = {
   id: string;
@@ -11,164 +12,204 @@ type Member = {
   memberType: string;
   role: string;
   avatarUrl: string | null;
+  accentColor: string | null;
   postCount: number;
 };
 
 type ClassDetail = {
   id: string;
   name: string;
-  description: string | null;
+  school: string | null;
+  gradYear: string | null;
   joinCode: string;
   myRole: string;
-  myMembershipId: string;
+  counts: { students: number; teachers: number; memories: number };
   members: Member[];
 };
+
+const TABS = ["Schüler", "Lehrpersonen", "Zitate", "Bilder", "Best Of"] as const;
+type Tab = (typeof TABS)[number];
 
 export default function ClassPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const search = useSearchParams();
+  const initialTab = (TABS as readonly string[]).includes(search.get("tab") || "")
+    ? (search.get("tab") as Tab)
+    : "Schüler";
   const [data, setData] = useState<ClassDetail | null>(null);
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
+  async function loadClass() {
     const res = await fetch(`/api/classes/${id}`);
     if (res.status === 401) return router.push("/login");
-    if (!res.ok) {
-      setError((await res.json()).error || "Fehler.");
-      return;
-    }
+    if (!res.ok) return setError((await res.json()).error || "Fehler.");
     setData(await res.json());
   }
   useEffect(() => {
-    load();
+    loadClass();
   }, [id]);
 
-  async function moderate(membershipId: string, body: Record<string, string>) {
-    await fetch(`/api/classes/${id}/members/${membershipId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    load();
-  }
+  useEffect(() => {
+    if (tab === "Schüler" || tab === "Lehrpersonen") return;
+    setPostsLoading(true);
+    const q =
+      tab === "Zitate"
+        ? `board=YEARBOOK&kind=QUOTE`
+        : tab === "Bilder"
+          ? `board=YEARBOOK&kind=IMAGE`
+          : `sort=popular`;
+    fetch(`/api/posts?classId=${id}&${q}`)
+      .then((r) => r.json())
+      .then((d) => setPosts(d.posts ?? []))
+      .finally(() => setPostsLoading(false));
+  }, [tab, id]);
 
-  async function removeMember(membershipId: string) {
-    if (!confirm("Mitglied wirklich entfernen?")) return;
-    await fetch(`/api/classes/${id}/members/${membershipId}`, { method: "DELETE" });
-    load();
-  }
-
-  async function deleteClass() {
-    if (!confirm("Die gesamte Klasse mit allen Beiträgen löschen?")) return;
-    const res = await fetch(`/api/classes/${id}`, { method: "DELETE" });
-    if (res.ok) router.push("/classes");
-  }
-
-  if (error) return <p className="text-red-500">{error}</p>;
-  if (!data) return <p className="text-gray-400">Lädt…</p>;
+  if (error) return <p className="text-coral font-bold">{error}</p>;
+  if (!data) return <p className="text-muted">Lädt…</p>;
 
   const canMod = data.myRole === "OWNER" || data.myRole === "MODERATOR";
   const students = data.members.filter((m) => m.memberType === "STUDENT");
   const teachers = data.members.filter((m) => m.memberType === "TEACHER");
 
   return (
-    <div className="space-y-6">
-      <div className="card p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{data.name}</h1>
-            {data.description && <p className="text-gray-500">{data.description}</p>}
+    <div className="space-y-4">
+      {/* Banner */}
+      <div className="card p-5 relative overflow-hidden">
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-butter/50" />
+        <div className="absolute right-10 top-10 w-16 h-16 rounded-full bg-sky/40" />
+        <div className="relative">
+          <h1 className="font-hand text-4xl">{data.name}</h1>
+          {data.school && <p className="text-muted text-sm">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
+          <div className="flex gap-2 mt-3 flex-wrap text-xs">
+            <span className="chip">🎓 {data.counts.students} Schüler</span>
+            <span className="chip">🧑‍🏫 {data.counts.teachers} Lehrpersonen</span>
+            <span className="chip">✨ {data.counts.memories} Erinnerungen</span>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-400">Beitritts-Code</p>
-            <p className="font-mono text-lg font-bold">{data.joinCode}</p>
+          <div className="mt-3 flex gap-2">
+            <Link href={`/classes/${id}/postit`} className="btn-soft text-sm">📌 Pinnwand</Link>
+            {canMod && (
+              <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">⚙️ Verwalten</button>
+            )}
           </div>
-        </div>
-        <div className="mt-4 flex gap-2 flex-wrap">
-          <Link href={`/classes/${id}/postit`} className="btn-ghost">📌 Pinnwand</Link>
-          {data.myRole === "OWNER" && (
-            <button onClick={deleteClass} className="btn-ghost text-red-500">Klasse löschen</button>
-          )}
         </div>
       </div>
 
-      <MemberSection
-        title="🎓 Schüler:innen"
-        members={students}
-        classId={id}
-        canMod={canMod}
-        myRole={data.myRole}
-        onModerate={moderate}
-        onRemove={removeMember}
-      />
-      <MemberSection
-        title="🧑‍🏫 Lehrer:innen"
-        members={teachers}
-        classId={id}
-        canMod={canMod}
-        myRole={data.myRole}
-        onModerate={moderate}
-        onRemove={removeMember}
-      />
+      {showManage && canMod && <ManagePanel data={data} onChange={loadClass} />}
+
+      {/* Tabs */}
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+        {TABS.map((t) => (
+          <button key={t} onClick={() => setTab(t)} className={`tab ${tab === t ? "tab-active" : ""}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {tab === "Schüler" && <MemberGrid members={students} classId={id} empty="Noch keine Schüler:innen beigetreten." />}
+      {tab === "Lehrpersonen" && <TeacherGrid members={teachers} classId={id} />}
+      {(tab === "Zitate" || tab === "Bilder" || tab === "Best Of") && (
+        <div className="space-y-3">
+          {postsLoading ? (
+            <p className="text-muted">Lädt…</p>
+          ) : posts.length === 0 ? (
+            <p className="text-muted text-center py-6">Noch nichts hier.</p>
+          ) : (
+            posts.map((p) => <PostCard key={p.id} post={p} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />)
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function MemberSection({
-  title,
-  members,
-  classId,
-  canMod,
-  myRole,
-  onModerate,
-  onRemove,
-}: {
-  title: string;
-  members: Member[];
-  classId: string;
-  canMod: boolean;
-  myRole: string;
-  onModerate: (id: string, body: Record<string, string>) => void;
-  onRemove: (id: string) => void;
-}) {
-  if (members.length === 0) return null;
+function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
+  if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
   return (
-    <section>
-      <h2 className="font-semibold mb-2">{title}</h2>
-      <div className="grid sm:grid-cols-2 gap-2">
-        {members.map((m) => (
-          <div key={m.id} className="card p-3 flex items-center gap-3">
-            <Link href={`/classes/${classId}/members/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-              <Avatar name={m.displayName} url={m.avatarUrl} size={44} />
-              <div className="min-w-0">
-                <p className="font-medium truncate">
-                  {m.displayName}
-                  {m.role === "OWNER" && " 👑"}
-                  {m.role === "MODERATOR" && " 🛡️"}
-                </p>
-                <p className="text-xs text-gray-400">{m.postCount} Beiträge</p>
-              </div>
-            </Link>
-            {canMod && m.role !== "OWNER" && (
-              <div className="flex flex-col gap-1 text-xs">
-                {myRole === "OWNER" && (
-                  <button
-                    onClick={() =>
-                      onModerate(m.id, { role: m.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })
-                    }
-                    className="text-brand-600 hover:underline"
-                  >
-                    {m.role === "MODERATOR" ? "Mod entziehen" : "Zu Mod"}
-                  </button>
-                )}
-                <button onClick={() => onRemove(m.id)} className="text-red-500 hover:underline">
-                  Entfernen
-                </button>
-              </div>
+    <div className="grid grid-cols-3 gap-3">
+      {members.map((m) => (
+        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="flex flex-col items-center text-center gap-1.5 group">
+          <div className="group-hover:-translate-y-0.5 transition">
+            <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={72} />
+          </div>
+          <span className="text-sm font-bold leading-tight">
+            {m.displayName.split(" ")[0]}
+            {m.role === "OWNER" && " 👑"}
+          </span>
+          <span className="text-xs text-muted">{m.postCount} Beiträge</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function TeacherGrid({ members, classId }: { members: Member[]; classId: string }) {
+  if (members.length === 0) return <p className="text-muted text-center py-6">Noch keine Lehrpersonen.</p>;
+  return (
+    <div className="grid sm:grid-cols-2 gap-3">
+      {members.map((m) => (
+        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="card p-4 flex items-center gap-3 hover:shadow-soft transition">
+          <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor || "#FFD479"} size={52} />
+          <div>
+            <p className="font-extrabold">{m.displayName}</p>
+            <p className="text-xs text-muted">🧑‍🏫 Lehrperson · {m.postCount} Zitate</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => void }) {
+  const router = useRouter();
+  async function moderate(mid: string, body: Record<string, string>) {
+    await fetch(`/api/classes/${data.id}/members/${mid}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    onChange();
+  }
+  async function removeMember(mid: string) {
+    if (!confirm("Mitglied entfernen?")) return;
+    await fetch(`/api/classes/${data.id}/members/${mid}`, { method: "DELETE" });
+    onChange();
+  }
+  async function deleteClass() {
+    if (!confirm("Die ganze Klasse mit allen Beiträgen löschen?")) return;
+    const res = await fetch(`/api/classes/${data.id}`, { method: "DELETE" });
+    if (res.ok) router.push("/classes");
+  }
+  return (
+    <div className="card p-4 space-y-3 bg-paper/40">
+      <div className="flex items-center justify-between">
+        <span className="font-extrabold text-sm">Einladungs-Code</span>
+        <span className="font-mono font-bold text-lg">{data.joinCode}</span>
+      </div>
+      <div className="space-y-1.5">
+        {data.members.filter((m) => m.role !== "OWNER").map((m) => (
+          <div key={m.id} className="flex items-center gap-2 text-sm bg-white rounded-2xl px-3 py-2">
+            <span className="flex-1 truncate">{m.displayName}</span>
+            {data.myRole === "OWNER" && (
+              <button onClick={() => moderate(m.id, { role: m.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="text-xs underline text-ink/70">
+                {m.role === "MODERATOR" ? "Mod entz." : "→ Mod"}
+              </button>
             )}
+            <button onClick={() => moderate(m.id, { memberType: m.memberType === "TEACHER" ? "STUDENT" : "TEACHER" })} className="text-xs underline text-ink/70">
+              {m.memberType === "TEACHER" ? "→ Schüler" : "→ Lehrer"}
+            </button>
+            <button onClick={() => removeMember(m.id)} className="text-xs text-coral underline">entfernen</button>
           </div>
         ))}
       </div>
-    </section>
+      {data.myRole === "OWNER" && (
+        <button onClick={deleteClass} className="text-xs text-coral underline">Klasse löschen</button>
+      )}
+    </div>
   );
 }

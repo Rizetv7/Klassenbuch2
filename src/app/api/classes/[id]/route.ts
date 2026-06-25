@@ -19,9 +19,10 @@ export async function GET(
   const klass = await prisma.class.findUnique({
     where: { id: params.id },
     include: {
+      _count: { select: { posts: true } },
       memberships: {
         include: {
-          user: { select: { avatarUrl: true } },
+          user: { select: { avatarUrl: true, accentColor: true } },
           _count: { select: { subjectPosts: true } },
         },
         orderBy: [{ memberType: "asc" }, { displayName: "asc" }],
@@ -30,21 +31,31 @@ export async function GET(
   });
   if (!klass) return NextResponse.json({ error: "Klasse nicht gefunden." }, { status: 404 });
 
+  const members = klass.memberships.map((m) => ({
+    id: m.id,
+    displayName: m.displayName,
+    memberType: m.memberType,
+    role: m.role,
+    avatarUrl: m.user.avatarUrl,
+    accentColor: m.user.accentColor,
+    postCount: m._count.subjectPosts,
+  }));
+
   return NextResponse.json({
     id: klass.id,
     name: klass.name,
     description: klass.description,
+    school: klass.school,
+    gradYear: klass.gradYear,
     joinCode: klass.joinCode,
     myRole: membership.role,
     myMembershipId: membership.id,
-    members: klass.memberships.map((m) => ({
-      id: m.id,
-      displayName: m.displayName,
-      memberType: m.memberType,
-      role: m.role,
-      avatarUrl: m.user.avatarUrl,
-      postCount: m._count.subjectPosts,
-    })),
+    counts: {
+      students: members.filter((m) => m.memberType === "STUDENT").length,
+      teachers: members.filter((m) => m.memberType === "TEACHER").length,
+      memories: klass._count.posts,
+    },
+    members,
   });
 }
 

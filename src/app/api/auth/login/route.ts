@@ -15,24 +15,20 @@ export async function POST(req: Request) {
 }
 
 async function handleLogin(req: Request) {
-  const { email, password } = await req.json().catch(() => ({}));
+  const { name, password } = await req.json().catch(() => ({}));
 
-  if (!email || !password) {
+  if (!name || !password) {
     return NextResponse.json(
-      { error: "E-Mail und Passwort sind erforderlich." },
+      { error: "Name und Passwort sind erforderlich." },
       { status: 400 }
     );
   }
 
-  const normalizedEmail = String(email).toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({ where: { name: String(name).trim() } });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    return NextResponse.json(
-      { error: "E-Mail oder Passwort ist falsch." },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Name oder Passwort ist falsch." }, { status: 401 });
   }
 
   await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name, email: user.email });
+  return NextResponse.json({ id: user.id, name: user.name });
 }

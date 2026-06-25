@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
-  const { name, description, memberType, displayName } = await req
+  const { name, description, school, gradYear, memberType, displayName } = await req
     .json()
     .catch(() => ({}));
 
@@ -53,6 +53,8 @@ export async function POST(req: Request) {
     data: {
       name: String(name).trim(),
       description: description ? String(description).trim() : null,
+      school: school ? String(school).trim() : null,
+      gradYear: gradYear ? String(gradYear).trim() : null,
       joinCode,
       ownerId: userId,
       memberships: {

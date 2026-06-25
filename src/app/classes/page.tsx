@@ -10,7 +10,6 @@ type ClassItem = {
   description: string | null;
   joinCode: string;
   role: string;
-  memberType: string;
   memberCount: number;
   postCount: number;
 };
@@ -18,37 +17,25 @@ type ClassItem = {
 export default function ClassesPage() {
   const router = useRouter();
   const [classes, setClasses] = useState<ClassItem[] | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [createType, setCreateType] = useState<"STUDENT" | "TEACHER">("STUDENT");
   const [joinCode, setJoinCode] = useState("");
   const [joinType, setJoinType] = useState<"STUDENT" | "TEACHER">("STUDENT");
   const [error, setError] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+
+  // create fields
+  const [name, setName] = useState("");
+  const [school, setSchool] = useState("");
+  const [gradYear, setGradYear] = useState("");
+  const [createType, setCreateType] = useState<"STUDENT" | "TEACHER">("STUDENT");
 
   async function load() {
     const res = await fetch("/api/classes");
-    if (res.status === 401) {
-      router.push("/login");
-      return;
-    }
+    if (res.status === 401) return router.push("/login");
     setClasses((await res.json()).classes);
   }
   useEffect(() => {
     load();
   }, []);
-
-  async function createClass(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const res = await fetch("/api/classes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, memberType: createType }),
-    });
-    const d = await res.json();
-    if (res.ok) router.push(`/classes/${d.id}`);
-    else setError(d.error || "Fehler.");
-  }
 
   async function join(e: React.FormEvent) {
     e.preventDefault();
@@ -63,59 +50,86 @@ export default function ClassesPage() {
     else setError(d.error || "Fehler.");
   }
 
+  async function createClass(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const res = await fetch("/api/classes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, school, gradYear, memberType: createType }),
+    });
+    const d = await res.json();
+    if (res.ok) router.push(`/classes/${d.id}`);
+    else setError(d.error || "Fehler.");
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Meine Klassen</h1>
+      {/* Join — prominent */}
+      <section className="card p-5 text-center">
+        <h1 className="font-hand text-3xl mb-1">Tritt deiner Klasse bei</h1>
+        <p className="text-muted text-sm mb-4">Gib den Code ein, den du bekommen hast.</p>
+        <form onSubmit={join} className="space-y-3">
+          <input
+            className="input text-center text-2xl font-extrabold tracking-widest uppercase"
+            placeholder="M5I-2026"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+            required
+          />
+          <div className="flex gap-2 justify-center text-sm">
+            <button type="button" onClick={() => setJoinType("STUDENT")} className={joinType === "STUDENT" ? "btn-primary" : "btn-soft"}>🎓 Schüler:in</button>
+            <button type="button" onClick={() => setJoinType("TEACHER")} className={joinType === "TEACHER" ? "btn-primary" : "btn-soft"}>🧑‍🏫 Lehrer:in</button>
+          </div>
+          <button className="btn-accent w-full">Beitreten</button>
+        </form>
+      </section>
 
-      {classes === null ? (
-        <p className="text-gray-400">Lädt…</p>
-      ) : classes.length === 0 ? (
-        <p className="text-gray-500">Du bist noch in keiner Klasse.</p>
-      ) : (
-        <div className="grid gap-3">
+      {error && <p className="text-sm text-coral font-bold text-center">{error}</p>}
+
+      {/* My classes */}
+      {classes && classes.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="font-extrabold">Meine Klassen</h2>
           {classes.map((c) => (
-            <Link key={c.id} href={`/classes/${c.id}`} className="card p-4 hover:shadow-md transition">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-semibold">{c.name}</h2>
-                  {c.description && <p className="text-sm text-gray-500">{c.description}</p>}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {c.memberCount} Mitglieder · {c.postCount} Beiträge
-                    {c.role === "OWNER" && " · 👑 Ersteller:in"}
-                    {c.role === "MODERATOR" && " · 🛡️ Moderator:in"}
-                  </p>
-                </div>
-                <span className="text-xs font-mono bg-gray-100 rounded px-2 py-1">{c.joinCode}</span>
+            <Link key={c.id} href={`/classes/${c.id}`} className="card p-4 flex items-center justify-between hover:shadow-soft transition">
+              <div>
+                <h3 className="font-extrabold">{c.name}</h3>
+                <p className="text-xs text-muted">
+                  {c.memberCount} Mitglieder · {c.postCount} Erinnerungen
+                  {c.role === "OWNER" && " · 👑"}
+                  {c.role === "MODERATOR" && " · 🛡️"}
+                </p>
               </div>
+              <span className="text-xs font-mono chip">{c.joinCode}</span>
             </Link>
           ))}
-        </div>
+        </section>
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <form onSubmit={createClass} className="card p-4 space-y-3">
-          <h3 className="font-semibold">➕ Neue Klasse erstellen</h3>
-          <input className="input" placeholder="Klassenname (z. B. 10b 2026)" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input className="input" placeholder="Beschreibung (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <select className="input" value={createType} onChange={(e) => setCreateType(e.target.value as "STUDENT" | "TEACHER")}>
-            <option value="STUDENT">Ich bin Schüler:in</option>
-            <option value="TEACHER">Ich bin Lehrer:in</option>
-          </select>
-          <button className="btn-primary w-full">Erstellen</button>
-        </form>
-
-        <form onSubmit={join} className="card p-4 space-y-3">
-          <h3 className="font-semibold">🔑 Klasse beitreten</h3>
-          <input className="input uppercase" placeholder="Beitritts-Code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} required />
-          <select className="input" value={joinType} onChange={(e) => setJoinType(e.target.value as "STUDENT" | "TEACHER")}>
-            <option value="STUDENT">Ich bin Schüler:in</option>
-            <option value="TEACHER">Ich bin Lehrer:in</option>
-          </select>
-          <button className="btn-primary w-full">Beitreten</button>
-        </form>
-      </div>
+      {/* Create — subtle */}
+      <section>
+        {!showCreate ? (
+          <button onClick={() => setShowCreate(true)} className="text-sm text-muted underline w-full text-center">
+            Neue Klasse erstellen
+          </button>
+        ) : (
+          <form onSubmit={createClass} className="card p-5 space-y-3">
+            <h2 className="font-extrabold">Neue Klasse erstellen</h2>
+            <input className="input" placeholder="Klassenname (z. B. M5i)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input className="input" placeholder="Schule (optional)" value={school} onChange={(e) => setSchool(e.target.value)} />
+            <input className="input" placeholder="Abschlussjahr (optional)" value={gradYear} onChange={(e) => setGradYear(e.target.value)} />
+            <select className="input" value={createType} onChange={(e) => setCreateType(e.target.value as "STUDENT" | "TEACHER")}>
+              <option value="STUDENT">Ich bin Schüler:in</option>
+              <option value="TEACHER">Ich bin Lehrer:in</option>
+            </select>
+            <div className="flex gap-2">
+              <button className="btn-accent flex-1">Erstellen</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="btn-soft">Abbrechen</button>
+            </div>
+          </form>
+        )}
+      </section>
     </div>
   );
 }

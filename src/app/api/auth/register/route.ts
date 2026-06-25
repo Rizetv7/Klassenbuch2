@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
 
+const ACCENTS = ["#F6B2A2", "#BFE0EF", "#C3E0C6", "#FFD479", "#D9C7F0", "#F4A38F", "#8ECfE6"];
+
 export async function POST(req: Request) {
   try {
     return await handleRegister(req);
@@ -15,13 +17,16 @@ export async function POST(req: Request) {
 }
 
 async function handleRegister(req: Request) {
-  const { email, name, password } = await req.json().catch(() => ({}));
+  const { name, password, email } = await req.json().catch(() => ({}));
 
-  if (!email || !name || !password) {
+  if (!name || !password) {
     return NextResponse.json(
-      { error: "E-Mail, Name und Passwort sind erforderlich." },
+      { error: "Name und Passwort sind erforderlich." },
       { status: 400 }
     );
+  }
+  if (String(name).trim().length < 2) {
+    return NextResponse.json({ error: "Bitte einen längeren Namen wählen." }, { status: 400 });
   }
   if (password.length < 6) {
     return NextResponse.json(
@@ -30,23 +35,24 @@ async function handleRegister(req: Request) {
     );
   }
 
-  const normalizedEmail = String(email).toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const cleanName = String(name).trim();
+  const existing = await prisma.user.findUnique({ where: { name: cleanName } });
   if (existing) {
     return NextResponse.json(
-      { error: "Diese E-Mail ist bereits registriert." },
+      { error: "Dieser Name ist schon vergeben. Füge z. B. deinen Nachnamen hinzu." },
       { status: 409 }
     );
   }
 
   const user = await prisma.user.create({
     data: {
-      email: normalizedEmail,
-      name: String(name).trim(),
+      name: cleanName,
+      email: email ? String(email).toLowerCase().trim() : null,
       passwordHash: await hashPassword(password),
+      accentColor: ACCENTS[Math.floor(Math.random() * ACCENTS.length)],
     },
   });
 
   await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name, email: user.email });
+  return NextResponse.json({ id: user.id, name: user.name });
 }

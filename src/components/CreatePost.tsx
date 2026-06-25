@@ -10,22 +10,31 @@ export function CreatePost({
   board,
   members,
   defaultSubjectId,
+  defaultKind = "QUOTE",
   onCreated,
 }: {
   classId: string;
   board: "YEARBOOK" | "POSTIT";
   members?: Member[];
   defaultSubjectId?: string;
+  defaultKind?: "QUOTE" | "IMAGE";
   onCreated: (post: Post) => void;
 }) {
-  const [kind, setKind] = useState<"QUOTE" | "IMAGE">(board === "POSTIT" ? "QUOTE" : "QUOTE");
+  const [kind, setKind] = useState<"QUOTE" | "IMAGE">(defaultKind);
   const [text, setText] = useState("");
+  const [context, setContext] = useState("");
   const [subjectId, setSubjectId] = useState(defaultSubjectId ?? "");
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const needsSubject = board === "YEARBOOK" && !defaultSubjectId;
+
+  function pickFile(f: File | null) {
+    setFile(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
+  }
 
   async function uploadImage(): Promise<string | null> {
     if (!file) return null;
@@ -40,10 +49,7 @@ export function CreatePost({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (needsSubject && !subjectId) {
-      setError("Bitte eine Person auswählen.");
-      return;
-    }
+    if (needsSubject && !subjectId) return setError("Bitte eine Person auswählen.");
     setBusy(true);
     try {
       let imageUrl: string | null = null;
@@ -61,16 +67,18 @@ export function CreatePost({
           classId,
           board,
           kind,
-          text: kind === "IMAGE" ? null : text,
+          text: kind === "IMAGE" ? text.trim() || null : text,
+          context: context.trim() || null,
           imageUrl,
-          subjectMembershipId: board === "YEARBOOK" ? (defaultSubjectId ?? subjectId) : null,
+          subjectMembershipId: board === "YEARBOOK" ? defaultSubjectId ?? subjectId : null,
         }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Fehler beim Speichern.");
       onCreated(d.post);
       setText("");
-      setFile(null);
+      setContext("");
+      pickFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
     } finally {
@@ -79,20 +87,12 @@ export function CreatePost({
   }
 
   return (
-    <form onSubmit={submit} className={board === "POSTIT" ? "postit" : "card p-4"}>
+    <form onSubmit={submit} className={board === "POSTIT" ? "postit relative" : "card p-4"}>
       <div className="flex gap-2 mb-3">
-        <button
-          type="button"
-          onClick={() => setKind("QUOTE")}
-          className={kind === "QUOTE" ? "btn-primary" : "btn-ghost"}
-        >
+        <button type="button" onClick={() => setKind("QUOTE")} className={kind === "QUOTE" ? "btn-primary" : "btn-soft"}>
           {board === "POSTIT" ? "📝 Notiz" : "💬 Zitat"}
         </button>
-        <button
-          type="button"
-          onClick={() => setKind("IMAGE")}
-          className={kind === "IMAGE" ? "btn-primary" : "btn-ghost"}
-        >
+        <button type="button" onClick={() => setKind("IMAGE")} className={kind === "IMAGE" ? "btn-primary" : "btn-soft"}>
           🖼️ Bild
         </button>
       </div>
@@ -112,26 +112,38 @@ export function CreatePost({
       )}
 
       {kind === "IMAGE" ? (
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="block w-full text-sm"
-        />
+        <div className="space-y-2">
+          <label className="block">
+            <span className="btn-soft cursor-pointer w-full">{file ? "Bild ändern" : "📷 Bild auswählen"}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
+          </label>
+          {preview && (
+            <div className="polaroid w-40 mx-auto">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview} alt="" className="w-full h-32 object-cover" />
+            </div>
+          )}
+          <input className="input" placeholder="Beschreibung (optional)" value={text} onChange={(e) => setText(e.target.value)} />
+        </div>
       ) : (
-        <textarea
-          className="input min-h-[80px]"
-          placeholder={board === "POSTIT" ? "Schreibe etwas auf den Zettel…" : "Zitat eingeben…"}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+        <>
+          <textarea
+            className="input min-h-[80px]"
+            placeholder={board === "POSTIT" ? "Schreibe etwas auf den Zettel…" : "Zitat eingeben…"}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          {board === "YEARBOOK" && (
+            <input className="input mt-2" placeholder="Kontext (optional, z. B. vor der Prüfung)" value={context} onChange={(e) => setContext(e.target.value)} />
+          )}
+        </>
       )}
 
-      {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+      {error && <p className="text-sm text-coral font-bold mt-2">{error}</p>}
 
       <div className="mt-3 flex justify-end">
-        <button className="btn-primary" disabled={busy}>
-          {busy ? "Speichert…" : "Posten"}
+        <button className="btn-accent" disabled={busy}>
+          {busy ? "Speichert…" : "Posten ✨"}
         </button>
       </div>
     </form>

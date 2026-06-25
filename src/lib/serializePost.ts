@@ -7,7 +7,7 @@ export async function serializePosts(postIds: string[], viewerId: string) {
   const posts = await prisma.post.findMany({
     where: { id: { in: postIds } },
     include: {
-      author: { select: { id: true, name: true, avatarUrl: true } },
+      author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
       class: { select: { id: true, name: true } },
       subject: { select: { id: true, displayName: true, memberType: true } },
       _count: { select: { likes: true, comments: true } },
@@ -25,6 +25,7 @@ export async function serializePosts(postIds: string[], viewerId: string) {
       board: p.board,
       kind: p.kind,
       text: p.text,
+      context: p.context,
       imageUrl: p.imageUrl,
       createdAt: p.createdAt,
       author: p.author,

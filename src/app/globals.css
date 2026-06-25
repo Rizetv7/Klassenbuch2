@@ -3,36 +3,147 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f6f7fb;
+  --paper-dot: rgba(120, 100, 70, 0.05);
+  --font-sans: "Nunito", system-ui, sans-serif;
+  --font-hand: "Caveat", cursive;
 }
 
 body {
-  background: var(--bg);
-  color: #1f2333;
+  color: theme("colors.ink");
+  background-color: theme("colors.cream");
+  /* subtle paper texture: faint dotted grain on top of the gradient */
+  background-image: radial-gradient(var(--paper-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
 }
 
-/* Base building blocks. A nicer design can extend / override these later. */
-@layer components {
-  .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+/* Colorful, softly drifting gradient mesh behind everything (Partiful vibe,
+   but in the warm pastel palette so cards stay readable). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: -2;
+  background:
+    radial-gradient(38% 38% at 18% 18%, rgba(255, 211, 121, 0.75), transparent 70%),
+    radial-gradient(42% 42% at 84% 16%, rgba(142, 207, 230, 0.7), transparent 70%),
+    radial-gradient(46% 46% at 80% 82%, rgba(246, 162, 143, 0.7), transparent 70%),
+    radial-gradient(40% 40% at 16% 86%, rgba(150, 205, 160, 0.7), transparent 70%),
+    radial-gradient(55% 55% at 52% 52%, rgba(201, 175, 235, 0.55), transparent 70%);
+  animation: bg-drift 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes bg-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
   }
+  to {
+    transform: translate3d(0, -3%, 0) scale(1.14) rotate(3deg);
+  }
+}
+
+@layer components {
+  /* ---- Cards & surfaces ---- */
+  .card {
+    @apply bg-white rounded-xl2 shadow-card border border-black/5;
+  }
+  .surface {
+    @apply bg-white/70 backdrop-blur rounded-xl2 border border-black/5;
+  }
+
+  /* ---- Buttons ---- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-ink text-cream hover:bg-black;
+  }
+  .btn-accent {
+    @apply btn bg-coral text-ink hover:brightness-95;
   }
   .btn-ghost {
-    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200;
+    @apply btn bg-paper text-ink/80 hover:bg-paper/70;
   }
+  .btn-soft {
+    @apply btn bg-white text-ink/80 border border-black/5 hover:bg-paper/50;
+  }
+
+  /* ---- Form ---- */
   .input {
-    @apply w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-ink/30 focus:ring-4 focus:ring-butter/40;
   }
   .label {
-    @apply block text-sm font-medium text-gray-600 mb-1;
+    @apply block text-xs font-bold uppercase tracking-wide text-muted mb-1.5;
   }
+
+  /* ---- Tabs ---- */
+  .tab {
+    @apply px-3.5 py-1.5 rounded-full text-sm font-bold text-muted hover:text-ink transition whitespace-nowrap;
+  }
+  .tab-active {
+    @apply bg-ink text-cream;
+  }
+
+  /* ---- Chips ---- */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-xs font-bold text-ink/70;
+  }
+
+  /* ---- Post-it ---- */
   .postit {
-    @apply p-4 rounded-md shadow-md rotate-[-1deg] hover:rotate-0 transition;
-    background: #fef9c3;
+    @apply p-4 shadow-sticker rounded-sm;
+    background: #fff3b0;
+    transform: rotate(-1.4deg);
+    transition: transform 0.2s ease;
   }
+  .postit:nth-child(3n) {
+    background: #c9eafd;
+    transform: rotate(1.6deg);
+  }
+  .postit:nth-child(3n + 1) {
+    background: #d6f5d6;
+    transform: rotate(-0.6deg);
+  }
+  .postit:hover {
+    transform: rotate(0deg) translateY(-2px);
+  }
+
+  /* ---- Polaroid ---- */
+  .polaroid {
+    @apply bg-white p-2.5 pb-5 shadow-sticker;
+    transform: rotate(-1.2deg);
+    transition: transform 0.2s ease;
+  }
+  .polaroid:hover {
+    transform: rotate(0deg) translateY(-2px) scale(1.01);
+  }
+
+  /* ---- Tape strip (decorative) ---- */
+  .tape::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 64px;
+    height: 22px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: rgba(255, 235, 170, 0.7);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ---- Big quote ---- */
+  .quote-big {
+    @apply font-hand text-2xl leading-snug text-ink;
+  }
+}
+
+/* keep scrollbars subtle on tab rows */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

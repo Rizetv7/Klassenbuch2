@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -19,7 +19,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
         router.push("/");
@@ -27,37 +27,40 @@ export default function LoginPage() {
         return;
       }
       const msg = await res.json().catch(() => null);
-      setError(
-        msg?.error ||
-          `Anmeldung fehlgeschlagen (Serverfehler ${res.status}). Ist die Datenbank korrekt eingerichtet?`
-      );
+      setError(msg?.error || `Anmeldung fehlgeschlagen (Fehler ${res.status}).`);
     } catch {
-      setError("Verbindung zum Server fehlgeschlagen. Bitte später erneut versuchen.");
+      setError("Verbindung zum Server fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="max-w-sm mx-auto card p-6 mt-8">
-      <h1 className="text-xl font-bold mb-4">Anmelden</h1>
-      <form onSubmit={submit} className="space-y-3">
+    <div className="min-h-[80vh] flex flex-col justify-center max-w-sm mx-auto">
+      <div className="text-center mb-6">
+        <div className="text-5xl mb-2">📓</div>
+        <h1 className="font-hand text-4xl">Klassenbuch</h1>
+        <p className="text-muted text-sm">Euer digitales Erinnerungsbuch</p>
+      </div>
+
+      <form onSubmit={submit} className="card p-6 space-y-3">
         <div>
-          <label className="label">E-Mail</label>
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label className="label">Name</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Isai Graf" required />
         </div>
         <div>
           <label className="label">Passwort</label>
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-coral font-bold">{error}</p>}
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Anmelden…" : "Anmelden"}
         </button>
       </form>
-      <p className="text-sm text-gray-500 mt-4 text-center">
+
+      <p className="text-sm text-muted mt-5 text-center">
         Noch kein Konto?{" "}
-        <Link href="/register" className="text-brand-600 font-medium">Registrieren</Link>
+        <Link href="/register" className="text-ink font-bold underline">Registrieren</Link>
       </p>
     </div>
   );

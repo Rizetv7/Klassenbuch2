@@ -16,6 +16,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const classId = url.searchParams.get("classId");
   const board = url.searchParams.get("board");
+  const kind = url.searchParams.get("kind");
+  const sort = url.searchParams.get("sort"); // "popular" | "recent"
+  const random = url.searchParams.get("random"); // "1" -> a single random post
   const subjectMembershipId = url.searchParams.get("subjectMembershipId");
   const limit = Math.min(Number(url.searchParams.get("limit")) || 30, 100);
 
@@ -37,11 +40,26 @@ export async function GET(req: Request) {
   }
 
   if (board === "YEARBOOK" || board === "POSTIT") where.board = board;
+  if (kind === "QUOTE" || kind === "IMAGE" || kind === "TEXT") where.kind = kind;
   if (subjectMembershipId) where.subjectMembershipId = subjectMembershipId;
+
+  // Random "memory of the day": pick one random matching post.
+  if (random === "1") {
+    const ids = await prisma.post.findMany({ where, select: { id: true }, take: 200 });
+    if (ids.length === 0) return NextResponse.json({ posts: [] });
+    const pick = ids[Math.floor(Math.random() * ids.length)].id;
+    const posts = await serializePosts([pick], userId);
+    return NextResponse.json({ posts });
+  }
+
+  const orderBy =
+    sort === "popular"
+      ? [{ likes: { _count: "desc" as const } }, { createdAt: "desc" as const }]
+      : [{ createdAt: "desc" as const }];
 
   const rows = await prisma.post.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy,
     take: limit,
     select: { id: true },
   });
@@ -56,7 +74,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { classId, board, kind, text, imageUrl, subjectMembershipId } = body;
+  const { classId, board, kind, text, context, imageUrl, subjectMembershipId } = body;
 
   if (!classId) return NextResponse.json({ error: "classId fehlt." }, { status: 400 });
 
@@ -95,6 +113,7 @@ export async function POST(req: Request) {
       board: boardValue,
       kind: kindValue,
       text: text ? String(text).trim() : null,
+      context: context ? String(context).trim() : null,
       imageUrl: imageUrl || null,
       subjectMembershipId: subjectId,
     },

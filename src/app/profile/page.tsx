@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [accent, setAccent] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -18,7 +19,7 @@ export default function ProfilePage() {
       .then((d) => {
         if (!d.user) return router.push("/login");
         setName(d.user.name);
-        setEmail(d.user.email);
+        setAccent(d.user.accentColor);
         setAvatarUrl(d.user.avatarUrl);
       });
   }, []);
@@ -53,30 +54,40 @@ export default function ProfilePage() {
     if (res.ok) router.refresh();
   }
 
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
-    <div className="max-w-md mx-auto space-y-5">
-      <h1 className="text-2xl font-bold">Mein Profil</h1>
-      <div className="card p-5 space-y-4">
-        <div className="flex items-center gap-4">
-          <Avatar name={name || "?"} url={avatarUrl} size={72} />
-          <label className="btn-ghost cursor-pointer">
-            Profilbild ändern
-            <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
-          </label>
-        </div>
+    <div className="space-y-4">
+      <div className="card p-6 flex flex-col items-center text-center">
+        <label className="cursor-pointer relative">
+          <Avatar name={name || "?"} url={avatarUrl} accent={accent} size={100} />
+          <span className="absolute -bottom-1 -right-1 bg-ink text-cream rounded-full w-8 h-8 grid place-items-center text-sm">✎</span>
+          <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
+        </label>
+        <h1 className="font-hand text-4xl mt-3">{name}</h1>
+        {msg && <p className="text-sm text-muted mt-1">{msg}</p>}
+      </div>
+
+      <div className="card p-5 space-y-3">
         <div>
-          <label className="label">Name</label>
+          <label className="label">Anzeigename</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div>
-          <label className="label">E-Mail</label>
-          <input className="input bg-gray-50" value={email} disabled />
-        </div>
-        {msg && <p className="text-sm text-gray-500">{msg}</p>}
-        <button onClick={() => save()} className="btn-primary" disabled={busy}>
+        <button onClick={() => save()} className="btn-primary w-full" disabled={busy}>
           {busy ? "Speichert…" : "Speichern"}
         </button>
       </div>
+
+      <Link href="/classes" className="card p-4 flex items-center justify-between hover:shadow-soft transition">
+        <span className="font-bold">👥 Meine Klassen</span>
+        <span className="text-muted">›</span>
+      </Link>
+
+      <button onClick={logout} className="btn-soft w-full text-coral">Abmelden</button>
     </div>
   );
 }
