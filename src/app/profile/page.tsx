@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Nav";
+import { IconPencil } from "@/components/Icons";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -65,7 +66,9 @@ export default function ProfilePage() {
       <div className="card p-6 flex flex-col items-center text-center">
         <label className="cursor-pointer relative">
           <Avatar name={name || "?"} url={avatarUrl} accent={accent} size={100} />
-          <span className="absolute -bottom-1 -right-1 bg-ink text-cream rounded-full w-8 h-8 grid place-items-center text-sm">✎</span>
+          <span className="absolute -bottom-1 -right-1 bg-ink text-white rounded-full w-8 h-8 grid place-items-center">
+            <IconPencil size={16} />
+          </span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
         </label>
         <h1 className="display text-4xl mt-3">{name}</h1>
@@ -83,7 +86,7 @@ export default function ProfilePage() {
       </div>
 
       <Link href="/classes" className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-        <span className="font-bold">👥 Meine Klassen</span>
+        <span className="font-bold">Meine Klassen</span>
         <span className="text-muted">›</span>
       </Link>
 

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BottomNav } from "@/components/Nav";
-import { Decorations } from "@/components/Decorations";
 
 export const metadata: Metadata = {
   title: "Klassenbuch · Erinnerungen",
@@ -20,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-sans pb-28">
-        <Decorations />
         <main className="mx-auto max-w-3xl px-5 pt-7 sm:pt-9">{children}</main>
         <BottomNav />
       </body>

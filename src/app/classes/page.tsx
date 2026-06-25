@@ -78,8 +78,8 @@ export default function ClassesPage() {
             required
           />
           <div className="flex gap-2 justify-center text-sm">
-            <button type="button" onClick={() => setJoinType("STUDENT")} className={joinType === "STUDENT" ? "btn-primary" : "btn-soft"}>🎓 Schüler:in</button>
-            <button type="button" onClick={() => setJoinType("TEACHER")} className={joinType === "TEACHER" ? "btn-primary" : "btn-soft"}>🧑‍🏫 Lehrer:in</button>
+            <button type="button" onClick={() => setJoinType("STUDENT")} className={joinType === "STUDENT" ? "btn-primary" : "btn-soft"}>Schüler:in</button>
+            <button type="button" onClick={() => setJoinType("TEACHER")} className={joinType === "TEACHER" ? "btn-primary" : "btn-soft"}>Lehrer:in</button>
           </div>
           <button className="btn-accent w-full">Beitreten</button>
         </form>
@@ -97,8 +97,8 @@ export default function ClassesPage() {
                 <h3 className="font-extrabold">{c.name}</h3>
                 <p className="text-xs text-muted">
                   {c.memberCount} Mitglieder · {c.postCount} Erinnerungen
-                  {c.role === "OWNER" && " · 👑"}
-                  {c.role === "MODERATOR" && " · 🛡️"}
+                  {c.role === "OWNER" && " · Ersteller:in"}
+                  {c.role === "MODERATOR" && " · Mod"}
                 </p>
               </div>
               <span className="text-xs font-mono chip">{c.joinCode}</span>

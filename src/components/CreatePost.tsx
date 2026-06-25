@@ -90,10 +90,10 @@ export function CreatePost({
     <form onSubmit={submit} className={board === "POSTIT" ? "postit relative" : "card p-4"}>
       <div className="flex gap-2 mb-3">
         <button type="button" onClick={() => setKind("QUOTE")} className={kind === "QUOTE" ? "btn-primary" : "btn-soft"}>
-          {board === "POSTIT" ? "📝 Notiz" : "💬 Zitat"}
+          {board === "POSTIT" ? "Notiz" : "Zitat"}
         </button>
         <button type="button" onClick={() => setKind("IMAGE")} className={kind === "IMAGE" ? "btn-primary" : "btn-soft"}>
-          🖼️ Bild
+          Bild
         </button>
       </div>
 
@@ -114,7 +114,7 @@ export function CreatePost({
       {kind === "IMAGE" ? (
         <div className="space-y-2">
           <label className="block">
-            <span className="btn-soft cursor-pointer w-full">{file ? "Bild ändern" : "📷 Bild auswählen"}</span>
+            <span className="btn-soft cursor-pointer w-full">{file ? "Bild ändern" : "Bild auswählen"}</span>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
           </label>
           {preview && (
@@ -143,7 +143,7 @@ export function CreatePost({
 
       <div className="mt-3 flex justify-end">
         <button className="btn-accent" disabled={busy}>
-          {busy ? "Speichert…" : "Posten ✨"}
+          {busy ? "Speichert…" : "Posten"}
         </button>
       </div>
     </form>

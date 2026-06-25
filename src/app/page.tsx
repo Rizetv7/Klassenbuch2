@@ -31,13 +31,12 @@ export default function HomePage() {
   if (!me) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
-        <div className="text-6xl mb-3">📓</div>
-        <h1 className="display text-5xl mb-2">Klassenbuch</h1>
+        <h1 className="display text-5xl mb-3">Klassenbuch</h1>
         <p className="text-muted max-w-xs mb-6">
           Sammelt eure besten Zitate, Bilder und Momente — als gemeinsames Erinnerungsbuch der Klasse.
         </p>
         <div className="flex gap-3">
-          <Link href="/register" className="btn-accent">Loslegen ✨</Link>
+          <Link href="/register" className="btn-accent">Loslegen</Link>
           <Link href="/login" className="btn-soft">Anmelden</Link>
         </div>
       </div>
@@ -47,30 +46,19 @@ export default function HomePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="display text-4xl">Hey {me.name.split(" ")[0]} 👋</h1>
+        <h1 className="display text-4xl">Hey {me.name.split(" ")[0]}</h1>
         <p className="text-muted text-sm">Was ist heute neu in der Klasse?</p>
       </header>
 
       {memory && (
         <section>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🎞️</span>
-            <h2 className="font-extrabold">Erinnerung des Tages</h2>
-          </div>
-          <div className="relative">
-            <div className="absolute -inset-1 rounded-xl2 bg-butter/50 -rotate-1" />
-            <div className="relative">
-              <PostCard post={memory} />
-            </div>
-          </div>
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-ink/45">Erinnerung des Tages</h2>
+          <PostCard post={memory} />
         </section>
       )}
 
       <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">⚡</span>
-          <h2 className="font-extrabold">Heute neu</h2>
-        </div>
+        <h2 className="text-xs font-bold uppercase tracking-wide text-ink/45">Heute neu</h2>
         {posts.length === 0 ? (
           <div className="card p-8 text-center text-muted">
             <p className="mb-3">Noch nichts hier. Mach den Anfang!</p>

@@ -10,16 +10,17 @@ const config: Config = {
         hand: ["var(--font-hand)", "cursive"],
       },
       colors: {
-        cream: "#FBF6EC",
-        paper: "#F0E5D2",
+        cream: "#F4F0FA",
+        paper: "#ECE7F5",
         ink: "#211F2A",
         muted: "#6B6675",
-        // saturated accent palette (avatar rings, stickers)
-        butter: "#FFC93C",
-        sky: "#6FC5EC",
-        sage: "#6FCB87",
-        coral: "#F23DA0",
+        // single scheme: violet / pink / blue
+        violet: "#7E5BD9",
+        sky: "#8FB6EF",
+        sage: "#4F86D6", // info/success (blue)
+        coral: "#D6519E", // alerts/destructive (pink)
         lilac: "#B68CF0",
+        butter: "#C49EE8", // legacy name, kept in-scheme
         brand: {
           50: "#fff7ed",
           100: "#ffedd5",

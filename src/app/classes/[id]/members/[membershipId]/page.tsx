@@ -48,15 +48,15 @@ export default function MemberPage() {
 
       {/* Hero */}
       <div className="card p-6 flex flex-col items-center text-center">
-        <Avatar name={member.displayName} url={member.avatarUrl} accent={member.accentColor || (isTeacher ? "#FFD479" : null)} size={96} />
+        <Avatar name={member.displayName} url={member.avatarUrl} accent={member.accentColor} size={96} />
         <h1 className="display text-4xl mt-3">{member.displayName}</h1>
-        <p className="text-muted text-sm">{isTeacher ? "🧑‍🏫 Lehrperson" : "🎓 Schüler:in"} · {posts.length} Beiträge</p>
+        <p className="text-muted text-sm">{isTeacher ? "Lehrperson" : "Schüler:in"} · {posts.length} Beiträge</p>
       </div>
 
       {/* Add */}
       {!showAdd ? (
         <div className="flex gap-2">
-          <button onClick={() => setShowAdd(true)} className="btn-accent flex-1">＋ {isTeacher ? "Lehrerzitat" : "Zitat"} / Bild</button>
+          <button onClick={() => setShowAdd(true)} className="btn-accent flex-1">{isTeacher ? "Lehrerzitat" : "Zitat"} / Bild hinzufügen</button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -75,7 +75,7 @@ export default function MemberPage() {
       {/* Posts */}
       <div className="space-y-3">
         {shown.length === 0 ? (
-          <p className="text-muted text-center py-6">Noch nichts über {firstName}. Mach den Anfang! ✨</p>
+          <p className="text-muted text-center py-6">Noch nichts über {firstName}. Mach den Anfang!</p>
         ) : (
           shown.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />

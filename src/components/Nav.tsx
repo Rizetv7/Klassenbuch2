@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconHome, IconUsers, IconGrid, IconUser, IconPlus } from "./Icons";
 
-// Deterministic warm accent color from a name/id — gives every person a
-// consistent colored ring around their round "sticker" avatar.
-const ACCENTS = ["#F6B2A2", "#BFE0EF", "#C3E0C6", "#FFD479", "#D9C7F0", "#F4A38F", "#8ECfE6"];
+// Deterministic accent color from a name/id — within the violet/pink/blue
+// scheme — for the ring around each round avatar.
+const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
 export function deriveAccent(seed: string): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -32,16 +33,16 @@ export function Avatar({
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const ringStyle = ring ? { boxShadow: `0 0 0 3px ${color}` } : undefined;
+  const ringStyle = ring ? { boxShadow: `0 0 0 2.5px ${color}` } : undefined;
 
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full overflow-hidden bg-paper font-extrabold text-ink/70"
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/60 font-extrabold text-ink/70 backdrop-blur"
       style={{ width: size, height: size, fontSize: size * 0.38, ...ringStyle }}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt={name} className="w-full h-full object-cover" />
+        <img src={url} alt={name} className="h-full w-full object-cover" />
       ) : (
         initials
       )}
@@ -50,46 +51,42 @@ export function Avatar({
 }
 
 const ITEMS = [
-  { href: "/", label: "Home", icon: "🏠" },
-  { href: "/classes", label: "Klasse", icon: "👥" },
-  { href: "/upload", label: "", icon: "＋", center: true },
-  { href: "/projects", label: "Projekte", icon: "🎨" },
-  { href: "/profile", label: "Profil", icon: "🙂" },
+  { href: "/", label: "Home", Icon: IconHome },
+  { href: "/classes", label: "Klasse", Icon: IconUsers },
+  { href: "/upload", label: "", Icon: IconPlus, center: true },
+  { href: "/projects", label: "Projekte", Icon: IconGrid },
+  { href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
 export function BottomNav() {
   const path = usePathname();
-  // hide nav on auth screens
   if (path === "/login" || path === "/register") return null;
 
-  const isActive = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href);
+  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-30">
+    <nav className="fixed inset-x-0 bottom-0 z-30">
       <div className="mx-auto max-w-md px-4 pb-4">
-        <div className="surface shadow-soft flex items-center justify-between px-3 py-2">
+        <div className="surface flex items-center justify-between px-3 py-2">
           {ITEMS.map((it) =>
             it.center ? (
               <Link
                 key={it.href}
                 href={it.href}
-                className="-mt-7 grid place-items-center w-14 h-14 rounded-full bg-coral text-ink text-3xl font-light shadow-sticker active:scale-95 transition"
                 aria-label="Hochladen"
+                className="-mt-7 grid h-14 w-14 place-items-center rounded-full bg-ink text-white shadow-lg transition active:scale-95"
               >
-                {it.icon}
+                <it.Icon size={26} />
               </Link>
             ) : (
               <Link
                 key={it.href}
                 href={it.href}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl text-[11px] font-bold transition ${
-                  isActive(it.href) ? "text-ink" : "text-muted"
+                className={`flex flex-col items-center gap-0.5 rounded-2xl px-3 py-1 text-[11px] font-bold transition ${
+                  isActive(it.href) ? "text-ink" : "text-ink/40"
                 }`}
               >
-                <span className={`text-lg ${isActive(it.href) ? "scale-110" : ""} transition`}>
-                  {it.icon}
-                </span>
+                <it.Icon size={22} className={isActive(it.href) ? "scale-110 transition" : "transition"} />
                 {it.label}
               </Link>
             )

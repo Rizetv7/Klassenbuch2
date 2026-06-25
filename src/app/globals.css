@@ -14,27 +14,33 @@ body {
   position: relative;
 }
 
-/* Partiful-style dreamy gradient: light blue (top-left) flowing through
-   lavender/pink into a vivid magenta (bottom-right). Fixed, full-screen. */
+/* Soft, marbled violet / pink / blue blend that bleeds irregularly into
+   white — calm, glassy, no harsh glow. Fixed, full-screen. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(75% 65% at 12% 6%, #bcd6f7 0%, rgba(188, 214, 247, 0) 55%),
-    radial-gradient(85% 80% at 95% 100%, #ff3ea5 0%, rgba(255, 62, 165, 0) 60%),
-    radial-gradient(65% 65% at 62% 52%, #f79ad6 0%, rgba(247, 154, 214, 0) 68%),
-    linear-gradient(157deg, #c2d8f4 0%, #e7a6d6 46%, #f74faf 100%);
+    radial-gradient(48% 42% at 16% 18%, rgba(140, 178, 240, 0.55), transparent 62%),
+    radial-gradient(46% 44% at 84% 22%, rgba(228, 158, 208, 0.5), transparent 62%),
+    radial-gradient(55% 55% at 78% 82%, rgba(150, 122, 222, 0.5), transparent 64%),
+    radial-gradient(46% 46% at 24% 82%, rgba(196, 158, 232, 0.45), transparent 62%),
+    radial-gradient(40% 40% at 52% 48%, rgba(255, 255, 255, 0.7), transparent 60%),
+    linear-gradient(150deg, #eef1fb 0%, #f4eef9 50%, #f7eef6 100%);
 }
 
 @layer components {
-  /* ---- Frosted-glass cards & surfaces (gradient shows through) ---- */
+  /* ---- Glassy surfaces (the core design language) ---- */
   .card {
-    @apply bg-white/55 backdrop-blur-xl rounded-xl2 border border-white/50 shadow-soft;
+    @apply rounded-xl2 border border-white/60 bg-white/35 backdrop-blur-2xl;
+    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
   }
   .surface {
-    @apply bg-white/45 backdrop-blur-xl rounded-xl2 border border-white/50 shadow-soft;
+    @apply rounded-xl2 border border-white/60 bg-white/30 backdrop-blur-2xl;
+    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
   }
 
   /* ---- Buttons ---- */
@@ -45,49 +51,48 @@ body::before {
     @apply btn bg-ink text-white hover:bg-black;
   }
   .btn-accent {
-    @apply btn bg-coral text-white hover:brightness-105;
+    @apply btn bg-violet text-white hover:brightness-110;
   }
-  .btn-ghost {
-    @apply btn bg-white/55 backdrop-blur text-ink border border-white/50 hover:bg-white/70;
-  }
+  .btn-ghost,
   .btn-soft {
-    @apply btn bg-white/55 backdrop-blur text-ink border border-white/50 hover:bg-white/70;
+    @apply btn border border-white/60 bg-white/40 text-ink backdrop-blur-xl hover:bg-white/60;
   }
 
   /* ---- Form ---- */
   .input {
-    @apply w-full rounded-2xl border border-white/60 bg-white/70 backdrop-blur px-4 py-3 text-sm outline-none transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/40;
+    @apply w-full rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm outline-none backdrop-blur-xl transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/50;
   }
   .label {
-    @apply block text-xs font-bold uppercase tracking-wide text-ink/50 mb-1.5;
+    @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-ink/50;
   }
 
   /* ---- Tabs ---- */
   .tab {
-    @apply px-3.5 py-1.5 rounded-full text-sm font-bold text-ink/55 hover:text-ink transition whitespace-nowrap bg-white/40 backdrop-blur border border-white/40;
+    @apply whitespace-nowrap rounded-full border border-white/50 bg-white/30 px-3.5 py-1.5 text-sm font-bold text-ink/55 backdrop-blur-xl transition hover:text-ink;
   }
   .tab-active {
-    @apply bg-ink text-white border-ink;
+    @apply border-ink bg-ink text-white;
   }
 
   /* ---- Chips ---- */
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full bg-white/60 backdrop-blur px-2.5 py-1 text-xs font-bold text-ink/75 border border-white/50;
+    @apply inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-1 text-xs font-bold text-ink/75 backdrop-blur-xl;
   }
 
-  /* ---- Post-it ---- */
+  /* ---- Post-it (kept glassy, within the scheme) ---- */
   .postit {
-    @apply p-4 shadow-sticker rounded-sm;
-    background: #fff3b0;
-    transform: rotate(-1.4deg);
+    @apply rounded-sm border border-white/40 p-4 backdrop-blur-md;
+    background: rgba(196, 158, 232, 0.35);
+    box-shadow: 0 10px 24px -12px rgba(80, 60, 140, 0.4);
+    transform: rotate(-1.2deg);
     transition: transform 0.2s ease;
   }
   .postit:nth-child(3n) {
-    background: #c9eafd;
-    transform: rotate(1.6deg);
+    background: rgba(140, 178, 240, 0.32);
+    transform: rotate(1.4deg);
   }
   .postit:nth-child(3n + 1) {
-    background: #ffd6ec;
+    background: rgba(228, 158, 208, 0.32);
     transform: rotate(-0.6deg);
   }
   .postit:hover {
@@ -96,15 +101,16 @@ body::before {
 
   /* ---- Polaroid ---- */
   .polaroid {
-    @apply bg-white p-2.5 pb-5 shadow-sticker;
-    transform: rotate(-1.2deg);
+    @apply border border-white/60 bg-white/70 p-2.5 pb-5 backdrop-blur-md;
+    box-shadow: 0 12px 28px -14px rgba(80, 60, 140, 0.45);
+    transform: rotate(-1.1deg);
     transition: transform 0.2s ease;
   }
   .polaroid:hover {
     transform: rotate(0deg) translateY(-2px) scale(1.01);
   }
 
-  /* ---- Display heading (Partiful-style heavy grotesque) ---- */
+  /* ---- Display heading ---- */
   .display {
     @apply font-display font-extrabold tracking-tight text-ink;
   }
@@ -115,7 +121,6 @@ body::before {
   }
 }
 
-/* keep scrollbars subtle on tab rows */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -10,11 +10,11 @@ type Member = { id: string; displayName: string; memberType: string };
 
 type Choice = "QUOTE" | "IMAGE" | "TEACHER" | "POSTIT";
 
-const CHOICES: { key: Choice; emoji: string; label: string; hint: string }[] = [
-  { key: "QUOTE", emoji: "💬", label: "Zitat", hint: "Etwas, das jemand gesagt hat" },
-  { key: "IMAGE", emoji: "🖼️", label: "Bild", hint: "Foto oder Erinnerung" },
-  { key: "TEACHER", emoji: "🧑‍🏫", label: "Lehrerzitat", hint: "Klassiker der Lehrpersonen" },
-  { key: "POSTIT", emoji: "📌", label: "Post-it", hint: "Notiz für die Pinnwand" },
+const CHOICES: { key: Choice; label: string; hint: string }[] = [
+  { key: "QUOTE", label: "Zitat", hint: "Etwas, das jemand gesagt hat" },
+  { key: "IMAGE", label: "Bild", hint: "Foto oder Erinnerung" },
+  { key: "TEACHER", label: "Lehrerzitat", hint: "Klassiker der Lehrpersonen" },
+  { key: "POSTIT", label: "Post-it", hint: "Notiz für die Pinnwand" },
 ];
 
 export default function UploadPage() {
@@ -55,7 +55,7 @@ export default function UploadPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="display text-4xl">＋ Hochladen</h1>
+        <h1 className="display text-4xl">Hochladen</h1>
         <p className="text-muted text-sm">Teile eine Erinnerung mit der Klasse.</p>
       </header>
 
@@ -74,10 +74,9 @@ export default function UploadPage() {
       {classId && !choice && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {CHOICES.map((c) => (
-            <button key={c.key} onClick={() => setChoice(c.key)} className="card p-5 text-center hover:-translate-y-1 transition">
-              <div className="text-4xl mb-1">{c.emoji}</div>
+            <button key={c.key} onClick={() => setChoice(c.key)} className="card p-5 text-left hover:-translate-y-1 transition">
               <div className="font-extrabold">{c.label}</div>
-              <div className="text-xs text-muted">{c.hint}</div>
+              <div className="text-xs text-muted mt-0.5">{c.hint}</div>
             </button>
           ))}
         </div>
@@ -86,7 +85,7 @@ export default function UploadPage() {
       {classId && choice && (
         <div className="space-y-3">
           <button onClick={() => { setChoice(null); setDone(false); }} className="text-sm text-muted">← andere Art wählen</button>
-          {done && <p className="text-sage font-bold text-center">Gepostet! ✨ Du kannst noch eins hinzufügen.</p>}
+          {done && <p className="text-sage font-bold text-center">Gepostet! Du kannst noch eins hinzufügen.</p>}
           {choice === "POSTIT" ? (
             <CreatePost key="postit" classId={classId} board="POSTIT" onCreated={() => setDone(true)} />
           ) : (

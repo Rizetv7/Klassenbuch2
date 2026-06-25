@@ -38,7 +38,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-[80vh] flex flex-col justify-center max-w-sm mx-auto">
       <div className="text-center mb-6">
-        <div className="text-5xl mb-2">✨</div>
         <h1 className="display text-4xl">Willkommen!</h1>
         <p className="text-muted text-sm">Erstelle dein Profil in 10 Sekunden</p>
       </div>

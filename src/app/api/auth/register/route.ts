@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
 
-const ACCENTS = ["#F6B2A2", "#BFE0EF", "#C3E0C6", "#FFD479", "#D9C7F0", "#F4A38F", "#8ECfE6"];
+const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
 
 export async function POST(req: Request) {
   try {

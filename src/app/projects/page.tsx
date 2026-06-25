@@ -22,7 +22,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="display text-4xl">🎨 Projekte</h1>
+        <h1 className="display text-4xl">Projekte</h1>
         <p className="text-muted text-sm">Kreative Boards eurer Klasse — Pinnwand, Foto-Album & Zitate-Wand.</p>
       </header>
 
@@ -36,9 +36,9 @@ export default function ProjectsPage() {
           <section key={c.id} className="space-y-2">
             <h2 className="font-extrabold">{c.name}</h2>
             <div className="grid grid-cols-3 gap-3">
-              <BoardTile href={`/classes/${c.id}/postit`} className="postit !rotate-0" emoji="📌" label="Pinnwand" />
-              <BoardTile href={`/classes/${c.id}?tab=Bilder`} className="polaroid !rotate-0" emoji="📷" label="Foto-Album" />
-              <BoardTile href={`/classes/${c.id}?tab=Zitate`} className="card" emoji="💬" label="Zitate-Wand" />
+              <BoardTile href={`/classes/${c.id}/postit`} label="Pinnwand" hint="Notizen" />
+              <BoardTile href={`/classes/${c.id}?tab=Bilder`} label="Foto-Album" hint="Bilder" />
+              <BoardTile href={`/classes/${c.id}?tab=Zitate`} label="Zitate-Wand" hint="Zitate" />
             </div>
           </section>
         ))
@@ -51,11 +51,11 @@ export default function ProjectsPage() {
   );
 }
 
-function BoardTile({ href, className, emoji, label }: { href: string; className: string; emoji: string; label: string }) {
+function BoardTile({ href, label, hint }: { href: string; label: string; hint: string }) {
   return (
-    <Link href={href} className={`${className} aspect-square flex flex-col items-center justify-center gap-1 text-center hover:-translate-y-1 transition`}>
-      <span className="text-3xl">{emoji}</span>
-      <span className="text-sm font-bold">{label}</span>
+    <Link href={href} className="card aspect-square flex flex-col items-center justify-center gap-1 text-center hover:-translate-y-1 transition p-3">
+      <span className="text-sm font-bold leading-tight">{label}</span>
+      <span className="text-xs text-muted">{hint}</span>
     </Link>
   );
 }

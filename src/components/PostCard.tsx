@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Nav";
+import { IconHeart, IconComment, IconClose } from "./Icons";
 
 export type Post = {
   id: string;
@@ -141,8 +142,8 @@ export function PostCard({
             {timeAgo(post.createdAt)}
           </p>
         </div>
-        <button onClick={deletePost} title="Löschen" className="text-black/20 hover:text-coral text-sm px-1">
-          ✕
+        <button onClick={deletePost} title="Löschen" className="text-ink/25 hover:text-coral px-1">
+          <IconClose size={16} />
         </button>
       </div>
 
@@ -166,7 +167,7 @@ export function PostCard({
         {post.subject && (
           <div className="mt-3">
             <Link href={`/classes/${post.class.id}/members/${post.subject.id}`} className="chip">
-              {post.subject.memberType === "TEACHER" ? "🧑‍🏫" : "🎓"} {post.subject.displayName}
+              {post.subject.memberType === "TEACHER" ? "Lehrer:in" : "Schüler:in"} · {post.subject.displayName}
             </Link>
           </div>
         )}
@@ -174,12 +175,13 @@ export function PostCard({
 
       {/* actions */}
       <div className="mt-3 flex items-center gap-5 text-sm font-bold">
-        <button onClick={toggleLike} className="flex items-center gap-1.5 active:scale-90 transition">
-          <span className={liked ? "animate-pop" : ""}>{liked ? "❤️" : "🤍"}</span>
+        <button onClick={toggleLike} className="flex items-center gap-1.5 transition active:scale-90">
+          <IconHeart size={19} filled={liked} className={liked ? "text-coral animate-pop" : "text-ink/55"} />
           <span className="text-ink/70">{likeCount}</span>
         </button>
-        <button onClick={toggleComments} className="flex items-center gap-1.5">
-          💬 <span className="text-ink/70">{commentCount}</span>
+        <button onClick={toggleComments} className="flex items-center gap-1.5 text-ink/55">
+          <IconComment size={19} />
+          <span className="text-ink/70">{commentCount}</span>
         </button>
       </div>
 
@@ -197,9 +199,9 @@ export function PostCard({
                 </div>
                 <button
                   onClick={() => deleteComment(c.id)}
-                  className="text-black/20 hover:text-coral opacity-0 group-hover:opacity-100"
+                  className="text-ink/20 opacity-0 transition hover:text-coral group-hover:opacity-100"
                 >
-                  ✕
+                  <IconClose size={14} />
                 </button>
               </div>
             ))

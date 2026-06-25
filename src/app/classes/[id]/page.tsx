@@ -79,23 +79,19 @@ export default function ClassPage() {
   return (
     <div className="space-y-4">
       {/* Banner */}
-      <div className="card p-5 relative overflow-hidden">
-        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-butter/50" />
-        <div className="absolute right-10 top-10 w-16 h-16 rounded-full bg-sky/40" />
-        <div className="relative">
-          <h1 className="display text-4xl">{data.name}</h1>
-          {data.school && <p className="text-muted text-sm">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
-          <div className="flex gap-2 mt-3 flex-wrap text-xs">
-            <span className="chip">🎓 {data.counts.students} Schüler</span>
-            <span className="chip">🧑‍🏫 {data.counts.teachers} Lehrpersonen</span>
-            <span className="chip">✨ {data.counts.memories} Erinnerungen</span>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Link href={`/classes/${id}/postit`} className="btn-soft text-sm">📌 Pinnwand</Link>
-            {canMod && (
-              <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">⚙️ Verwalten</button>
-            )}
-          </div>
+      <div className="card p-6">
+        <h1 className="display text-4xl">{data.name}</h1>
+        {data.school && <p className="text-muted text-sm">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
+        <div className="flex gap-2 mt-3 flex-wrap text-xs">
+          <span className="chip">{data.counts.students} Schüler</span>
+          <span className="chip">{data.counts.teachers} Lehrpersonen</span>
+          <span className="chip">{data.counts.memories} Erinnerungen</span>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Link href={`/classes/${id}/postit`} className="btn-soft text-sm">Pinnwand</Link>
+          {canMod && (
+            <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">Verwalten</button>
+          )}
         </div>
       </div>
 
@@ -137,10 +133,7 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
           <div className="group-hover:-translate-y-0.5 transition">
             <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={72} />
           </div>
-          <span className="text-sm font-bold leading-tight">
-            {m.displayName.split(" ")[0]}
-            {m.role === "OWNER" && " 👑"}
-          </span>
+          <span className="text-sm font-bold leading-tight">{m.displayName.split(" ")[0]}</span>
           <span className="text-xs text-muted">{m.postCount} Beiträge</span>
         </Link>
       ))}
@@ -154,10 +147,10 @@ function TeacherGrid({ members, classId }: { members: Member[]; classId: string 
     <div className="grid sm:grid-cols-3 gap-3">
       {members.map((m) => (
         <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="card p-4 flex items-center gap-3 hover:shadow-soft transition">
-          <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor || "#FFD479"} size={52} />
+          <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={52} />
           <div>
             <p className="font-extrabold">{m.displayName}</p>
-            <p className="text-xs text-muted">🧑‍🏫 Lehrperson · {m.postCount} Zitate</p>
+            <p className="text-xs text-muted">Lehrperson · {m.postCount} Zitate</p>
           </div>
         </Link>
       ))}
