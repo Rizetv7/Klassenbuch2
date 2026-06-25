@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
+import { ensureUserNicknameColumn } from "@/lib/schemaGuards";
 
 const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
 
@@ -18,7 +19,8 @@ export async function POST(req: Request) {
 }
 
 async function handleRegister(req: Request) {
-  const { name, password, email } = await req.json().catch(() => ({}));
+  await ensureUserNicknameColumn();
+  const { name, password, email, nickname } = await req.json().catch(() => ({}));
 
   if (!name || !password) {
     return NextResponse.json(
@@ -37,6 +39,9 @@ async function handleRegister(req: Request) {
   }
 
   const cleanName = String(name).trim();
+  const cleanNickname = typeof nickname === "string" && nickname.trim()
+    ? nickname.trim().slice(0, 40)
+    : null;
   const existing = await prisma.user.findUnique({ where: { name: cleanName } });
   if (existing) {
     return NextResponse.json(
@@ -48,6 +53,7 @@ async function handleRegister(req: Request) {
   const user = await prisma.user.create({
     data: {
       name: cleanName,
+      nickname: cleanNickname,
       email: email ? String(email).toLowerCase().trim() : null,
       passwordHash: await hashPassword(password),
       accentColor: ACCENTS[Math.floor(Math.random() * ACCENTS.length)],
@@ -55,5 +61,5 @@ async function handleRegister(req: Request) {
   });
 
   await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name });
+  return NextResponse.json({ id: user.id, name: user.name, nickname: user.nickname });
 }

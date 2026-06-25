@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { ensureUserNicknameColumn } from "./schemaGuards";
 
 const COOKIE_NAME = "kb_session";
 const secret = new TextEncoder().encode(
@@ -55,9 +56,10 @@ export async function getSessionUserId(): Promise<string | null> {
 export async function getCurrentUser() {
   const userId = await getSessionUserId();
   if (!userId) return null;
+  await ensureUserNicknameColumn();
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, avatarUrl: true, accentColor: true, createdAt: true },
+    select: { id: true, email: true, name: true, nickname: true, avatarUrl: true, accentColor: true, createdAt: true },
   });
   return user;
 }

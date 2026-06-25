@@ -10,6 +10,7 @@ import { uploadImageFile } from "@/lib/uploadImage";
 export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [nickname, setNickname] = useState("");
   const [accent, setAccent] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -21,6 +22,7 @@ export default function ProfilePage() {
       .then((d) => {
         if (!d.user) return router.push("/login");
         setName(d.user.name);
+        setNickname(d.user.nickname ?? "");
         setAccent(d.user.accentColor);
         setAvatarUrl(d.user.avatarUrl);
       });
@@ -47,7 +49,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, ...extra }),
+      body: JSON.stringify({ name, nickname, ...extra }),
     });
     setBusy(false);
     setMsg(res.ok ? "Gespeichert ✓" : "Fehler beim Speichern.");
@@ -82,7 +84,8 @@ export default function ProfilePage() {
           </span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
         </label>
-        <h1 className="display relative z-10 mt-3 break-words text-6xl leading-[0.86]">{name}</h1>
+        <h1 className="display relative z-10 mt-3 break-words text-6xl leading-[0.86]">{nickname || name}</h1>
+        {nickname && <p className="mt-1 text-sm font-black text-ink/55">{name}</p>}
         {msg && <p className="text-sm text-muted mt-1">{msg}</p>}
       </div>
 
@@ -90,6 +93,10 @@ export default function ProfilePage() {
         <div>
           <label className="label">Anzeigename</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Spitzname</label>
+          <input className="input" value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={40} placeholder="optional" />
         </div>
         <button onClick={() => save()} className="btn-primary w-full" disabled={busy}>
           {busy ? "Speichert…" : "Speichern"}
