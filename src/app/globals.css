@@ -14,20 +14,20 @@ body {
   position: relative;
 }
 
-/* Soft, marbled violet / pink / blue blend that bleeds irregularly into
-   white — calm, glassy, no harsh glow. Fixed, full-screen. */
+/* Static candy-pastel fallback (shown only if WebGL/canvas is unavailable).
+   The animated <LiquidBackground/> canvas sits above this at z-index -2. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   background:
-    radial-gradient(48% 42% at 16% 18%, rgba(140, 178, 240, 0.55), transparent 62%),
-    radial-gradient(46% 44% at 84% 22%, rgba(228, 158, 208, 0.5), transparent 62%),
-    radial-gradient(55% 55% at 78% 82%, rgba(150, 122, 222, 0.5), transparent 64%),
-    radial-gradient(46% 46% at 24% 82%, rgba(196, 158, 232, 0.45), transparent 62%),
-    radial-gradient(40% 40% at 52% 48%, rgba(255, 255, 255, 0.7), transparent 60%),
-    linear-gradient(150deg, #eef1fb 0%, #f4eef9 50%, #f7eef6 100%);
+    radial-gradient(55% 45% at 12% 12%, #28d9f2 0%, transparent 60%),
+    radial-gradient(50% 45% at 90% 10%, #ffc4a3 0%, transparent 60%),
+    radial-gradient(45% 40% at 50% 50%, #b9a7ff 0%, transparent 62%),
+    radial-gradient(70% 55% at 50% 100%, #ff2fbf 0%, transparent 60%),
+    radial-gradient(45% 45% at 16% 92%, #ec35d6 0%, transparent 60%),
+    linear-gradient(160deg, #cfe9f7 0%, #e9c8ee 45%, #ff62c2 100%);
 }
 
 @layer components {

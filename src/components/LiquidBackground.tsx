@@ -1,0 +1,170 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+// Full-screen animated "liquid" gradient (WebGL). Large soft color fields that
+// slowly drift, stretch and flow into each other via fbm domain-warping —
+// like ink in water. Candy / Y2K iridescent pastel palette. No UI, no shapes.
+
+const FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+
+vec2 hash22(vec2 p){
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
+}
+float gnoise(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = dot(hash22(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
+  float b = dot(hash22(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
+  float c = dot(hash22(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
+  float d = dot(hash22(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.55;
+  for (int i = 0; i < 5; i++){ v += a * gnoise(p); p = p * 2.0 + 17.3; a *= 0.5; }
+  return v;
+}
+
+// gaussian-weighted color blob
+void blob(inout vec3 col, inout float w, vec2 uv, vec2 c, float r, vec3 color, float strength){
+  float d = distance(uv, c);
+  float wi = exp(-(d * d) / (2.0 * r * r)) * strength;
+  col += wi * color; w += wi;
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 p = uv * vec2(uRes.x / uRes.y, 1.0);
+  float t = uTime * 0.045;
+
+  // organic domain warp (ink-in-water motion)
+  vec2 q = vec2(fbm(p * 1.4 + vec2(0.0, t)), fbm(p * 1.4 + vec2(5.2, 1.3) - t * 0.8));
+  vec2 r = vec2(fbm(p * 1.4 + 1.6 * q + vec2(1.7, 9.2) + t * 0.7),
+                fbm(p * 1.4 + 1.6 * q + vec2(8.3, 2.8) - t * 0.6));
+  vec2 wuv = uv + 0.16 * r + 0.05 * q;
+
+  vec3 col = vec3(0.0); float w = 0.0;
+
+  // upper-left: cyan / aqua
+  blob(col, w, wuv, vec2(0.10, 0.92), 0.42, vec3(0.157, 0.851, 0.949), 1.0);
+  blob(col, w, wuv, vec2(0.02, 0.60), 0.40, vec3(0.447, 0.918, 0.875), 0.9);
+  // upper-right: peach / cream / soft orange
+  blob(col, w, wuv, vec2(0.92, 0.94), 0.40, vec3(1.000, 0.769, 0.639), 1.0);
+  blob(col, w, wuv, vec2(0.74, 0.84), 0.34, vec3(0.973, 0.945, 0.875), 0.85);
+  blob(col, w, wuv, vec2(1.00, 0.74), 0.36, vec3(1.000, 0.824, 0.631), 0.9);
+  // middle: lavender + milky white + pink
+  blob(col, w, wuv, vec2(0.50, 0.52), 0.40, vec3(0.725, 0.655, 1.000), 0.95);
+  blob(col, w, wuv, vec2(0.42, 0.46), 0.30, vec3(0.973, 0.945, 0.890), 0.7);
+  // bottom: dominant hot pink / magenta
+  blob(col, w, wuv, vec2(0.50, 0.02), 0.55, vec3(1.000, 0.184, 0.749), 1.45);
+  blob(col, w, wuv, vec2(0.18, 0.12), 0.40, vec3(0.925, 0.208, 0.839), 1.15);
+  blob(col, w, wuv, vec2(0.82, 0.08), 0.42, vec3(1.000, 0.416, 0.835), 1.15);
+
+  // soft base so nothing goes dark
+  blob(col, w, wuv, vec2(0.5, 0.5), 1.4, vec3(0.97, 0.92, 0.93), 0.35);
+
+  col /= max(w, 0.0001);
+
+  // gentle saturation lift
+  float l = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(l), col, 1.12);
+
+  // subtle film grain so it feels alive
+  float g = fract(sin(dot(gl_FragCoord.xy + t, vec2(12.9898, 78.233))) * 43758.5453);
+  col += (g - 0.5) * 0.025;
+
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}
+`;
+
+const VERT = `
+attribute vec2 aPos;
+void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
+
+export function LiquidBackground() {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, premultipliedAlpha: false });
+    if (!gl) return; // CSS fallback gradient stays visible
+
+    const compile = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "aPos");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    const uRes = gl.getUniformLocation(prog, "uRes");
+    const uTime = gl.getUniformLocation(prog, "uTime");
+
+    const SCALE = 0.55; // render at low res for a soft, dreamy look + perf
+    const resize = () => {
+      const w = Math.max(1, Math.floor(window.innerWidth * SCALE));
+      const h = Math.max(1, Math.floor(window.innerHeight * SCALE));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        gl.viewport(0, 0, w, h);
+      }
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    let raf = 0;
+    const start = performance.now();
+    let running = true;
+    const loop = () => {
+      if (!running) return;
+      resize();
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, (performance.now() - start) / 1000);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+
+    const onVis = () => {
+      running = !document.hidden;
+      if (running) loop();
+      else cancelAnimationFrame(raf);
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden
+      className="fixed inset-0 -z-[2] h-full w-full"
+      style={{ width: "100vw", height: "100vh" }}
+    />
+  );
+}

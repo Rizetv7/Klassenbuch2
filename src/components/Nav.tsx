@@ -53,19 +53,60 @@ export function Avatar({
 const ITEMS = [
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/classes", label: "Klasse", Icon: IconUsers },
-  { href: "/upload", label: "", Icon: IconPlus, center: true },
+  { href: "/upload", label: "Hochladen", Icon: IconPlus, center: true },
   { href: "/projects", label: "Projekte", Icon: IconGrid },
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
-export function BottomNav() {
+function useActive() {
+  const path = usePathname();
+  return (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+}
+
+// Renders the right nav for the viewport: a top bar on desktop, a floating
+// bottom bar on phones.
+export function SiteNav() {
   const path = usePathname();
   if (path === "/login" || path === "/register") return null;
-
-  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30">
+    <>
+      <TopNav />
+      <BottomNav />
+    </>
+  );
+}
+
+function TopNav() {
+  const isActive = useActive();
+  return (
+    <header className="sticky top-0 z-30 hidden lg:block">
+      <div className="surface mx-auto mt-4 flex max-w-5xl items-center gap-2 rounded-full px-4 py-2">
+        <Link href="/" className="display mr-2 text-xl">Klassenbuch</Link>
+        <nav className="flex items-center gap-1">
+          {ITEMS.filter((it) => !it.center).map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                isActive(it.href) ? "bg-ink text-white" : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {it.label}
+            </Link>
+          ))}
+        </nav>
+        <Link href="/upload" className="btn-accent ml-auto">
+          <IconPlus size={18} /> Hochladen
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function BottomNav() {
+  const isActive = useActive();
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-md px-4 pb-4">
         <div className="surface flex items-center justify-between px-3 py-2">
           {ITEMS.map((it) =>
