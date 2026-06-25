@@ -16,7 +16,43 @@ type Blob = {
 };
 
 const POINTS = 46;
-const LAYER_ALPHA = [0.36, 0.15, 0.08];
+const LAYER_ALPHA = [0.44, 0.19, 0.1];
+
+const WASH_THEMES: Record<string, string>[] = [
+  {},
+  {
+    "--wash-cool-x": "108%",
+    "--wash-cool-y": "20%",
+    "--wash-warm-x": "-8%",
+    "--wash-warm-y": "16%",
+    "--wash-pink-x": "58%",
+    "--wash-pink-y": "48%",
+    "--wash-bottom-x": "46%",
+    "--wash-linear-angle": "210deg",
+  },
+  {
+    "--wash-cool-x": "8%",
+    "--wash-cool-y": "10%",
+    "--wash-warm-x": "92%",
+    "--wash-warm-y": "10%",
+    "--wash-pink-x": "70%",
+    "--wash-pink-y": "52%",
+    "--wash-bottom-x": "24%",
+    "--wash-base-b": "#b9a7ff",
+    "--wash-linear-angle": "135deg",
+  },
+  {
+    "--wash-cool-x": "86%",
+    "--wash-cool-y": "8%",
+    "--wash-warm-x": "18%",
+    "--wash-warm-y": "22%",
+    "--wash-pink-x": "34%",
+    "--wash-pink-y": "44%",
+    "--wash-bottom-x": "72%",
+    "--wash-base-c": "#ec35d6",
+    "--wash-linear-angle": "245deg",
+  },
+];
 
 const BLOBS: Blob[] = [
   { color: "#ff2fbf", colors: ["#ff2fbf", "#ec35d6", "#ff6ad5"], x: 0.54, y: 1.17, radius: 0.58, alpha: 0.88, drift: 0.14, phase: 0.9, scaleX: 1.58, scaleY: 0.62 },
@@ -49,23 +85,34 @@ function seededRandom(seed: number) {
   };
 }
 
-function makePaintBlobs(seed: number) {
+function makePaintBlobs(seed: number, layout: number) {
   const random = seededRandom(seed);
   return BLOBS.map((blob) => {
     const colors = blob.colors ?? [blob.color];
+    const flipX = layout === 1 || layout === 3;
+    const shiftX = layout === 2 ? 0.12 : layout === 3 ? -0.10 : 0;
     return {
       ...blob,
       color: colors[Math.floor(random() * colors.length)] ?? blob.color,
-      x: blob.x + (random() - 0.5) * 0.075,
-      y: blob.y + (random() - 0.5) * 0.070,
-      radius: blob.radius * (0.88 + random() * 0.26),
+      x: clamp((flipX ? 1 - blob.x : blob.x) + shiftX + (random() - 0.5) * 0.11, -0.18, 1.18),
+      y: clamp(blob.y + (random() - 0.5) * 0.095, -0.12, 1.22),
+      radius: blob.radius * (0.84 + random() * 0.34),
       alpha: clamp(blob.alpha * (0.78 + random() * 0.42), 0.12, 0.90),
-      drift: blob.drift * (0.78 + random() * 0.42),
+      drift: blob.drift * (1.08 + random() * 0.55),
       phase: blob.phase + random() * Math.PI * 2,
-      scaleX: (blob.scaleX ?? 1) * (0.90 + random() * 0.22),
-      scaleY: (blob.scaleY ?? 1) * (0.90 + random() * 0.22),
+      scaleX: (blob.scaleX ?? 1) * (0.86 + random() * 0.30),
+      scaleY: (blob.scaleY ?? 1) * (0.86 + random() * 0.30),
     };
   });
+}
+
+function applyWashTheme(layout: number) {
+  const root = document.documentElement;
+  const theme = WASH_THEMES[layout] ?? WASH_THEMES[0];
+  for (const [key, value] of Object.entries(theme)) root.style.setProperty(key, value);
+  return () => {
+    for (const key of Object.keys(theme)) root.style.removeProperty(key);
+  };
 }
 
 function edgeNoise(angle: number, blob: Blob, t: number, layer: number) {
@@ -78,18 +125,18 @@ function edgeNoise(angle: number, blob: Blob, t: number, layer: number) {
 
 function drawBlob(ctx: CanvasRenderingContext2D, blob: Blob, w: number, h: number, t: number) {
   const size = Math.max(w, h);
-  const wobbleX = Math.sin(t * blob.drift + blob.phase) * 0.024 + Math.sin(t * 0.08 + blob.phase * 2.1) * 0.011;
-  const wobbleY = Math.cos(t * blob.drift * 0.82 + blob.phase) * 0.022 + Math.sin(t * 0.09 + blob.phase * 1.7) * 0.010;
-  const pulse = 1 + Math.sin(t * 0.14 + blob.phase) * 0.024 + Math.cos(t * 0.08 + blob.phase * 1.9) * 0.014;
+  const wobbleX = Math.sin(t * blob.drift + blob.phase) * 0.040 + Math.sin(t * 0.12 + blob.phase * 2.1) * 0.018;
+  const wobbleY = Math.cos(t * blob.drift * 0.82 + blob.phase) * 0.036 + Math.sin(t * 0.13 + blob.phase * 1.7) * 0.016;
+  const pulse = 1 + Math.sin(t * 0.18 + blob.phase) * 0.036 + Math.cos(t * 0.11 + blob.phase * 1.9) * 0.020;
   const x = (blob.x + wobbleX) * w;
   const y = (blob.y + wobbleY) * h;
   const r = blob.radius * size * pulse;
-  const scaleX = (blob.scaleX ?? 1) * (1 + Math.sin(t * 0.08 + blob.phase) * 0.018);
-  const scaleY = (blob.scaleY ?? 1) * (1 + Math.cos(t * 0.07 + blob.phase * 1.3) * 0.018);
+  const scaleX = (blob.scaleX ?? 1) * (1 + Math.sin(t * 0.11 + blob.phase) * 0.032);
+  const scaleY = (blob.scaleY ?? 1) * (1 + Math.cos(t * 0.10 + blob.phase * 1.3) * 0.032);
 
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(Math.sin(t * 0.055 + blob.phase) * 0.035);
+  ctx.rotate(Math.sin(t * 0.075 + blob.phase) * 0.055);
   ctx.scale(scaleX, scaleY);
 
   const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
@@ -101,8 +148,8 @@ function drawBlob(ctx: CanvasRenderingContext2D, blob: Blob, w: number, h: numbe
   ctx.fillStyle = gradient;
   for (let layer = 0; layer < LAYER_ALPHA.length; layer++) {
     const layerScale = 1 + layer * 0.11 + Math.sin(t * 0.05 + blob.phase + layer) * 0.018;
-    const offsetX = Math.sin(t * 0.045 + blob.phase * 1.4 + layer) * r * 0.016;
-    const offsetY = Math.cos(t * 0.04 + blob.phase * 1.1 + layer) * r * 0.014;
+    const offsetX = Math.sin(t * 0.065 + blob.phase * 1.4 + layer) * r * 0.024;
+    const offsetY = Math.cos(t * 0.06 + blob.phase * 1.1 + layer) * r * 0.022;
     ctx.globalAlpha = blob.alpha * LAYER_ALPHA[layer];
     ctx.beginPath();
     for (let i = 0; i <= POINTS; i++) {
@@ -130,9 +177,11 @@ export function LiquidBackground() {
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const scale = window.devicePixelRatio > 1.5 ? 0.42 : 0.48;
-    const paintBlobs = makePaintBlobs(
-      Math.floor(performance.timeOrigin + performance.now() + window.innerWidth * 17 + window.innerHeight * 31)
-    );
+    const seed = Math.floor(performance.timeOrigin + performance.now() + window.innerWidth * 17 + window.innerHeight * 31);
+    const themeRandom = seededRandom(seed ^ 0x9e3779b9);
+    const layout = Math.floor(themeRandom() * WASH_THEMES.length);
+    const resetWashTheme = applyWashTheme(layout);
+    const paintBlobs = makePaintBlobs(seed, layout);
     let width = 1;
     let height = 1;
 
@@ -175,7 +224,7 @@ export function LiquidBackground() {
     let last = 0;
     let scrolling = false;
     let scrollTimer = 0;
-    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 10;
+    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 12;
 
     const loop = (now: number) => {
       if (!running) return;
@@ -213,6 +262,7 @@ export function LiquidBackground() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
+      resetWashTheme();
     };
   }, []);
 
@@ -221,7 +271,7 @@ export function LiquidBackground() {
       ref={ref}
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-[2] h-full w-full"
-      style={{ width: "100vw", height: "100vh", opacity: 0.38 }}
+      style={{ width: "100vw", height: "100vh", opacity: 0.5 }}
     />
   );
 }

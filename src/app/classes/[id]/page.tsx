@@ -182,38 +182,20 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
   const ordered = [...members].sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
   return (
-    <div className="grid auto-rows-[118px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {ordered.map((m, index) => {
-        const featured = m.postCount > 1 && index < 3;
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
+      {ordered.map((m) => {
         const firstName = m.displayName.split(" ")[0];
         return (
           <Link
             key={m.id}
             href={`/classes/${classId}/members/${m.id}`}
-            className={`glass-card group flex transition hover:-translate-y-1 ${
-              featured ? "col-span-2 row-span-2 flex-col justify-between p-4" : "items-center gap-2 p-3"
-            }`}
+            className="glass-card group flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5"
           >
-            {featured ? (
-              <>
-                <div className="flex items-start justify-between gap-3">
-                  <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={68} />
-                  <span className="chip">{m.postCount} Beiträge</span>
-                </div>
-                <div>
-                  <p className="display break-words text-4xl leading-[0.84]">{firstName}</p>
-                  <p className="mt-2 text-sm font-black text-ink/50">{m.displayName}</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={44} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black leading-tight">{firstName}</p>
-                  <p className="text-[11px] font-bold text-ink/50">{m.postCount} Beiträge</p>
-                </div>
-              </>
-            )}
+            <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={38} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black leading-tight">{firstName}</p>
+              <p className="truncate text-[11px] font-bold text-ink/50">{m.postCount} Beiträge</p>
+            </div>
           </Link>
         );
       })}
@@ -267,13 +249,13 @@ function TeachersTab({ classId }: { classId: string }) {
       ) : teachers.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Lehrpersonen. Erstelle die erste!</div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
           {teachers.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex items-center gap-3 p-4 transition hover:-translate-y-1">
-              <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={52} />
+            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5">
+              <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={38} />
               <div className="min-w-0">
-                <p className="font-black truncate">{t.name}</p>
-                <p className="text-xs font-bold text-muted">{t.subject ? `${t.subject} · ` : ""}{t.postCount} Beiträge</p>
+                <p className="truncate text-sm font-black leading-tight">{t.name}</p>
+                <p className="truncate text-[11px] font-bold text-ink/50">{t.subject ? `${t.subject} · ` : ""}{t.postCount} Beiträge</p>
               </div>
             </Link>
           ))}

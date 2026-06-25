@@ -13,6 +13,35 @@
   --glass-line: rgba(255, 255, 255, 0.34);
   --pink-shadow: rgba(255, 47, 191, 0.16);
   --cyan-shadow: rgba(40, 217, 242, 0.15);
+  --wash-cool-x: -7%;
+  --wash-cool-y: 18%;
+  --wash-cool-a: #28d9f2;
+  --wash-cool-b: #72eadf;
+  --wash-cool-c: rgba(114, 234, 223, 0.44);
+  --wash-milk-x: 54%;
+  --wash-milk-y: 6%;
+  --wash-milk-a: #f8f1df;
+  --wash-milk-b: rgba(248, 241, 223, 0.8);
+  --wash-warm-x: 106%;
+  --wash-warm-y: 18%;
+  --wash-warm-a: #f8f1df;
+  --wash-warm-b: #ffd2a1;
+  --wash-warm-c: rgba(255, 196, 163, 0.66);
+  --wash-pink-x: 40%;
+  --wash-pink-y: 46%;
+  --wash-pink-a: rgba(255, 47, 191, 0.84);
+  --wash-pink-b: rgba(255, 106, 213, 0.62);
+  --wash-pink-c: rgba(185, 167, 255, 0.46);
+  --wash-bottom-x: 50%;
+  --wash-bottom-y: 108%;
+  --wash-bottom-a: #ff2fbf;
+  --wash-bottom-b: #ec35d6;
+  --wash-bottom-c: rgba(255, 106, 213, 0.68);
+  --wash-linear-angle: 150deg;
+  --wash-base-a: #f8f1df;
+  --wash-base-b: #ffc4a3;
+  --wash-base-c: #ff6ad5;
+  --wash-base-d: #ff2fbf;
 }
 
 html {
@@ -35,12 +64,12 @@ body::before {
   inset: 0;
   z-index: -3;
   background:
-    radial-gradient(58% 74% at -7% 18%, #28d9f2 0%, #72eadf 38%, rgba(114, 234, 223, 0.44) 62%, transparent 82%),
-    radial-gradient(88% 58% at 54% 6%, #f8f1df 0%, rgba(248, 241, 223, 0.80) 43%, transparent 78%),
-    radial-gradient(82% 76% at 106% 18%, #f8f1df 0%, #ffd2a1 35%, rgba(255, 196, 163, 0.66) 60%, transparent 84%),
-    radial-gradient(66% 78% at 40% 46%, rgba(255, 47, 191, 0.84) 0%, rgba(255, 106, 213, 0.62) 42%, rgba(185, 167, 255, 0.46) 72%, transparent 88%),
-    radial-gradient(96% 62% at 50% 108%, #ff2fbf 0%, #ec35d6 46%, rgba(255, 106, 213, 0.68) 74%, transparent 90%),
-    linear-gradient(150deg, #f8f1df 0%, #ffc4a3 30%, #ff6ad5 58%, #ff2fbf 100%);
+    radial-gradient(58% 74% at var(--wash-cool-x) var(--wash-cool-y), var(--wash-cool-a) 0%, var(--wash-cool-b) 38%, var(--wash-cool-c) 62%, transparent 82%),
+    radial-gradient(88% 58% at var(--wash-milk-x) var(--wash-milk-y), var(--wash-milk-a) 0%, var(--wash-milk-b) 43%, transparent 78%),
+    radial-gradient(82% 76% at var(--wash-warm-x) var(--wash-warm-y), var(--wash-warm-a) 0%, var(--wash-warm-b) 35%, var(--wash-warm-c) 60%, transparent 84%),
+    radial-gradient(66% 78% at var(--wash-pink-x) var(--wash-pink-y), var(--wash-pink-a) 0%, var(--wash-pink-b) 42%, var(--wash-pink-c) 72%, transparent 88%),
+    radial-gradient(96% 62% at var(--wash-bottom-x) var(--wash-bottom-y), var(--wash-bottom-a) 0%, var(--wash-bottom-b) 46%, var(--wash-bottom-c) 74%, transparent 90%),
+    linear-gradient(var(--wash-linear-angle), var(--wash-base-a) 0%, var(--wash-base-b) 30%, var(--wash-base-c) 58%, var(--wash-base-d) 100%);
 }
 
 body::after {

@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Nav";
+import { LoginCard } from "@/components/LoginCard";
 import type { Post } from "@/components/PostCard";
 
 export default function HomePage() {
+  const router = useRouter();
   const [me, setMe] = useState<{ name: string; avatarUrl?: string | null; accentColor?: string | null } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [memory, setMemory] = useState<Post | null>(null);
@@ -15,58 +18,23 @@ export default function HomePage() {
   useEffect(() => {
     (async () => {
       const home = await fetch("/api/home").then((r) => r.json());
+      if (!home.user) {
+        router.replace("/login");
+        setLoading(false);
+        return;
+      }
       setMe(home.user);
       setPosts(home.posts ?? []);
       setMemory(home.memory ?? null);
       setHasClass(!!home.hasClass);
       setLoading(false);
     })();
-  }, []);
+  }, [router]);
 
   if (loading) return <Skeleton />;
 
   if (!me) {
-    return (
-      <div className="grid min-h-[78vh] items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="max-w-xl">
-          <p className="section-label mb-4">Digitales Erinnerungsbuch</p>
-          <h1 className="hero-type">Maturaziitig</h1>
-          <p className="mt-6 max-w-md text-lg font-bold leading-relaxed text-ink/70">
-            Zitate, Bilder und Momente eurer Klasse, gesammelt in einem lebendigen, glasigen Jahrbuch.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/register" className="btn-primary">Loslegen</Link>
-            <Link href="/login" className="btn-soft">Anmelden</Link>
-          </div>
-        </section>
-
-        <section className="hero-frame min-h-[460px] p-5 sm:p-7">
-          <div className="relative z-10 flex h-full flex-col justify-between gap-5">
-            <div className="space-y-5">
-              <div className="inline-flex rounded-full border border-white/50 bg-white/20 px-4 py-2 text-sm font-black text-ink/80">
-                Public class memory
-              </div>
-              <h2 className="display max-w-lg text-4xl leading-[0.88] sm:text-5xl">
-                Die Sprüche, die niemand vergessen darf.
-              </h2>
-            </div>
-
-            <div className="relative min-h-[220px]">
-              <div className="polaroid absolute right-2 top-0 w-[56%] rotate-2">
-                <div className="aspect-[4/3] rounded-[22px] bg-[radial-gradient(circle_at_18%_18%,#28d9f2,transparent_42%),radial-gradient(circle_at_82%_16%,#ffc4a3,transparent_44%),radial-gradient(circle_at_52%_92%,#ff2fbf,transparent_58%),#f8f1df]" />
-                <p className="mt-2 hidden text-center font-hand text-2xl text-ink/80 sm:block">Pausenhof, kurz vor Chaos</p>
-              </div>
-              <div className="glass-card absolute bottom-0 left-0 max-w-[72%] p-4 sm:p-5">
-                <p className="font-hand text-3xl leading-none text-hotpink">Zitat des Tages</p>
-                <p className="mt-3 text-xl font-black leading-[0.95] sm:text-2xl">
-                  “Das kommt sicher nicht an der Prüfung.”
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    );
+    return <LoginCard />;
   }
 
   const imagePosts = posts.filter((p) => p.imageUrl);
