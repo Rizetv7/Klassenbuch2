@@ -14,18 +14,11 @@ export default function HomePage() {
 
   useEffect(() => {
     (async () => {
-      const meRes = await fetch("/api/auth/me").then((r) => r.json());
-      setMe(meRes.user);
-      if (meRes.user) {
-        const [feed, rnd, cls] = await Promise.all([
-          fetch("/api/posts").then((r) => r.json()),
-          fetch("/api/posts?random=1").then((r) => r.json()),
-          fetch("/api/classes").then((r) => r.json()),
-        ]);
-        setPosts(feed.posts ?? []);
-        setMemory(rnd.posts?.[0] ?? null);
-        setHasClass((cls.classes ?? []).length > 0);
-      }
+      const home = await fetch("/api/home").then((r) => r.json());
+      setMe(home.user);
+      setPosts(home.posts ?? []);
+      setMemory(home.memory ?? null);
+      setHasClass(!!home.hasClass);
       setLoading(false);
     })();
   }, []);
@@ -193,7 +186,7 @@ function MemoryHero({
           {mainImage?.imageUrl ? (
             <div className="polaroid absolute right-0 top-0 w-[82%] rotate-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mainImage.imageUrl} alt="" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
+              <img src={mainImage.imageUrl} alt="" fetchPriority="high" decoding="async" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
               <p className="mt-2 text-center font-hand text-2xl leading-tight text-ink/75">
                 {mainImage.text || mainImage.author?.name || "Anonym"}
               </p>

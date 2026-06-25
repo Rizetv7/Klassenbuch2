@@ -137,7 +137,7 @@ export function PostCard({
   const saidBy = post.kind === "QUOTE" ? (post.subject?.displayName || post.teacher?.name || post.saidByName || null) : null;
 
   return (
-    <article className="post-card animate-fade-up">
+    <article className="post-card">
       {/* header: who/what it is about */}
       <div className="relative z-10 flex items-center gap-3">
         {about ? (
@@ -174,7 +174,7 @@ export function PostCard({
           <div className="mt-2 flex justify-center">
             <div className="polaroid w-full max-w-3xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.imageUrl} alt="" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
+              <img src={post.imageUrl} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
               {post.text && <p className="mt-2 text-center font-hand text-3xl leading-tight text-ink/80">{post.text}</p>}
             </div>
           </div>

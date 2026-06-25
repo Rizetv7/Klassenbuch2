@@ -52,7 +52,7 @@ export default function MemberPage() {
       <section className="hero-frame min-h-[380px] p-5 sm:p-7">
         {cover?.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-24" />
+          <img src={cover.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-24" />
         )}
         <div className="relative z-10 grid gap-5 sm:grid-cols-[auto_1fr] sm:items-center">
           <div className="polaroid mx-auto w-44 sm:w-52">

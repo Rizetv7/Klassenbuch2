@@ -66,7 +66,7 @@ export default function TopicPage() {
         <div className="project-cover min-h-[380px] rounded-none border-0">
           {cover?.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={cover.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
           ) : null}
           <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-hotpink/40" />
           <div className="absolute inset-x-0 bottom-0 z-10 p-5 sm:p-8">
@@ -101,7 +101,7 @@ export default function TopicPage() {
             {images.map((p) => (
               <button key={p.id} onClick={() => setLightbox(p)} className="aspect-square overflow-hidden rounded-[18px] transition hover:-translate-y-0.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.imageUrl!} alt="" className="h-full w-full object-cover" />
+                <img src={p.imageUrl!} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               </button>
             ))}
           </div>

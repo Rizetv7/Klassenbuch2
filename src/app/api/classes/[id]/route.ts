@@ -19,7 +19,7 @@ export async function GET(
   const klass = await prisma.class.findUnique({
     where: { id: params.id },
     include: {
-      _count: { select: { posts: true } },
+      _count: { select: { posts: true, teachers: true } },
       memberships: {
         include: {
           user: { select: { avatarUrl: true, accentColor: true } },
@@ -52,7 +52,7 @@ export async function GET(
     myMembershipId: membership.id,
     counts: {
       students: members.filter((m) => m.memberType === "STUDENT").length,
-      teachers: members.filter((m) => m.memberType === "TEACHER").length,
+      teachers: klass._count.teachers,
       memories: klass._count.posts,
     },
     members,

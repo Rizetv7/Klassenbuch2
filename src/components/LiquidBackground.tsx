@@ -105,11 +105,14 @@ export function LiquidBackground() {
     let raf = 0;
     let running = true;
     let last = 0;
-    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 18;
+    let scrolling = false;
+    let scrollTimer = 0;
+    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 10;
 
     const loop = (now: number) => {
       if (!running) return;
       raf = window.requestAnimationFrame(loop);
+      if (scrolling) return;
       if (now - last < frameMs) return;
       last = now;
       render(now);
@@ -118,6 +121,15 @@ export function LiquidBackground() {
     render(performance.now());
     raf = window.requestAnimationFrame(loop);
     window.addEventListener("resize", resize);
+    const onScroll = () => {
+      scrolling = true;
+      window.clearTimeout(scrollTimer);
+      scrollTimer = window.setTimeout(() => {
+        scrolling = false;
+        render(performance.now());
+      }, 160);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     const onVisibility = () => {
       running = !document.hidden;
@@ -129,7 +141,9 @@ export function LiquidBackground() {
     return () => {
       running = false;
       window.cancelAnimationFrame(raf);
+      window.clearTimeout(scrollTimer);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);

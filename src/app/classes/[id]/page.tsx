@@ -37,7 +37,6 @@ export default function ClassPage() {
     ? (search.get("tab") as Tab)
     : "Schüler";
   const [data, setData] = useState<ClassDetail | null>(null);
-  const [teacherCount, setTeacherCount] = useState(0);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [showManage, setShowManage] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +49,6 @@ export default function ClassPage() {
   }
   useEffect(() => {
     loadClass();
-    fetch(`/api/classes/${id}/teachers`).then((r) => r.json()).then((d) => setTeacherCount((d.teachers ?? []).length)).catch(() => {});
   }, [id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
@@ -71,7 +69,7 @@ export default function ClassPage() {
           </div>
           <div className="grid grid-cols-3 gap-2 md:w-[330px]">
             <Stat value={students.length} label="Schüler" />
-            <Stat value={teacherCount} label="Lehrpersonen" />
+            <Stat value={data.counts.teachers} label="Lehrpersonen" />
             <Stat value={data.counts.memories} label="Erinnerungen" />
           </div>
         </div>
@@ -157,7 +155,7 @@ function ProjectsTab({ classId }: { classId: string }) {
               <div className="project-cover h-48 rounded-b-none border-0">
                 {t.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+                  <img src={t.coverImageUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
                 ) : (
                   <div className="grid h-full place-items-center px-6 text-center">
                     <span className="display text-6xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>

@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       _count: { select: { posts: true } },
       posts: {
         orderBy: { createdAt: "desc" },
-        take: 6,
+        take: 3,
         select: { kind: true, imageUrl: true, text: true },
       },
     },

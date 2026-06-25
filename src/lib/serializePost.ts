@@ -1,28 +1,20 @@
 import { prisma } from "./db";
 
 // Shape used everywhere the frontend renders a post.
-export async function serializePosts(postIds: string[], viewerId: string) {
-  if (postIds.length === 0) return [];
+export function postInclude(viewerId: string) {
+  return {
+    author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
+    class: { select: { id: true, name: true } },
+    subject: { select: { id: true, displayName: true, memberType: true, user: { select: { avatarUrl: true, accentColor: true } } } },
+    teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
+    topic: { select: { id: true, name: true } },
+    _count: { select: { likes: true, comments: true } },
+    likes: { where: { userId: viewerId }, select: { id: true } },
+  };
+}
 
-  const posts = await prisma.post.findMany({
-    where: { id: { in: postIds } },
-    include: {
-      author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
-      class: { select: { id: true, name: true } },
-      subject: { select: { id: true, displayName: true, memberType: true, user: { select: { avatarUrl: true, accentColor: true } } } },
-      teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
-      topic: { select: { id: true, name: true } },
-      _count: { select: { likes: true, comments: true } },
-      likes: { where: { userId: viewerId }, select: { id: true } },
-    },
-  });
-
-  // preserve incoming order
-  const byId = new Map(posts.map((p) => [p.id, p]));
-  return postIds
-    .map((id) => byId.get(id))
-    .filter((p): p is NonNullable<typeof p> => Boolean(p))
-    .map((p) => ({
+export function serializePostRows(posts: any[]) {
+  return posts.map((p) => ({
       id: p.id,
       board: p.board,
       kind: p.kind,
@@ -50,4 +42,17 @@ export async function serializePosts(postIds: string[], viewerId: string) {
       commentCount: p._count.comments,
       likedByMe: p.likes.length > 0,
     }));
+}
+
+export async function serializePosts(postIds: string[], viewerId: string) {
+  if (postIds.length === 0) return [];
+
+  const posts = await prisma.post.findMany({
+    where: { id: { in: postIds } },
+    include: postInclude(viewerId),
+  });
+
+  // preserve incoming order
+  const byId = new Map(posts.map((p) => [p.id, p]));
+  return serializePostRows(postIds.map((id) => byId.get(id)).filter(Boolean));
 }

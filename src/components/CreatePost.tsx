@@ -117,7 +117,7 @@ export function CreatePost({
               {previews.map((src, i) => (
                 <div key={i} className={`polaroid w-28 ${i % 2 ? "rotate-2" : "-rotate-1"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="h-24 w-full rounded-[18px] object-cover" />
+                  <img src={src} alt="" decoding="async" className="h-24 w-full rounded-[18px] object-cover" />
                 </div>
               ))}
             </div>
