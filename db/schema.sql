@@ -6,7 +6,6 @@
 CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "nickname" TEXT,
     "email" TEXT,
     "passwordHash" TEXT NOT NULL,
     "avatarUrl" TEXT,
@@ -15,8 +14,6 @@ CREATE TABLE IF NOT EXISTS "User" (
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
-
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "nickname" TEXT;
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "Class" (

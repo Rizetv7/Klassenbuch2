@@ -8,7 +8,7 @@ import type { Post } from "@/components/PostCard";
 
 export default function HomePage() {
   const router = useRouter();
-  const [me, setMe] = useState<{ name: string; nickname?: string | null } | null>(null);
+  const [me, setMe] = useState<{ name: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [memory, setMemory] = useState<Post | null>(null);
   const [hasClass, setHasClass] = useState(false);
@@ -59,7 +59,7 @@ export default function HomePage() {
         <div>
           <p className="section-label mb-2">Aus deiner Maturaziitig</p>
           <h1 className="display break-words text-5xl leading-[0.86] sm:text-6xl">
-            Hey {me.nickname || me.name.split(" ")[0]}
+            Hey {me.name.split(" ")[0]}
           </h1>
           <p className="mt-2 max-w-xl text-sm font-black text-ink/60">
             Ein wechselnder Mix aus neuen Bildern, lauten Zitaten und Momenten, die gerade auffallen.

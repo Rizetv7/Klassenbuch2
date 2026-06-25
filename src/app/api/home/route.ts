@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
-import { ensureUserNicknameColumn } from "@/lib/schemaGuards";
 import { postInclude, serializePostRows } from "@/lib/serializePost";
 
 function dailyIndex(seed: string, length: number) {
@@ -16,13 +15,11 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ user: null, hasClass: false, posts: [], memory: null });
 
-  await ensureUserNicknameColumn();
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       name: true,
-      nickname: true,
       avatarUrl: true,
       accentColor: true,
       memberships: { select: { classId: true } },
@@ -45,7 +42,7 @@ export async function GET() {
   const memory = memoryPool.length ? memoryPool[dailyIndex(userId, memoryPool.length)] : posts[0] ?? null;
 
   return NextResponse.json({
-    user: { id: user.id, name: user.name, nickname: user.nickname, avatarUrl: user.avatarUrl, accentColor: user.accentColor },
+    user: { id: user.id, name: user.name, avatarUrl: user.avatarUrl, accentColor: user.accentColor },
     hasClass: classIds.length > 0,
     posts,
     memory,

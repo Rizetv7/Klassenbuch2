@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,7 +19,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, nickname, password }),
+        body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
         router.push("/classes");
@@ -48,10 +47,6 @@ export default function RegisterPage() {
         <div>
           <label className="label">Dein Name</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Isai Graf" required />
-        </div>
-        <div>
-          <label className="label">Spitzname</label>
-          <input className="input" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="optional, z. B. Isi" maxLength={40} />
         </div>
         <div>
           <label className="label">Passwort</label>

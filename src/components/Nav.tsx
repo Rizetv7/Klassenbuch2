@@ -57,7 +57,6 @@ const ITEMS = [
 
 type NavUser = {
   name: string;
-  nickname?: string | null;
   avatarUrl?: string | null;
   accentColor?: string | null;
 };
@@ -118,7 +117,7 @@ function TopNav({ me }: { me: NavUser | null }) {
                 <span>{it.label}</span>
                 {profile && (
                   <Avatar
-                    name={me.nickname || me.name}
+                    name={me.name}
                     url={me.avatarUrl}
                     accent={me.accentColor}
                     size={26}
@@ -151,7 +150,7 @@ function BottomNav({ me }: { me: NavUser | null }) {
                 }`}
               >
                 {profile ? (
-                  <Avatar name={me.nickname || me.name} url={me.avatarUrl} accent={me.accentColor} size={22} ring={false} />
+                  <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={22} ring={false} />
                 ) : (
                   <it.Icon size={21} className="transition" />
                 )}

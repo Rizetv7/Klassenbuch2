@@ -9,7 +9,6 @@ DROP TABLE IF EXISTS "Like", "Comment", "Post", "Membership", "Class", "User" CA
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "nickname" TEXT,
     "email" TEXT,
     "passwordHash" TEXT NOT NULL,
     "avatarUrl" TEXT,
