@@ -156,7 +156,7 @@ body::after {
   }
 
   .quote-big {
-    @apply font-display text-3xl font-black leading-[0.98] text-ink sm:text-5xl;
+    @apply font-display text-2xl font-black leading-[0.98] text-ink sm:text-3xl;
   }
 
   .postit {
@@ -194,7 +194,7 @@ body::after {
   }
 
   .post-card {
-    @apply glass-card relative overflow-hidden p-4 sm:p-5;
+    @apply glass-card relative overflow-hidden p-3 sm:p-4;
   }
 
   .post-card::before {

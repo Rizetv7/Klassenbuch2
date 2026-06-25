@@ -149,26 +149,26 @@ function ProjectsTab({ classId }: { classId: string }) {
       ) : topics.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Projekte. Erstelle das erste!</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topics.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden transition hover:-translate-y-1">
-              <div className="project-cover h-48 rounded-b-none border-0">
+            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden p-2 transition hover:-translate-y-1">
+              <div className="project-cover h-36 rounded-[24px] border-0">
                 {t.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={t.coverImageUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
                 ) : (
                   <div className="grid h-full place-items-center px-6 text-center">
-                    <span className="display text-6xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>
+                    <span className="display text-5xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>
                   </div>
                 )}
               </div>
-              <div className="relative z-10 p-5">
+              <div className="relative z-10 p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="display break-words text-5xl leading-[0.88]">{t.name}</h3>
+                  <h3 className="display break-words text-3xl leading-[0.9]">{t.name}</h3>
                   <span className="chip shrink-0">{t.postCount}</span>
                 </div>
-                {t.latestText && <p className="mt-4 font-hand text-3xl leading-[0.98] text-hotpink">{t.latestText}</p>}
-                <p className="mt-5 text-xs font-black uppercase text-ink/50">Projekt öffnen</p>
+                {t.latestText && <p className="mt-3 line-clamp-2 font-hand text-2xl leading-[0.98] text-hotpink">{t.latestText}</p>}
+                <p className="mt-4 text-[11px] font-black uppercase text-ink/50">Projekt öffnen</p>
               </div>
             </Link>
           ))}
@@ -180,17 +180,43 @@ function ProjectsTab({ classId }: { classId: string }) {
 
 function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
+  const ordered = [...members].sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {members.map((m) => (
-        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="glass-card group flex min-h-[178px] flex-col items-center justify-center gap-2 p-4 text-center transition hover:-translate-y-1">
-          <div className="transition group-hover:scale-[1.04]">
-            <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={72} />
-          </div>
-          <span className="text-base font-black leading-tight">{m.displayName.split(" ")[0]}</span>
-          <span className="chip">{m.postCount} Beiträge</span>
-        </Link>
-      ))}
+    <div className="grid auto-rows-[118px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {ordered.map((m, index) => {
+        const featured = m.postCount > 1 && index < 3;
+        const firstName = m.displayName.split(" ")[0];
+        return (
+          <Link
+            key={m.id}
+            href={`/classes/${classId}/members/${m.id}`}
+            className={`glass-card group flex transition hover:-translate-y-1 ${
+              featured ? "col-span-2 row-span-2 flex-col justify-between p-4" : "items-center gap-2 p-3"
+            }`}
+          >
+            {featured ? (
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={68} />
+                  <span className="chip">{m.postCount} Beiträge</span>
+                </div>
+                <div>
+                  <p className="display break-words text-4xl leading-[0.84]">{firstName}</p>
+                  <p className="mt-2 text-sm font-black text-ink/50">{m.displayName}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={44} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black leading-tight">{firstName}</p>
+                  <p className="text-[11px] font-bold text-ink/50">{m.postCount} Beiträge</p>
+                </div>
+              </>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }

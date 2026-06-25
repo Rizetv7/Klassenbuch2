@@ -106,9 +106,9 @@ export default function TeacherPage() {
       </div>
 
       {/* Posts */}
-      <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {shown.length === 0 ? (
-          <p className="text-muted text-center py-6">Noch nichts über {teacher.name}. Mach den Anfang!</p>
+          <p className="text-muted py-6 text-center md:col-span-2 xl:col-span-3">Noch nichts über {teacher.name}. Mach den Anfang!</p>
         ) : (
           shown.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />

@@ -88,9 +88,9 @@ export default function MemberPage() {
       </div>
 
       {/* Posts */}
-      <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {shown.length === 0 ? (
-          <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch nichts über {firstName}. Mach den Anfang!</div>
+          <div className="glass-panel p-8 text-center font-bold text-ink/60 md:col-span-2 xl:col-span-3">Noch nichts über {firstName}. Mach den Anfang!</div>
         ) : (
           shown.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />

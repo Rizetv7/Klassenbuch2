@@ -159,23 +159,23 @@ export function PostCard({
       {/* body */}
       <div className="relative z-10 mt-4">
         {post.kind === "QUOTE" && post.text && (
-          <div className="rounded-[30px] border border-white/50 bg-white/30 p-5 sm:p-7">
+          <div className="rounded-[26px] border border-white/50 bg-white/25 p-4">
             <p className="quote-big">“{post.text}”</p>
             {saidBy && <p className="mt-2 text-sm font-black text-ink/70">— {saidBy}</p>}
           </div>
         )}
         {post.kind === "TEXT" && post.text && (
-          <div className="postit inline-block max-w-full whitespace-pre-wrap font-hand text-3xl leading-[0.98] text-ink/90">
+          <div className="postit inline-block max-w-full whitespace-pre-wrap font-hand text-2xl leading-[0.98] text-ink/90">
             {post.text}
           </div>
         )}
         {post.context && <p className="mt-2 font-hand text-2xl leading-none text-hotpink">{post.context}</p>}
         {post.imageUrl && (
           <div className="mt-2 flex justify-center">
-            <div className="polaroid w-full max-w-3xl">
+            <div className="polaroid w-full max-w-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={post.imageUrl} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full rounded-[22px] object-cover" />
-              {post.text && <p className="mt-2 text-center font-hand text-3xl leading-tight text-ink/80">{post.text}</p>}
+              {post.text && <p className="mt-2 text-center font-hand text-2xl leading-tight text-ink/80">{post.text}</p>}
             </div>
           </div>
         )}
