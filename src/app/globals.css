@@ -8,9 +8,9 @@
   --font-hand: "Caveat", cursive;
   --ink: #09070c;
   --muted: rgba(9, 7, 12, 0.58);
-  --glass: rgba(255, 255, 255, 0.16);
-  --glass-strong: rgba(255, 255, 255, 0.28);
-  --glass-line: rgba(255, 255, 255, 0.46);
+  --glass: rgba(255, 255, 255, 0.09);
+  --glass-strong: rgba(255, 255, 255, 0.18);
+  --glass-line: rgba(255, 255, 255, 0.34);
   --pink-shadow: rgba(255, 47, 191, 0.16);
   --cyan-shadow: rgba(40, 217, 242, 0.15);
 }
@@ -28,18 +28,19 @@ body {
   background: transparent;
 }
 
-/* Static fallback behind the WebGL canvas. No objects or UI elements here. */
+/* Static fallback behind the canvas. No objects or UI elements here. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -3;
   background:
-    radial-gradient(92% 82% at -8% 10%, #28d9f2 0%, #72eadf 36%, rgba(114, 234, 223, 0.56) 58%, transparent 82%),
-    radial-gradient(86% 76% at 108% 8%, #f8f1df 0%, #ffd2a1 36%, rgba(255, 196, 163, 0.70) 58%, transparent 84%),
-    radial-gradient(62% 60% at 52% 42%, rgba(248, 241, 223, 0.88) 0%, #b9a7ff 42%, rgba(255, 106, 213, 0.58) 72%, transparent 86%),
-    radial-gradient(84% 60% at 50% 104%, #ff2fbf 0%, #ec35d6 46%, rgba(255, 106, 213, 0.66) 72%, transparent 88%),
-    linear-gradient(150deg, #72eadf 0%, #f8f1df 28%, #ff6ad5 57%, #ff2fbf 100%);
+    radial-gradient(58% 74% at -7% 18%, #28d9f2 0%, #72eadf 38%, rgba(114, 234, 223, 0.44) 62%, transparent 82%),
+    radial-gradient(88% 58% at 54% 6%, #f8f1df 0%, rgba(248, 241, 223, 0.80) 43%, transparent 78%),
+    radial-gradient(82% 76% at 106% 18%, #f8f1df 0%, #ffd2a1 35%, rgba(255, 196, 163, 0.66) 60%, transparent 84%),
+    radial-gradient(66% 78% at 40% 46%, rgba(255, 47, 191, 0.84) 0%, rgba(255, 106, 213, 0.62) 42%, rgba(185, 167, 255, 0.46) 72%, transparent 88%),
+    radial-gradient(96% 62% at 50% 108%, #ff2fbf 0%, #ec35d6 46%, rgba(255, 106, 213, 0.68) 74%, transparent 90%),
+    linear-gradient(150deg, #f8f1df 0%, #ffc4a3 30%, #ff6ad5 58%, #ff2fbf 100%);
 }
 
 body::after {
@@ -48,11 +49,11 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.11;
+  opacity: 0.055;
   mix-blend-mode: soft-light;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
+  background-size: 260px 260px;
 }
 
 ::selection {
@@ -66,7 +67,7 @@ body::after {
     @apply border;
     border-color: var(--glass-line);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.31), rgba(255, 255, 255, 0.10)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05)),
       var(--glass);
     box-shadow:
       0 24px 64px -48px rgba(9, 7, 12, 0.48),
@@ -83,8 +84,8 @@ body::after {
   .surface {
     @apply rounded-full;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.40), rgba(255,255,255,0.18)),
-      rgba(255,255,255,0.16);
+      linear-gradient(180deg, rgba(255,255,255,0.23), rgba(255,255,255,0.08)),
+      rgba(255,255,255,0.075);
   }
 
   .glass-panel {
@@ -209,8 +210,8 @@ body::after {
   .hero-frame {
     @apply glass-panel relative overflow-hidden;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08)),
-      rgba(255,255,255,0.10);
+      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.035)),
+      rgba(255,255,255,0.045);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

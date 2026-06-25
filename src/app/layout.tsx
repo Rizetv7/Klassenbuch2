@@ -4,7 +4,7 @@ import { SiteNav } from "@/components/Nav";
 import { LiquidBackground } from "@/components/LiquidBackground";
 
 export const metadata: Metadata = {
-  title: "Klassenbuch · Erinnerungen",
+  title: "Maturaziitig · Erinnerungen",
   description: "Euer digitales Erinnerungsbuch — Zitate, Bilder und Momente der ganzen Klasse.",
 };
 

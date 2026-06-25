@@ -1,4 +1,4 @@
-// Prisma schema for the Klassenbuch app.
+// Prisma schema for the Maturaziitig app.
 //
 // Local development uses SQLite (zero setup). For production switch the
 // provider to "postgresql" and point DATABASE_URL at a managed Postgres

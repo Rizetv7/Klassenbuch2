@@ -1,4 +1,4 @@
-# Übergabe / Handoff — Klassenbuch
+# Übergabe / Handoff — Maturaziitig
 
 Stand-Dokument, damit jemand reibungslos weiterarbeiten kann. Beschreibt
 Architektur, Hosting (Vercel + Supabase), Environment-Variablen, Datenbank-

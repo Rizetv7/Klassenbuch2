@@ -77,7 +77,7 @@ function TopNav() {
   return (
     <header className="sticky top-0 z-30 hidden lg:block">
       <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
-        <Link href="/" className="display mr-2 text-2xl leading-none">Klassenbuch</Link>
+        <Link href="/" className="display mr-2 text-2xl leading-none">Maturaziitig</Link>
         <nav className="ml-auto flex items-center gap-1">
           {ITEMS.map((it) => (
             <Link

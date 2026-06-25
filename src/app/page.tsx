@@ -30,7 +30,7 @@ export default function HomePage() {
       <div className="grid min-h-[78vh] items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <section className="max-w-xl">
           <p className="section-label mb-4">Digitales Erinnerungsbuch</p>
-          <h1 className="hero-type">Klassenbuch</h1>
+          <h1 className="hero-type">Maturaziitig</h1>
           <p className="mt-6 max-w-md text-lg font-bold leading-relaxed text-ink/70">
             Zitate, Bilder und Momente eurer Klasse, gesammelt in einem lebendigen, glasigen Jahrbuch.
           </p>

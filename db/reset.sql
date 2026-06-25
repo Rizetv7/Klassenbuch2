@@ -1,4 +1,4 @@
--- Klassenbuch: Tabellen neu aufsetzen (bringt die DB auf den aktuellen Stand).
+-- Maturaziitig: Tabellen neu aufsetzen (bringt die DB auf den aktuellen Stand).
 -- Sicher: Die App-Tabellen sind leer (Registrieren war noch nie moeglich),
 -- es gehen also KEINE echten Daten verloren.
 -- Supabase -> SQL Editor -> New query -> alles einfuegen -> Run.
@@ -132,4 +132,3 @@ ALTER TABLE "Like" ADD CONSTRAINT "Like_postId_fkey" FOREIGN KEY ("postId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

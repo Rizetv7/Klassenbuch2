@@ -1,4 +1,4 @@
--- Klassenbuch: Datenbank-Schema (idempotent).
+-- Maturaziitig: Datenbank-Schema (idempotent).
 -- Sicher mehrfach ausführbar — legt nur an, was noch fehlt.
 -- Supabase -> SQL Editor -> New query -> einfügen -> Run.
 
@@ -149,4 +149,3 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-

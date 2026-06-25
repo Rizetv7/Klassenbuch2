@@ -1,4 +1,4 @@
-# 📓 Klassenbuch
+# 📓 Maturaziitig
 
 Eine einfache Website, auf der eine ganze Klasse gemeinsam Zitate, Bilder und
 Erinnerungen sammelt. Jede Person hat ihre eigene Seite (Steckbrief), auf der
