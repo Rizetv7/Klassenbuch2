@@ -3,6 +3,18 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  try {
+    return await handleLogin(req);
+  } catch (err) {
+    console.error("login error", err);
+    return NextResponse.json(
+      { error: "Datenbankfehler. Sind die Tabellen angelegt und DATABASE_URL korrekt?" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleLogin(req: Request) {
   const { email, password } = await req.json().catch(() => ({}));
 
   if (!email || !password) {

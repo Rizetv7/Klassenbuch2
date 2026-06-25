@@ -15,17 +15,26 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setBusy(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    setBusy(false);
-    if (res.ok) {
-      router.push("/");
-      router.refresh();
-    } else {
-      setError((await res.json()).error || "Anmeldung fehlgeschlagen.");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        router.push("/");
+        router.refresh();
+        return;
+      }
+      const msg = await res.json().catch(() => null);
+      setError(
+        msg?.error ||
+          `Anmeldung fehlgeschlagen (Serverfehler ${res.status}). Ist die Datenbank korrekt eingerichtet?`
+      );
+    } catch {
+      setError("Verbindung zum Server fehlgeschlagen. Bitte später erneut versuchen.");
+    } finally {
+      setBusy(false);
     }
   }
 
