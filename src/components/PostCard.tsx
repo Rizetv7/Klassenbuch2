@@ -153,10 +153,11 @@ export function PostCard({
 
       {/* body */}
       <div className="mt-3">
-        {post.text && post.kind !== "IMAGE" && (
-          <p className={post.kind === "QUOTE" ? "quote-big" : "whitespace-pre-wrap text-[15px]"}>
-            {post.kind === "QUOTE" ? `„${post.text}"` : post.text}
-          </p>
+        {post.kind === "QUOTE" && post.text && <p className="quote-big">{`„${post.text}"`}</p>}
+        {post.kind === "TEXT" && post.text && (
+          <div className="inline-block rounded-md bg-[#fff3a8] px-4 py-3 font-hand text-xl leading-snug text-ink/90 whitespace-pre-wrap shadow-[0_8px_18px_-12px_rgba(80,60,140,0.4)]">
+            {post.text}
+          </div>
         )}
         {post.context && <p className="text-xs text-muted mt-1 italic">{post.context}</p>}
         {post.imageUrl && (

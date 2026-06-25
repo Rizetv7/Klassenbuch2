@@ -25,8 +25,8 @@ float gnoise(vec2 p){
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 float fbm(vec2 p){
-  float v = 0.0, a = 0.55;
-  for (int i = 0; i < 5; i++){ v += a * gnoise(p); p = p * 2.0 + 17.3; a *= 0.5; }
+  float v = 0.0, a = 0.58;
+  for (int i = 0; i < 4; i++){ v += a * gnoise(p); p = p * 2.0 + 17.3; a *= 0.5; }
   return v;
 }
 
@@ -118,7 +118,7 @@ export function LiquidBackground() {
     const uRes = gl.getUniformLocation(prog, "uRes");
     const uTime = gl.getUniformLocation(prog, "uTime");
 
-    const SCALE = 0.55; // render at low res for a soft, dreamy look + perf
+    const SCALE = 0.4; // render at low res for a soft, dreamy look + perf
     const resize = () => {
       const w = Math.max(1, Math.floor(window.innerWidth * SCALE));
       const h = Math.max(1, Math.floor(window.innerHeight * SCALE));
@@ -133,20 +133,24 @@ export function LiquidBackground() {
 
     let raf = 0;
     const start = performance.now();
+    let last = 0;
+    const FRAME_MS = 1000 / 30; // cap at ~30 FPS to save GPU/battery
     let running = true;
-    const loop = () => {
+    const loop = (now: number) => {
       if (!running) return;
+      raf = requestAnimationFrame(loop);
+      if (now - last < FRAME_MS) return;
+      last = now;
       resize();
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, (performance.now() - start) / 1000);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      raf = requestAnimationFrame(loop);
     };
-    loop();
+    raf = requestAnimationFrame(loop);
 
     const onVis = () => {
       running = !document.hidden;
-      if (running) loop();
+      if (running) raf = requestAnimationFrame(loop);
       else cancelAnimationFrame(raf);
     };
     document.addEventListener("visibilitychange", onVis);

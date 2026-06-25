@@ -31,16 +31,16 @@ body::before {
 }
 
 @layer components {
-  /* ---- Glassy surfaces (the core design language) ---- */
+  /* Translucent "glassy" surfaces WITHOUT backdrop-filter — backdrop-blur over
+     an animated background is very slow on mobile/Safari, so we fake the glass
+     with semi-opaque white instead. Much smoother. */
   .card {
-    @apply rounded-xl2 border border-white/60 bg-white/35 backdrop-blur-2xl;
-    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    @apply rounded-xl2 border border-white/70 bg-white/75;
+    box-shadow: 0 10px 30px -16px rgba(80, 60, 140, 0.28);
   }
   .surface {
-    @apply rounded-xl2 border border-white/60 bg-white/30 backdrop-blur-2xl;
-    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    @apply rounded-xl2 border border-white/70 bg-white/80;
+    box-shadow: 0 10px 30px -16px rgba(80, 60, 140, 0.28);
   }
 
   /* ---- Buttons ---- */
@@ -55,12 +55,12 @@ body::before {
   }
   .btn-ghost,
   .btn-soft {
-    @apply btn border border-white/60 bg-white/40 text-ink backdrop-blur-xl hover:bg-white/60;
+    @apply btn border border-white/70 bg-white/75 text-ink hover:bg-white;
   }
 
   /* ---- Form ---- */
   .input {
-    @apply w-full rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm outline-none backdrop-blur-xl transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/50;
+    @apply w-full rounded-2xl border border-white/80 bg-white/85 px-4 py-3 text-sm outline-none transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/50;
   }
   .label {
     @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-ink/50;
@@ -68,7 +68,7 @@ body::before {
 
   /* ---- Tabs ---- */
   .tab {
-    @apply whitespace-nowrap rounded-full border border-white/50 bg-white/30 px-3.5 py-1.5 text-sm font-bold text-ink/55 backdrop-blur-xl transition hover:text-ink;
+    @apply whitespace-nowrap rounded-full border border-white/60 bg-white/65 px-3.5 py-1.5 text-sm font-bold text-ink/55 transition hover:text-ink;
   }
   .tab-active {
     @apply border-ink bg-ink text-white;
@@ -76,23 +76,23 @@ body::before {
 
   /* ---- Chips ---- */
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-1 text-xs font-bold text-ink/75 backdrop-blur-xl;
+    @apply inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/75 px-2.5 py-1 text-xs font-bold text-ink/75;
   }
 
-  /* ---- Post-it (kept glassy, within the scheme) ---- */
+  /* ---- Post-it (note) ---- */
   .postit {
-    @apply rounded-sm border border-white/40 p-4 backdrop-blur-md;
-    background: rgba(196, 158, 232, 0.35);
-    box-shadow: 0 10px 24px -12px rgba(80, 60, 140, 0.4);
+    @apply rounded-sm border border-black/5 p-4;
+    background: #fff3a8;
+    box-shadow: 0 10px 24px -12px rgba(80, 60, 140, 0.35);
     transform: rotate(-1.2deg);
     transition: transform 0.2s ease;
   }
   .postit:nth-child(3n) {
-    background: rgba(140, 178, 240, 0.32);
+    background: #c9e7ff;
     transform: rotate(1.4deg);
   }
   .postit:nth-child(3n + 1) {
-    background: rgba(228, 158, 208, 0.32);
+    background: #ffd6ec;
     transform: rotate(-0.6deg);
   }
   .postit:hover {
@@ -101,8 +101,8 @@ body::before {
 
   /* ---- Polaroid ---- */
   .polaroid {
-    @apply border border-white/60 bg-white/70 p-2.5 pb-5 backdrop-blur-md;
-    box-shadow: 0 12px 28px -14px rgba(80, 60, 140, 0.45);
+    @apply border border-white/70 bg-white p-2.5 pb-5;
+    box-shadow: 0 12px 28px -16px rgba(80, 60, 140, 0.4);
     transform: rotate(-1.1deg);
     transition: transform 0.2s ease;
   }

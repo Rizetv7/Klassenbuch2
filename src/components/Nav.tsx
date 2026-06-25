@@ -37,7 +37,7 @@ export function Avatar({
 
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/60 font-extrabold text-ink/70 backdrop-blur"
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/80 font-extrabold text-ink/70"
       style={{ width: size, height: size, fontSize: size * 0.38, ...ringStyle }}
     >
       {url ? (
