@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 import { IconPencil } from "@/components/Icons";
+import { uploadImageFile } from "@/lib/uploadImage";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -30,17 +31,15 @@ export default function ProfilePage() {
     if (!file) return;
     setBusy(true);
     setMsg("");
-    const fd = new FormData();
-    fd.append("file", file);
-    const up = await fetch("/api/upload", { method: "POST", body: fd });
-    const upData = await up.json();
-    if (up.ok) {
-      setAvatarUrl(upData.url);
-      await save({ avatarUrl: upData.url });
-    } else {
-      setMsg(upData.error || "Upload fehlgeschlagen.");
+    try {
+      const url = await uploadImageFile(file);
+      setAvatarUrl(url);
+      await save({ avatarUrl: url });
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Upload fehlgeschlagen.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function save(extra?: Record<string, string>) {

@@ -2,26 +2,9 @@
 
 import { useState } from "react";
 import type { Post } from "./PostCard";
+import { uploadImageFile } from "@/lib/uploadImage";
 
 type Kind = "QUOTE" | "IMAGE" | "TEXT";
-
-async function uploadOne(file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch("/api/upload", { method: "POST", body: fd });
-  const text = await res.text();
-  let data: { url?: string; error?: string } | null = null;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    // non-JSON response (e.g. platform error)
-  }
-  if (!res.ok) {
-    throw new Error(data?.error || `Upload fehlgeschlagen (Status ${res.status}). ${text.slice(0, 140)}`);
-  }
-  if (!data?.url) throw new Error("Upload: keine Bild-URL erhalten.");
-  return data.url;
-}
 
 // Target: a person (subjectMembershipId) OR a project/topic (topicId).
 export function CreatePost({
@@ -71,7 +54,7 @@ export function CreatePost({
         if (files.length === 0) throw new Error("Bitte mindestens ein Bild auswählen.");
         for (let i = 0; i < files.length; i++) {
           setProgress(files.length > 1 ? `Lädt ${i + 1}/${files.length}…` : "Lädt…");
-          const url = await uploadOne(files[i]);
+          const url = await uploadImageFile(files[i]);
           const post = await createPost({ kind: "IMAGE", text: text.trim() || null, imageUrl: url });
           onCreated(post);
         }
