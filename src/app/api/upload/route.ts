@@ -45,32 +45,50 @@ export async function POST(req: Request) {
 
   // --- Production path: Supabase Storage ---
   if (supabaseUrl && serviceKey) {
+    const base = supabaseUrl.replace(/\/+$/, ""); // strip trailing slash
+    const doUpload = () =>
+      fetch(`${base}/storage/v1/object/${BUCKET}/${filename}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": file.type,
+          "x-upsert": "true",
+        },
+        body: bytes,
+      });
+
     try {
-      const uploadRes = await fetch(
-        `${supabaseUrl}/storage/v1/object/${BUCKET}/${filename}`,
-        {
+      let uploadRes = await doUpload();
+
+      // If the bucket doesn't exist yet, create it (public) and retry once.
+      if (!uploadRes.ok && (uploadRes.status === 400 || uploadRes.status === 404)) {
+        await fetch(`${base}/storage/v1/bucket`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            "Content-Type": file.type,
-            "x-upsert": "true",
-          },
-          body: bytes,
-        }
-      );
+          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
+        }).catch(() => null);
+        // make sure it is public even if it already existed as private
+        await fetch(`${base}/storage/v1/bucket/${BUCKET}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ public: true }),
+        }).catch(() => null);
+        uploadRes = await doUpload();
+      }
+
       if (!uploadRes.ok) {
         const detail = await uploadRes.text().catch(() => "");
         console.error("supabase upload failed", uploadRes.status, detail);
         return NextResponse.json(
-          { error: "Upload zum Speicher fehlgeschlagen. Existiert der Bucket 'uploads' und ist er öffentlich?" },
+          { error: `Speicher-Upload fehlgeschlagen (Status ${uploadRes.status}). ${detail.slice(0, 160)}` },
           { status: 500 }
         );
       }
-      const publicUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${filename}`;
+      const publicUrl = `${base}/storage/v1/object/public/${BUCKET}/${filename}`;
       return NextResponse.json({ url: publicUrl });
     } catch (err) {
       console.error("supabase upload error", err);
-      return NextResponse.json({ error: "Upload fehlgeschlagen." }, { status: 500 });
+      return NextResponse.json({ error: "Upload fehlgeschlagen (Verbindung zum Speicher)." }, { status: 500 });
     }
   }
 
