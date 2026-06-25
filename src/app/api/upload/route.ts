@@ -14,7 +14,9 @@ import { getSessionUserId } from "@/lib/auth";
 // If those env vars are missing (e.g. local development), we fall back to
 // writing into /public/uploads so things still work without any setup.
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const runtime = "nodejs";
+
+const MAX_BYTES = 4 * 1024 * 1024; // 4 MB (under Vercel's request body limit)
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const BUCKET = "uploads";
 
@@ -31,7 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nur Bilder (JPG, PNG, WEBP, GIF) erlaubt." }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Bild ist zu groß (max. 5 MB)." }, { status: 400 });
+    return NextResponse.json({ error: "Bild ist zu groß (max. 4 MB)." }, { status: 400 });
   }
 
   const ext = file.type.split("/")[1].replace("jpeg", "jpg");
