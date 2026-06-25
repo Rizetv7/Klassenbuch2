@@ -11,12 +11,20 @@ export async function GET() {
   // show only host:port/db (mask everything before @)
   const hostPart = raw.includes("@") ? raw.split("@")[1] : null;
 
+  let supabaseOrigin: string | null = null;
+  try {
+    supabaseOrigin = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : null;
+  } catch {
+    supabaseOrigin = "INVALID";
+  }
+
   const env = {
     hasDatabaseUrl: !!process.env.DATABASE_URL,
     dbHost: hostPart ? hostPart.split("?")[0] : null,
     pgbouncer: raw.includes("pgbouncer=true"),
     hasAuthSecret: !!process.env.AUTH_SECRET,
     hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    supabaseOrigin, // public project URL (not a secret)
     hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   };
 

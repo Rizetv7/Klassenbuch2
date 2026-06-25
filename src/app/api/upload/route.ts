@@ -45,7 +45,14 @@ export async function POST(req: Request) {
 
   // --- Production path: Supabase Storage ---
   if (supabaseUrl && serviceKey) {
-    const base = supabaseUrl.replace(/\/+$/, ""); // strip trailing slash
+    // Use only the project origin (https://xxx.supabase.co), discarding any
+    // accidental path like "/rest/v1" that would route to the wrong service.
+    let base: string;
+    try {
+      base = new URL(supabaseUrl).origin;
+    } catch {
+      base = supabaseUrl.replace(/\/+$/, "");
+    }
     // Supabase's gateway requires BOTH the apikey header and the Bearer token.
     const authHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
