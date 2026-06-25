@@ -18,8 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans pb-24">
-        <main className="mx-auto max-w-xl px-4 pt-5">{children}</main>
+      <body className="font-sans pb-28">
+        <main className="mx-auto max-w-3xl px-5 pt-7 sm:pt-9">{children}</main>
         <BottomNav />
       </body>
     </html>

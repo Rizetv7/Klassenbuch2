@@ -4,16 +4,19 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { getSessionUserId } from "@/lib/auth";
 
-// Simple image upload. In local development files are written to
-// /public/uploads and served statically.
+// Image upload.
 //
-// IMPORTANT for production: serverless hosts (Vercel/Netlify) have a
-// read-only / ephemeral filesystem, so uploaded files would be lost. For
-// production, swap this handler for an object storage upload (Supabase
-// Storage, Cloudflare R2, AWS S3). See README.md.
+// In production we upload to Supabase Storage (set SUPABASE_URL +
+// SUPABASE_SERVICE_ROLE_KEY in the environment). This keeps images on durable
+// object storage — required because serverless hosts like Vercel have a
+// read-only / ephemeral filesystem.
+//
+// If those env vars are missing (e.g. local development), we fall back to
+// writing into /public/uploads so things still work without any setup.
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const BUCKET = "uploads";
 
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
@@ -33,11 +36,53 @@ export async function POST(req: Request) {
 
   const ext = file.type.split("/")[1].replace("jpeg", "jpg");
   const filename = `${randomUUID()}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
   const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadDir, filename), bytes);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // --- Production path: Supabase Storage ---
+  if (supabaseUrl && serviceKey) {
+    try {
+      const uploadRes = await fetch(
+        `${supabaseUrl}/storage/v1/object/${BUCKET}/${filename}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": file.type,
+            "x-upsert": "true",
+          },
+          body: bytes,
+        }
+      );
+      if (!uploadRes.ok) {
+        const detail = await uploadRes.text().catch(() => "");
+        console.error("supabase upload failed", uploadRes.status, detail);
+        return NextResponse.json(
+          { error: "Upload zum Speicher fehlgeschlagen. Existiert der Bucket 'uploads' und ist er öffentlich?" },
+          { status: 500 }
+        );
+      }
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${filename}`;
+      return NextResponse.json({ url: publicUrl });
+    } catch (err) {
+      console.error("supabase upload error", err);
+      return NextResponse.json({ error: "Upload fehlgeschlagen." }, { status: 500 });
+    }
+  }
+
+  // --- Local fallback: filesystem ---
+  try {
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(path.join(uploadDir, filename), bytes);
+    return NextResponse.json({ url: `/uploads/${filename}` });
+  } catch (err) {
+    console.error("fs upload error", err);
+    return NextResponse.json(
+      { error: "Bild-Speicher nicht konfiguriert. Bitte SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY setzen." },
+      { status: 500 }
+    );
+  }
 }

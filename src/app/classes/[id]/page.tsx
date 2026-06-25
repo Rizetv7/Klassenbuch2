@@ -131,7 +131,7 @@ export default function ClassPage() {
 function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
       {members.map((m) => (
         <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="flex flex-col items-center text-center gap-1.5 group">
           <div className="group-hover:-translate-y-0.5 transition">
@@ -151,7 +151,7 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
 function TeacherGrid({ members, classId }: { members: Member[]; classId: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">Noch keine Lehrpersonen.</p>;
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    <div className="grid sm:grid-cols-3 gap-3">
       {members.map((m) => (
         <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="card p-4 flex items-center gap-3 hover:shadow-soft transition">
           <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor || "#FFD479"} size={52} />

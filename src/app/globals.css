@@ -26,11 +26,11 @@ body::before {
   inset: -25%;
   z-index: -2;
   background:
-    radial-gradient(38% 38% at 18% 18%, rgba(255, 211, 121, 0.75), transparent 70%),
-    radial-gradient(42% 42% at 84% 16%, rgba(142, 207, 230, 0.7), transparent 70%),
-    radial-gradient(46% 46% at 80% 82%, rgba(246, 162, 143, 0.7), transparent 70%),
-    radial-gradient(40% 40% at 16% 86%, rgba(150, 205, 160, 0.7), transparent 70%),
-    radial-gradient(55% 55% at 52% 52%, rgba(201, 175, 235, 0.55), transparent 70%);
+    radial-gradient(40% 40% at 16% 16%, rgba(255, 201, 60, 0.92), transparent 68%),
+    radial-gradient(44% 44% at 86% 14%, rgba(111, 197, 236, 0.9), transparent 68%),
+    radial-gradient(48% 48% at 82% 84%, rgba(244, 107, 78, 0.85), transparent 68%),
+    radial-gradient(42% 42% at 14% 88%, rgba(111, 203, 135, 0.88), transparent 68%),
+    radial-gradient(58% 58% at 50% 50%, rgba(182, 140, 240, 0.7), transparent 70%);
   animation: bg-drift 22s ease-in-out infinite alternate;
   will-change: transform;
 }

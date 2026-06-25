@@ -72,7 +72,7 @@ export default function UploadPage() {
       )}
 
       {classId && !choice && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {CHOICES.map((c) => (
             <button key={c.key} onClick={() => setChoice(c.key)} className="card p-5 text-center hover:-translate-y-1 transition">
               <div className="text-4xl mb-1">{c.emoji}</div>

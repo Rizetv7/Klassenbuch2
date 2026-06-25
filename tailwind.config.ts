@@ -9,16 +9,16 @@ const config: Config = {
         hand: ["var(--font-hand)", "cursive"],
       },
       colors: {
-        cream: "#FBF7EF",
-        paper: "#F3EADC",
-        ink: "#2C2A27",
-        muted: "#8A847B",
-        // soft accent palette
-        butter: "#FFE6A0",
-        sky: "#BFE0EF",
-        sage: "#C3E0C6",
-        coral: "#F6B2A2",
-        lilac: "#D9C7F0",
+        cream: "#FBF6EC",
+        paper: "#F0E5D2",
+        ink: "#2A2722",
+        muted: "#857F74",
+        // saturated accent palette
+        butter: "#FFC93C",
+        sky: "#6FC5EC",
+        sage: "#6FCB87",
+        coral: "#F46B4E",
+        lilac: "#B68CF0",
         brand: {
           50: "#fff7ed",
           100: "#ffedd5",

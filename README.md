@@ -104,12 +104,13 @@ keine Daten verloren.
    ```bash
    npx prisma db push
    ```
-6. **Bild-Uploads produktionsfest machen:** Die Datei
-   `src/app/api/upload/route.ts` schreibt Bilder aktuell ins lokale
-   Verzeichnis `public/uploads` (nur für Entwicklung gedacht). Für die
-   Produktion dort stattdessen zu **Supabase Storage** (oder Cloudflare R2)
-   hochladen und die zurückgegebene URL speichern. Der Rest der App bleibt
-   unverändert, weil überall nur `imageUrl` gespeichert wird.
+6. **Bild-Uploads aktivieren (Profilbilder & Fotos):** Die App lädt Bilder
+   automatisch zu **Supabase Storage** hoch, sobald diese Env-Variablen
+   gesetzt sind (sonst lokaler Datei-Fallback):
+   - `SUPABASE_URL` = Supabase → Settings → Data API → *Project URL*
+   - `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Settings → API Keys → *service_role*
+   Außerdem in Supabase unter **Storage** einen **öffentlichen** Bucket namens
+   `uploads` anlegen. Danach funktionieren Uploads ohne Code-Änderung.
 
 ### Datensicherheit / kein Datenverlust
 

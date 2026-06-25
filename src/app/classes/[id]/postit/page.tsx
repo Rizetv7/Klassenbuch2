@@ -39,7 +39,7 @@ export default function PostitBoardPage() {
       ) : posts.length === 0 ? (
         <p className="text-muted text-center py-6">Noch nichts angepinnt.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />
           ))}

@@ -67,7 +67,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30">
-      <div className="mx-auto max-w-xl px-4 pb-4">
+      <div className="mx-auto max-w-md px-4 pb-4">
         <div className="surface shadow-soft flex items-center justify-between px-3 py-2">
           {ITEMS.map((it) =>
             it.center ? (
