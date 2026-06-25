@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 import { IconPencil } from "@/components/Icons";
+import { uploadImageFile } from "@/lib/uploadImage";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -30,17 +31,15 @@ export default function ProfilePage() {
     if (!file) return;
     setBusy(true);
     setMsg("");
-    const fd = new FormData();
-    fd.append("file", file);
-    const up = await fetch("/api/upload", { method: "POST", body: fd });
-    const upData = await up.json();
-    if (up.ok) {
-      setAvatarUrl(upData.url);
-      await save({ avatarUrl: upData.url });
-    } else {
-      setMsg(upData.error || "Upload fehlgeschlagen.");
+    try {
+      const url = await uploadImageFile(file);
+      setAvatarUrl(url);
+      await save({ avatarUrl: url });
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Upload fehlgeschlagen.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function save(extra?: Record<string, string>) {
@@ -61,21 +60,33 @@ export default function ProfilePage() {
     router.refresh();
   }
 
+  async function leaveClass() {
+    if (!confirm("Deine Klasse verlassen?")) return;
+    const res = await fetch("/api/classes/leave", { method: "POST" });
+    const d = await res.json().catch(() => null);
+    if (res.ok) {
+      router.push("/classes");
+      router.refresh();
+    } else {
+      setMsg(d?.error || "Konnte Klasse nicht verlassen.");
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="card p-6 flex flex-col items-center text-center">
+      <div className="hero-frame flex flex-col items-center p-6 text-center">
         <label className="cursor-pointer relative">
           <Avatar name={name || "?"} url={avatarUrl} accent={accent} size={100} />
-          <span className="absolute -bottom-1 -right-1 bg-ink text-white rounded-full w-8 h-8 grid place-items-center">
+          <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
             <IconPencil size={16} />
           </span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
         </label>
-        <h1 className="display text-4xl mt-3">{name}</h1>
+        <h1 className="display relative z-10 mt-3 break-words text-6xl leading-[0.86]">{name}</h1>
         {msg && <p className="text-sm text-muted mt-1">{msg}</p>}
       </div>
 
-      <div className="card p-5 space-y-3">
+      <div className="glass-card p-5 space-y-3">
         <div>
           <label className="label">Anzeigename</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -85,12 +96,15 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      <Link href="/classes" className="card p-4 flex items-center justify-between hover:shadow-soft transition">
-        <span className="font-bold">Meine Klassen</span>
+      <Link href="/classes" className="glass-card p-4 flex items-center justify-between hover:shadow-soft transition">
+        <span className="font-black">Meine Klasse</span>
         <span className="text-muted">›</span>
       </Link>
 
-      <button onClick={logout} className="btn-soft w-full text-coral">Abmelden</button>
+      <div className="flex gap-2">
+        <button onClick={leaveClass} className="btn-soft flex-1 text-ink/70">Klasse verlassen</button>
+        <button onClick={logout} className="btn-soft flex-1 text-coral">Abmelden</button>
+      </div>
     </div>
   );
 }

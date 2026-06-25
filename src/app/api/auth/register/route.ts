@@ -9,8 +9,9 @@ export async function POST(req: Request) {
     return await handleRegister(req);
   } catch (err) {
     console.error("register error", err);
+    const e = err as { code?: string; message?: string };
     return NextResponse.json(
-      { error: "Datenbankfehler. Sind die Tabellen angelegt und DATABASE_URL korrekt?" },
+      { error: `DB-Fehler [${e?.code ?? "?"}]: ${(e?.message ?? String(err)).slice(0, 300)}` },
       { status: 500 }
     );
   }

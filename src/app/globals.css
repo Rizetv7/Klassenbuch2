@@ -3,121 +3,240 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Plus Jakarta Sans", "Nunito", system-ui, sans-serif;
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-hand: "Caveat", cursive;
+  --ink: #09070c;
+  --muted: rgba(9, 7, 12, 0.58);
+  --glass: rgba(255, 255, 255, 0.16);
+  --glass-strong: rgba(255, 255, 255, 0.28);
+  --glass-line: rgba(255, 255, 255, 0.46);
+  --pink-shadow: rgba(255, 47, 191, 0.16);
+  --cyan-shadow: rgba(40, 217, 242, 0.15);
+}
+
+html {
+  background: #ff6ad5;
 }
 
 body {
   color: theme("colors.ink");
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
+  background: transparent;
 }
 
-/* Static candy-pastel fallback (shown only if WebGL/canvas is unavailable).
-   The animated <LiquidBackground/> canvas sits above this at z-index -2. */
+/* Static fallback behind the WebGL canvas. No objects or UI elements here. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -3;
   background:
-    radial-gradient(55% 45% at 12% 12%, #28d9f2 0%, transparent 60%),
-    radial-gradient(50% 45% at 90% 10%, #ffc4a3 0%, transparent 60%),
-    radial-gradient(45% 40% at 50% 50%, #b9a7ff 0%, transparent 62%),
-    radial-gradient(70% 55% at 50% 100%, #ff2fbf 0%, transparent 60%),
-    radial-gradient(45% 45% at 16% 92%, #ec35d6 0%, transparent 60%),
-    linear-gradient(160deg, #cfe9f7 0%, #e9c8ee 45%, #ff62c2 100%);
+    radial-gradient(92% 82% at -8% 10%, #28d9f2 0%, #72eadf 36%, rgba(114, 234, 223, 0.56) 58%, transparent 82%),
+    radial-gradient(86% 76% at 108% 8%, #f8f1df 0%, #ffd2a1 36%, rgba(255, 196, 163, 0.70) 58%, transparent 84%),
+    radial-gradient(62% 60% at 52% 42%, rgba(248, 241, 223, 0.88) 0%, #b9a7ff 42%, rgba(255, 106, 213, 0.58) 72%, transparent 86%),
+    radial-gradient(84% 60% at 50% 104%, #ff2fbf 0%, #ec35d6 46%, rgba(255, 106, 213, 0.66) 72%, transparent 88%),
+    linear-gradient(150deg, #72eadf 0%, #f8f1df 28%, #ff6ad5 57%, #ff2fbf 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.11;
+  mix-blend-mode: soft-light;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+::selection {
+  background: rgba(255, 47, 191, 0.32);
 }
 
 @layer components {
-  /* ---- Glassy surfaces (the core design language) ---- */
-  .card {
-    @apply rounded-xl2 border border-white/60 bg-white/35 backdrop-blur-2xl;
-    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
-  }
+  .glass,
+  .card,
   .surface {
-    @apply rounded-xl2 border border-white/60 bg-white/30 backdrop-blur-2xl;
-    box-shadow: 0 10px 30px -14px rgba(80, 60, 140, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    @apply border;
+    border-color: var(--glass-line);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.31), rgba(255, 255, 255, 0.10)),
+      var(--glass);
+    box-shadow:
+      0 24px 64px -48px rgba(9, 7, 12, 0.48),
+      0 10px 34px -28px var(--pink-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.58);
+    backdrop-filter: blur(6px) saturate(1.10);
+    -webkit-backdrop-filter: blur(6px) saturate(1.10);
   }
 
-  /* ---- Buttons ---- */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  .card {
+    @apply rounded-[32px];
   }
+
+  .surface {
+    @apply rounded-full;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.40), rgba(255,255,255,0.18)),
+      rgba(255,255,255,0.16);
+  }
+
+  .glass-panel {
+    @apply glass rounded-[38px];
+  }
+
+  .glass-card {
+    @apply glass rounded-[30px];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-black transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 0 10px 28px -20px rgba(9, 7, 12, 0.55), inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+
   .btn-primary {
     @apply btn bg-ink text-white hover:bg-black;
   }
+
   .btn-accent {
-    @apply btn bg-violet text-white hover:brightness-110;
-  }
-  .btn-ghost,
-  .btn-soft {
-    @apply btn border border-white/60 bg-white/40 text-ink backdrop-blur-xl hover:bg-white/60;
+    @apply btn bg-hotpink text-white hover:brightness-105;
   }
 
-  /* ---- Form ---- */
+  .btn-soft,
+  .btn-ghost {
+    @apply btn border border-white/50 bg-white/20 text-ink hover:bg-white/35;
+    backdrop-filter: blur(5px) saturate(1.12);
+    -webkit-backdrop-filter: blur(5px) saturate(1.12);
+  }
+
   .input {
-    @apply w-full rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm outline-none backdrop-blur-xl transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/50;
+    @apply w-full rounded-[24px] border border-white/50 bg-white/25 px-5 py-3 text-sm font-bold outline-none transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/30;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.44);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
   }
+
   .label {
-    @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-ink/50;
+    @apply mb-1.5 block text-xs font-black uppercase text-ink/50;
   }
 
-  /* ---- Tabs ---- */
   .tab {
-    @apply whitespace-nowrap rounded-full border border-white/50 bg-white/30 px-3.5 py-1.5 text-sm font-bold text-ink/55 backdrop-blur-xl transition hover:text-ink;
+    @apply whitespace-nowrap rounded-full border border-white/50 bg-white/20 px-4 py-2 text-sm font-black text-ink/65 transition hover:bg-white/35 hover:text-ink;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
   }
+
   .tab-active {
-    @apply border-ink bg-ink text-white;
+    @apply border-ink bg-ink text-white shadow-soft;
   }
 
-  /* ---- Chips ---- */
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/40 px-2.5 py-1 text-xs font-bold text-ink/75 backdrop-blur-xl;
+    @apply inline-flex items-center gap-1 rounded-full border border-white/50 bg-white/20 px-3 py-1.5 text-xs font-black text-ink/75;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
   }
 
-  /* ---- Post-it (kept glassy, within the scheme) ---- */
+  .section-label {
+    @apply text-xs font-black uppercase text-ink/50;
+  }
+
+  .display {
+    @apply font-display font-extrabold text-ink;
+  }
+
+  .hero-type {
+    @apply display text-5xl leading-[0.86] sm:text-7xl lg:text-8xl;
+  }
+
+  .quote-big {
+    @apply font-display text-3xl font-black leading-[0.98] text-ink sm:text-5xl;
+  }
+
   .postit {
-    @apply rounded-sm border border-white/40 p-4 backdrop-blur-md;
-    background: rgba(196, 158, 232, 0.35);
-    box-shadow: 0 10px 24px -12px rgba(80, 60, 140, 0.4);
-    transform: rotate(-1.2deg);
-    transition: transform 0.2s ease;
+    @apply rounded-[22px] border border-white/50 bg-[#fff0a8]/80 p-5;
+    box-shadow: 0 22px 50px -34px rgba(9,7,12,0.62), inset 0 1px 0 rgba(255,255,255,0.55);
+    transform: rotate(-1.1deg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+
   .postit:nth-child(3n) {
-    background: rgba(140, 178, 240, 0.32);
-    transform: rotate(1.4deg);
+    background: rgba(185, 167, 255, 0.72);
+    transform: rotate(1.2deg);
   }
+
   .postit:nth-child(3n + 1) {
-    background: rgba(228, 158, 208, 0.32);
+    background: rgba(255, 196, 163, 0.74);
     transform: rotate(-0.6deg);
   }
+
   .postit:hover {
     transform: rotate(0deg) translateY(-2px);
+    box-shadow: 0 28px 62px -40px rgba(9,7,12,0.68);
   }
 
-  /* ---- Polaroid ---- */
   .polaroid {
-    @apply border border-white/60 bg-white/70 p-2.5 pb-5 backdrop-blur-md;
-    box-shadow: 0 12px 28px -14px rgba(80, 60, 140, 0.45);
-    transform: rotate(-1.1deg);
-    transition: transform 0.2s ease;
+    @apply rounded-[26px] border border-white/70 bg-white/80 p-2.5 pb-7;
+    box-shadow: 0 28px 70px -46px rgba(9,7,12,0.72), inset 0 1px 0 rgba(255,255,255,0.85);
+    transform: rotate(-1.4deg);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
   }
+
   .polaroid:hover {
     transform: rotate(0deg) translateY(-2px) scale(1.01);
+    box-shadow: 0 34px 76px -46px rgba(9,7,12,0.76), inset 0 1px 0 rgba(255,255,255,0.9);
   }
 
-  /* ---- Display heading ---- */
-  .display {
-    @apply font-display font-extrabold tracking-tight text-ink;
+  .post-card {
+    @apply glass-card relative overflow-hidden p-4 sm:p-5;
   }
 
-  /* ---- Big quote ---- */
-  .quote-big {
-    @apply text-[22px] font-bold leading-snug text-ink;
+  .post-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(55% 42% at 0% 0%, rgba(255,255,255,0.55), transparent 65%),
+      radial-gradient(50% 42% at 100% 100%, rgba(255,47,191,0.13), transparent 70%);
+  }
+
+  .hero-frame {
+    @apply glass-panel relative overflow-hidden;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.08)),
+      rgba(255,255,255,0.10);
+    backdrop-filter: blur(2px) saturate(1.06);
+    -webkit-backdrop-filter: blur(2px) saturate(1.06);
+  }
+
+  .hero-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(78% 52% at 10% 0%, rgba(255,255,255,0.18), transparent 66%),
+      linear-gradient(180deg, rgba(255,255,255,0.05), transparent 58%);
+  }
+
+  .project-cover {
+    @apply relative overflow-hidden rounded-[34px] border border-white/60;
+    background:
+      radial-gradient(70% 60% at 12% 18%, rgba(40,217,242,0.72), transparent 60%),
+      radial-gradient(72% 58% at 86% 10%, rgba(255,196,163,0.86), transparent 63%),
+      radial-gradient(76% 68% at 48% 100%, rgba(255,47,191,0.95), transparent 72%),
+      rgba(255,255,255,0.28);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+  }
+
+  .soft-divider {
+    @apply border-t border-white/40;
   }
 }
 

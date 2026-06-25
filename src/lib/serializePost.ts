@@ -9,7 +9,9 @@ export async function serializePosts(postIds: string[], viewerId: string) {
     include: {
       author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
       class: { select: { id: true, name: true } },
-      subject: { select: { id: true, displayName: true, memberType: true } },
+      subject: { select: { id: true, displayName: true, memberType: true, user: { select: { avatarUrl: true, accentColor: true } } } },
+      teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
+      topic: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId: viewerId }, select: { id: true } },
     },
@@ -26,11 +28,24 @@ export async function serializePosts(postIds: string[], viewerId: string) {
       kind: p.kind,
       text: p.text,
       context: p.context,
+      saidByName: p.saidByName,
+      anonymous: p.anonymous,
       imageUrl: p.imageUrl,
       createdAt: p.createdAt,
-      author: p.author,
+      // hide the author entirely for anonymous posts
+      author: p.anonymous ? null : { id: p.author.id, name: p.author.name, avatarUrl: p.author.avatarUrl, accentColor: p.author.accentColor },
       class: p.class,
-      subject: p.subject,
+      subject: p.subject
+        ? {
+            id: p.subject.id,
+            displayName: p.subject.displayName,
+            memberType: p.subject.memberType,
+            avatarUrl: p.subject.user.avatarUrl,
+            accentColor: p.subject.user.accentColor,
+          }
+        : null,
+      teacher: p.teacher,
+      topic: p.topic,
       likeCount: p._count.likes,
       commentCount: p._count.comments,
       likedByMe: p.likes.length > 0,

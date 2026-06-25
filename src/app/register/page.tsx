@@ -38,11 +38,12 @@ export default function RegisterPage() {
   return (
     <div className="min-h-[80vh] flex flex-col justify-center max-w-sm mx-auto">
       <div className="text-center mb-6">
-        <h1 className="display text-4xl">Willkommen!</h1>
-        <p className="text-muted text-sm">Erstelle dein Profil in 10 Sekunden</p>
+        <p className="section-label mb-2">Neues Profil</p>
+        <h1 className="display text-6xl leading-[0.86]">Willkommen!</h1>
+        <p className="text-muted text-sm font-bold">Erstelle dein Profil in 10 Sekunden</p>
       </div>
 
-      <form onSubmit={submit} className="card p-6 space-y-3">
+      <form onSubmit={submit} className="glass-panel p-6 space-y-3">
         <div>
           <label className="label">Dein Name</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Isai Graf" required />
@@ -52,7 +53,7 @@ export default function RegisterPage() {
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           <p className="text-xs text-muted mt-1">Mindestens 6 Zeichen.</p>
         </div>
-        {error && <p className="text-sm text-coral font-bold">{error}</p>}
+        {error && <p className="text-sm text-coral font-black">{error}</p>}
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Wird erstellt…" : "Los geht's"}
         </button>

@@ -20,6 +20,8 @@ export async function GET(req: Request) {
   const sort = url.searchParams.get("sort"); // "popular" | "recent"
   const random = url.searchParams.get("random"); // "1" -> a single random post
   const subjectMembershipId = url.searchParams.get("subjectMembershipId");
+  const teacherId = url.searchParams.get("teacherId");
+  const topicId = url.searchParams.get("topicId");
   const limit = Math.min(Number(url.searchParams.get("limit")) || 30, 100);
 
   const where: Record<string, unknown> = {};
@@ -39,9 +41,10 @@ export async function GET(req: Request) {
     where.classId = { in: memberships.map((m) => m.classId) };
   }
 
-  if (board === "YEARBOOK" || board === "POSTIT") where.board = board;
   if (kind === "QUOTE" || kind === "IMAGE" || kind === "TEXT") where.kind = kind;
   if (subjectMembershipId) where.subjectMembershipId = subjectMembershipId;
+  if (teacherId) where.teacherId = teacherId;
+  if (topicId) where.topicId = topicId;
 
   // Random "memory of the day": pick one random matching post.
   if (random === "1") {
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { classId, board, kind, text, context, imageUrl, subjectMembershipId } = body;
+  const { classId, kind, text, context, saidByName, anonymous, imageUrl, subjectMembershipId, teacherId, topicId } = body;
 
   if (!classId) return NextResponse.json({ error: "classId fehlt." }, { status: 400 });
 
@@ -83,7 +86,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Du bist kein Mitglied dieser Klasse." }, { status: 403 });
   }
 
-  const boardValue = board === "POSTIT" ? "POSTIT" : "YEARBOOK";
   const kindValue = ["QUOTE", "IMAGE", "TEXT"].includes(kind) ? kind : "QUOTE";
 
   if (kindValue === "IMAGE" && !imageUrl) {
@@ -93,29 +95,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Text fehlt." }, { status: 400 });
   }
 
-  // Yearbook posts must target a member of this class.
+  // A post targets a student (subjectMembershipId), a teacher (teacherId)
+  // or a topic/project (topicId).
   let subjectId: string | null = null;
-  if (boardValue === "YEARBOOK") {
-    if (!subjectMembershipId) {
-      return NextResponse.json({ error: "Bitte eine Person auswählen." }, { status: 400 });
-    }
+  let teachId: string | null = null;
+  let topId: string | null = null;
+  if (subjectMembershipId) {
     const subject = await prisma.membership.findUnique({ where: { id: subjectMembershipId } });
     if (!subject || subject.classId !== classId) {
-      return NextResponse.json({ error: "Ausgewählte Person gehört nicht zur Klasse." }, { status: 400 });
+      return NextResponse.json({ error: "Person gehört nicht zur Klasse." }, { status: 400 });
     }
     subjectId = subject.id;
+  } else if (teacherId) {
+    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+    if (!teacher || teacher.classId !== classId) {
+      return NextResponse.json({ error: "Lehrperson gehört nicht zur Klasse." }, { status: 400 });
+    }
+    teachId = teacher.id;
+  } else if (topicId) {
+    const topic = await prisma.topic.findUnique({ where: { id: topicId } });
+    if (!topic || topic.classId !== classId) {
+      return NextResponse.json({ error: "Projekt gehört nicht zur Klasse." }, { status: 400 });
+    }
+    topId = topic.id;
+  } else {
+    return NextResponse.json({ error: "Ziel fehlt." }, { status: 400 });
   }
 
   const post = await prisma.post.create({
     data: {
       classId,
       authorId: userId,
-      board: boardValue,
+      board: topId ? "TOPIC" : "YEARBOOK",
       kind: kindValue,
       text: text ? String(text).trim() : null,
       context: context ? String(context).trim() : null,
+      saidByName: saidByName ? String(saidByName).trim() : null,
+      anonymous: !!anonymous,
       imageUrl: imageUrl || null,
       subjectMembershipId: subjectId,
+      teacherId: teachId,
+      topicId: topId,
     },
   });
 
