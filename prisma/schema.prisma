@@ -1,0 +1,106 @@
+// Prisma schema for the Klassenbuch app.
+//
+// Local development uses SQLite (zero setup). For production switch the
+// provider to "postgresql" and point DATABASE_URL at a managed Postgres
+// (Supabase / Neon / Railway). The models below work with both.
+//
+// NOTE: SQLite has no native enums, so role / memberType / board / kind are
+// stored as plain strings. Allowed values are documented next to each field.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  memberships Membership[]
+  posts       Post[]       @relation("PostAuthor")
+  comments    Comment[]
+  likes       Like[]
+  ownedClasses Class[]     @relation("ClassOwner")
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  joinCode    String   @unique
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  posts       Post[]
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  userId      String
+  classId     String
+  role        String   @default("MEMBER")  // OWNER | MODERATOR | MEMBER
+  memberType  String   @default("STUDENT") // STUDENT | TEACHER
+  displayName String                       // name shown inside this class
+  createdAt   DateTime @default(now())
+
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  // Posts where this membership is the "subject" (whose yearbook page it is on)
+  subjectPosts Post[] @relation("PostSubject")
+
+  @@unique([userId, classId])
+}
+
+model Post {
+  id                 String   @id @default(cuid())
+  classId            String
+  authorId           String
+  subjectMembershipId String?  // person the post is about (yearbook). null for post-it board
+  board              String   @default("YEARBOOK") // YEARBOOK | POSTIT
+  kind               String   @default("QUOTE")    // QUOTE | IMAGE | TEXT
+  text               String?
+  imageUrl           String?
+  createdAt          DateTime @default(now())
+
+  class    Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  author   User        @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  subject  Membership? @relation("PostSubject", fields: [subjectMembershipId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  @@index([classId])
+  @@index([subjectMembershipId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}

@@ -1,0 +1,141 @@
+# 📓 Klassenbuch
+
+Eine einfache Website, auf der eine ganze Klasse gemeinsam Zitate, Bilder und
+Erinnerungen sammelt. Jede Person hat ihre eigene Seite (Steckbrief), auf der
+andere Zitate und Bilder posten, liken und kommentieren können. Dazu gibt es
+eine gemeinsame **Pinnwand** (Post-its & Bilder) und einen **Feed** auf der
+Startseite.
+
+Das hier ist eine **funktionstüchtige Basis** – bewusst schlicht gehalten,
+damit später leicht ein schönes Design darübergelegt werden kann.
+
+## Funktionen
+
+- **Konten:** Registrieren, Anmelden, Profil + Profilbild
+- **Klassen:** erstellen (mit Beitritts-Code), beitreten, moderieren
+- **Mitglieder:** Schüler:innen & Lehrer:innen werden automatisch gelistet,
+  sobald sie der Klasse beitreten
+- **Steckbrief pro Person:** Zitate & Bilder, die andere über die Person posten
+- **Pinnwand:** Notizen (Post-its) und Bilder für die ganze Klasse
+- **Interaktion:** Liken & Kommentieren
+- **Feed:** Startseite zeigt die neuesten Beiträge aus allen deinen Klassen
+- **Moderation:** Ersteller:in (👑) kann moderieren, Mitglieder zu
+  Moderator:innen (🛡️) machen, Mitglieder/Beiträge entfernen, Klasse löschen
+
+## Technik
+
+- **Next.js 14** (App Router) + **TypeScript** + **Tailwind CSS**
+- **Prisma** ORM – lokal **SQLite** (kein Setup), Produktion **PostgreSQL**
+- Eigene **Login-Logik** (E-Mail + Passwort, `bcrypt`, JWT im httpOnly-Cookie) –
+  kein externer Dienst nötig
+
+## Lokal starten
+
+```bash
+npm install            # Abhängigkeiten installieren
+cp .env.example .env   # .env anlegen (Standardwerte reichen für lokal)
+npm run db:push        # SQLite-Datenbank anlegen
+npm run dev            # http://localhost:3000
+```
+
+Nützliche Befehle:
+
+```bash
+npm run db:studio      # Daten im Browser ansehen (Prisma Studio)
+npm run build          # Produktions-Build
+npm start              # Produktionsserver
+```
+
+## Projektstruktur
+
+```
+prisma/schema.prisma        Datenmodell (User, Class, Membership, Post, Comment, Like)
+src/lib/                     DB-Client, Auth, Berechtigungen, Helfer
+src/app/api/                 Backend (REST-Endpunkte)
+src/app/                     Seiten (Feed, Login, Klassen, Steckbrief, Pinnwand, Profil)
+src/components/              UI-Bausteine (Nav, PostCard, CreatePost)
+```
+
+---
+
+## 🌐 Kostenlos online stellen – mit Datensicherheit
+
+Wichtig zu verstehen: SQLite (die lokale Datei `dev.db`) eignet sich **nur für
+die Entwicklung**. Beim Hosten auf modernen Plattformen wird das Dateisystem
+nach jedem Deploy zurückgesetzt – die Daten wären weg. Für den echten Betrieb
+brauchst du:
+
+1. eine **gehostete Datenbank** (PostgreSQL) mit Backups, und
+2. einen **Speicher für Bilder** (Object Storage), denn hochgeladene Dateien
+   dürfen ebenfalls nicht im Webserver-Dateisystem liegen.
+
+### Empfohlene, kostenlose Kombination (mit Backups)
+
+| Baustein            | Dienst (Gratis-Tarif)        | Wofür                          |
+| ------------------- | ---------------------------- | ------------------------------ |
+| Webseite (Hosting)  | **Vercel**                   | Next.js läuft hier nativel     |
+| Datenbank           | **Supabase** oder **Neon**   | PostgreSQL mit Backups         |
+| Bild-Speicher       | **Supabase Storage** / **Cloudflare R2** | Profilbilder & Foto-Uploads |
+
+Alle drei haben dauerhaft kostenlose Tarife, die für eine Schulklasse locker
+reichen. **Supabase** ist besonders praktisch, weil es Datenbank *und*
+Bild-Speicher in einem Konto bündelt und automatische Backups macht – so gehen
+keine Daten verloren.
+
+### Schritte zum Deployen (Variante Vercel + Supabase)
+
+1. **Datenbank anlegen:** Bei [supabase.com](https://supabase.com) ein Projekt
+   erstellen → unter *Project Settings → Database* die *Connection String*
+   (URI) kopieren.
+2. **Auf PostgreSQL umstellen:** in `prisma/schema.prisma`
+   ```prisma
+   datasource db {
+     provider = "postgresql"   // vorher: "sqlite"
+     url      = env("DATABASE_URL")
+   }
+   ```
+3. **Code zu GitHub pushen** (ist bereits passiert, wenn du das hier liest 🙂).
+4. **Bei [vercel.com](https://vercel.com)** mit GitHub anmelden → Repository
+   importieren. Unter *Environment Variables* setzen:
+   - `DATABASE_URL` = der Supabase-Connection-String
+   - `AUTH_SECRET` = ein langer Zufallswert (`openssl rand -base64 32`)
+5. **Deploy starten.** Danach einmalig das Schema in die Produktions-DB
+   schreiben – am einfachsten lokal mit gesetzter Produktions-`DATABASE_URL`:
+   ```bash
+   npx prisma db push
+   ```
+6. **Bild-Uploads produktionsfest machen:** Die Datei
+   `src/app/api/upload/route.ts` schreibt Bilder aktuell ins lokale
+   Verzeichnis `public/uploads` (nur für Entwicklung gedacht). Für die
+   Produktion dort stattdessen zu **Supabase Storage** (oder Cloudflare R2)
+   hochladen und die zurückgegebene URL speichern. Der Rest der App bleibt
+   unverändert, weil überall nur `imageUrl` gespeichert wird.
+
+### Datensicherheit / kein Datenverlust
+
+- **Automatische Backups:** Supabase und Neon sichern die Datenbank
+  regelmäßig. Zusätzlich kannst du jederzeit selbst exportieren:
+  ```bash
+  pg_dump "$DATABASE_URL" > backup.sql
+  ```
+- **Bilder** liegen im Object Storage (eigene Versionierung/Backups je nach
+  Dienst) – nicht auf dem flüchtigen Webserver.
+- **Passwörter** werden nie im Klartext gespeichert, sondern als `bcrypt`-Hash.
+- **`AUTH_SECRET`** geheim halten und nur als Umgebungsvariable setzen –
+  niemals in den Code committen.
+
+### Alternativen
+
+- **Netlify** statt Vercel (ebenfalls gratis, Next.js wird unterstützt).
+- **Railway** oder **Render**: bieten App-Hosting *und* PostgreSQL aus einer
+  Hand (kleiner Gratis-/Trial-Tarif). Etwas einfacher, weil alles an einem Ort.
+
+---
+
+## Nächste Schritte (Ideen)
+
+- Schönes Design über die vorhandenen `.card`/`.btn`-Bausteine in
+  `globals.css` legen
+- Bild-Upload auf Object Storage umstellen (siehe oben)
+- E-Mail-Bestätigung / Passwort-zurücksetzen
+- Benachrichtigungen bei neuen Likes/Kommentaren
