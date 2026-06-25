@@ -132,6 +132,34 @@ keine Daten verloren.
 
 ---
 
+## Backups (automatisch, kostenlos)
+
+Der kostenlose Supabase-Tarif macht **keine** automatischen Backups. Dieses
+Repo enthält dafür einen fertigen GitHub-Action-Workflow
+(`.github/workflows/backup.yml`), der die Datenbank **wöchentlich** (und auf
+Knopfdruck) sichert und als herunterladbare Datei ablegt.
+
+Einmalig aktivieren:
+
+1. In Supabase: **Connect → ORM → Prisma** die `DIRECT_URL` (Port 5432) kopieren
+   und `[YOUR-PASSWORD]` durch dein Datenbank-Passwort ersetzen.
+2. In GitHub: **Settings → Secrets and variables → Actions → New repository
+   secret** anlegen:
+   - Name: `BACKUP_DATABASE_URL`
+   - Wert: die fertige `DIRECT_URL`
+3. Der Workflow läuft danach jeden Sonntag automatisch. Manuell auslösen:
+   Reiter **Actions → „Datenbank-Backup" → „Run workflow"**.
+
+> Geplante (wöchentliche) Läufe funktionieren nur vom **Standard-Branch**
+> (`main`). Der Branch muss also nach `main` gemergt sein.
+
+Die fertige Backup-Datei findest du unter **Actions → der jeweilige Lauf →
+Artifacts** (90 Tage abrufbar). Wiederherstellen geht mit:
+
+```bash
+gunzip -c backup_DATUM.sql.gz | psql "$DIRECT_URL"
+```
+
 ## Nächste Schritte (Ideen)
 
 - Schönes Design über die vorhandenen `.card`/`.btn`-Bausteine in
