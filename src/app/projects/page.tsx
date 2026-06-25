@@ -22,7 +22,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-hand text-4xl">🎨 Projekte</h1>
+        <h1 className="display text-4xl">🎨 Projekte</h1>
         <p className="text-muted text-sm">Kreative Boards eurer Klasse — Pinnwand, Foto-Album & Zitate-Wand.</p>
       </header>
 

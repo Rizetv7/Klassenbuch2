@@ -32,7 +32,7 @@ export default function HomePage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
         <div className="text-6xl mb-3">📓</div>
-        <h1 className="font-hand text-5xl mb-2">Klassenbuch</h1>
+        <h1 className="display text-5xl mb-2">Klassenbuch</h1>
         <p className="text-muted max-w-xs mb-6">
           Sammelt eure besten Zitate, Bilder und Momente — als gemeinsames Erinnerungsbuch der Klasse.
         </p>
@@ -47,7 +47,7 @@ export default function HomePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-hand text-4xl">Hey {me.name.split(" ")[0]} 👋</h1>
+        <h1 className="display text-4xl">Hey {me.name.split(" ")[0]} 👋</h1>
         <p className="text-muted text-sm">Was ist heute neu in der Klasse?</p>
       </header>
 

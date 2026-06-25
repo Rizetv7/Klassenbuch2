@@ -6,18 +6,19 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
         hand: ["var(--font-hand)", "cursive"],
       },
       colors: {
         cream: "#FBF6EC",
         paper: "#F0E5D2",
-        ink: "#2A2722",
-        muted: "#857F74",
-        // saturated accent palette
+        ink: "#211F2A",
+        muted: "#6B6675",
+        // saturated accent palette (avatar rings, stickers)
         butter: "#FFC93C",
         sky: "#6FC5EC",
         sage: "#6FCB87",
-        coral: "#F46B4E",
+        coral: "#F23DA0",
         lilac: "#B68CF0",
         brand: {
           50: "#fff7ed",

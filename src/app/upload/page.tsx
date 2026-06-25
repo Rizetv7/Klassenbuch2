@@ -55,7 +55,7 @@ export default function UploadPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-hand text-4xl">＋ Hochladen</h1>
+        <h1 className="display text-4xl">＋ Hochladen</h1>
         <p className="text-muted text-sm">Teile eine Erinnerung mit der Klasse.</p>
       </header>
 

@@ -67,7 +67,7 @@ export default function ClassesPage() {
     <div className="space-y-6">
       {/* Join — prominent */}
       <section className="card p-5 text-center">
-        <h1 className="font-hand text-3xl mb-1">Tritt deiner Klasse bei</h1>
+        <h1 className="display text-3xl mb-1">Tritt deiner Klasse bei</h1>
         <p className="text-muted text-sm mb-4">Gib den Code ein, den du bekommen hast.</p>
         <form onSubmit={join} className="space-y-3">
           <input

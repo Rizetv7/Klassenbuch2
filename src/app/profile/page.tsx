@@ -68,7 +68,7 @@ export default function ProfilePage() {
           <span className="absolute -bottom-1 -right-1 bg-ink text-cream rounded-full w-8 h-8 grid place-items-center text-sm">✎</span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
         </label>
-        <h1 className="font-hand text-4xl mt-3">{name}</h1>
+        <h1 className="display text-4xl mt-3">{name}</h1>
         {msg && <p className="text-sm text-muted mt-1">{msg}</p>}
       </div>
 

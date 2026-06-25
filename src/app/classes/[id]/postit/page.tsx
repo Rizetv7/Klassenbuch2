@@ -28,7 +28,7 @@ export default function PostitBoardPage() {
     <div className="space-y-4">
       <Link href={`/classes/${id}`} className="text-sm text-muted">← {className}</Link>
       <header>
-        <h1 className="font-hand text-4xl">📌 Pinnwand</h1>
+        <h1 className="display text-4xl">📌 Pinnwand</h1>
         <p className="text-muted text-sm">Notizen, Insider & Sprüche für alle — wie Post-its an der Wand.</p>
       </header>
 

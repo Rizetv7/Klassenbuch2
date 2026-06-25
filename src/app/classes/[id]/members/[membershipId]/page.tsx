@@ -49,7 +49,7 @@ export default function MemberPage() {
       {/* Hero */}
       <div className="card p-6 flex flex-col items-center text-center">
         <Avatar name={member.displayName} url={member.avatarUrl} accent={member.accentColor || (isTeacher ? "#FFD479" : null)} size={96} />
-        <h1 className="font-hand text-4xl mt-3">{member.displayName}</h1>
+        <h1 className="display text-4xl mt-3">{member.displayName}</h1>
         <p className="text-muted text-sm">{isTeacher ? "🧑‍🏫 Lehrperson" : "🎓 Schüler:in"} · {posts.length} Beiträge</p>
       </div>
 

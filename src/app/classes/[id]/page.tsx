@@ -83,7 +83,7 @@ export default function ClassPage() {
         <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-butter/50" />
         <div className="absolute right-10 top-10 w-16 h-16 rounded-full bg-sky/40" />
         <div className="relative">
-          <h1 className="font-hand text-4xl">{data.name}</h1>
+          <h1 className="display text-4xl">{data.name}</h1>
           {data.school && <p className="text-muted text-sm">{data.school}{data.gradYear ? ` · ${data.gradYear}` : ""}</p>}
           <div className="flex gap-2 mt-3 flex-wrap text-xs">
             <span className="chip">🎓 {data.counts.students} Schüler</span>
