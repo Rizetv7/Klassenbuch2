@@ -3,11 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar } from "@/components/Nav";
-import { IconPencil } from "@/components/Icons";
 import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
-import { uploadImageFile } from "@/lib/uploadImage";
+import { ProfileImagePicker } from "@/components/ProfileImagePicker";
 
 type Teacher = {
   id: string;
@@ -18,7 +16,7 @@ type Teacher = {
   className: string;
 };
 
-const TABS = ["Alle", "Zitate", "Bilder"] as const;
+const TABS = ["Alle", "Zitate", "Bilder", "Post-its"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function TeacherPage() {
@@ -46,16 +44,14 @@ export default function TeacherPage() {
     })();
   }, [id, teacherId]);
 
-  async function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = await uploadImageFile(file).catch(() => null);
-    if (!url) return;
-    await fetch(`/api/teachers/${teacherId}`, {
+  async function updateAvatar(url: string | null) {
+    const res = await fetch(`/api/teachers/${teacherId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ avatarUrl: url }),
     });
+    const d = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(d?.error || "Profilbild konnte nicht gespeichert werden.");
     setTeacher((t) => (t ? { ...t, avatarUrl: url } : t));
   }
 
@@ -68,7 +64,11 @@ export default function TeacherPage() {
   if (loading) return <p className="text-muted">Lädt…</p>;
   if (!teacher) return <p className="text-coral font-bold">Lehrperson nicht gefunden.</p>;
 
-  const shown = posts.filter((p) => (tab === "Alle" ? true : tab === "Zitate" ? p.kind === "QUOTE" : p.kind === "IMAGE"));
+  const cover = posts.find((p) => p.imageUrl);
+  const imageUrls = Array.from(new Set(posts.map((p) => p.imageUrl).filter(Boolean) as string[]));
+  const shown = posts.filter((p) => (
+    tab === "Alle" ? true : tab === "Zitate" ? p.kind === "QUOTE" : tab === "Bilder" ? p.kind === "IMAGE" : p.kind === "TEXT"
+  ));
 
   return (
     <div className="space-y-4">
@@ -76,13 +76,14 @@ export default function TeacherPage() {
 
       {/* Hero */}
       <div className="card p-6 flex flex-col items-center text-center">
-        <label className="cursor-pointer relative">
-          <Avatar name={teacher.name} url={teacher.avatarUrl} accent={teacher.accentColor} size={96} />
-          <span className="absolute -bottom-1 -right-1 bg-ink text-white rounded-full w-8 h-8 grid place-items-center">
-            <IconPencil size={16} />
-          </span>
-          <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
-        </label>
+        <ProfileImagePicker
+          name={teacher.name}
+          accent={teacher.accentColor}
+          manualUrl={teacher.avatarUrl}
+          fallbackUrl={cover?.imageUrl ?? null}
+          images={imageUrls}
+          onChange={updateAvatar}
+        />
         <h1 className="display text-4xl mt-3">{teacher.name}</h1>
         <p className="text-muted text-sm">{teacher.subject ? `${teacher.subject} · ` : ""}Lehrperson · {posts.length} Beiträge</p>
         <button onClick={deleteTeacher} className="text-xs text-coral underline mt-2">Lehrperson löschen</button>
@@ -90,7 +91,7 @@ export default function TeacherPage() {
 
       {/* Add */}
       {!showAdd ? (
-        <button onClick={() => setShowAdd(true)} className="btn-accent w-full">Zitat / Bild hinzufügen</button>
+        <button onClick={() => setShowAdd(true)} className="btn-accent w-full">Zitat / Bild / Post-it hinzufügen</button>
       ) : (
         <div className="space-y-2">
           <CreatePost classId={id} teacherId={teacherId} onCreated={(p) => { setPosts((ps) => [p, ...ps]); setShowAdd(false); }} />
