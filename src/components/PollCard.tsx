@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "./Nav";
 
 export type Poll = {
@@ -36,53 +36,24 @@ export function PollCard({
   onVoted?: (poll: Poll) => void;
 }) {
   const [selected, setSelected] = useState<string[]>(poll.selectedOptionIds);
-  const [syncStatus, setSyncStatus] = useState<"idle" | "waiting" | "syncing">("idle");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [pulseOptionId, setPulseOptionId] = useState<string | null>(null);
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const syncVersion = useRef(0);
 
   useEffect(() => {
     setSelected(poll.selectedOptionIds);
     setError("");
-    setSyncStatus("idle");
   }, [poll.id, poll.selectedOptionIds.join("|")]);
 
-  useEffect(() => {
-    return () => {
-      if (syncTimer.current) clearTimeout(syncTimer.current);
-    };
-  }, []);
-
-  const optimisticTotalVotes = poll.totalVotes + (poll.selectedOptionIds.length === 0 && selected.length > 0 ? 1 : 0);
-  const optimisticOptions = useMemo(() => {
-    const saved = new Set(poll.selectedOptionIds);
-    const local = new Set(selected);
-    return poll.options.map((option) => {
-      const count = Math.max(0, option.count - (saved.has(option.id) ? 1 : 0) + (local.has(option.id) ? 1 : 0));
-      return {
-        ...option,
-        count,
-        percent: optimisticTotalVotes > 0 ? Math.round((count / optimisticTotalVotes) * 100) : 0,
-        selectedByMe: local.has(option.id),
-      };
-    });
-  }, [optimisticTotalVotes, poll.options, poll.selectedOptionIds, selected]);
-  const optimisticLeader = useMemo(() => {
-    let leader: (typeof optimisticOptions)[number] | null = null;
-    for (const option of optimisticOptions) {
-      if (!leader || option.count > leader.count) leader = option;
-    }
-    return leader && leader.count > 0
-      ? { id: leader.id, text: leader.text, count: leader.count, percent: leader.percent }
-      : null;
-  }, [optimisticOptions]);
-  const showResults = poll.votedByMe || optimisticTotalVotes > 0;
-  const originalIndex = useMemo(() => new Map(optimisticOptions.map((option, index) => [option.id, index])), [optimisticOptions]);
+  const selectedKey = useMemo(() => [...selected].sort().join("|"), [selected]);
+  const savedKey = useMemo(() => [...poll.selectedOptionIds].sort().join("|"), [poll.selectedOptionIds]);
+  const changed = selectedKey !== savedKey;
+  const showResults = poll.votedByMe || poll.totalVotes > 0;
+  const originalIndex = useMemo(() => new Map(poll.options.map((option, index) => [option.id, index])), [poll.options]);
   const displayedOptions = useMemo(() => {
-    if (!showResults) return optimisticOptions;
-    return [...optimisticOptions].sort((a, b) => b.count - a.count || (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0));
-  }, [optimisticOptions, originalIndex, showResults]);
+    if (!showResults) return poll.options;
+    return [...poll.options].sort((a, b) => b.count - a.count || (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0));
+  }, [originalIndex, poll.options, showResults]);
 
   function nextSelection(optionId: string) {
     if (!poll.multipleChoice) return [optionId];
@@ -91,37 +62,26 @@ export function PollCard({
     return selected.filter((id) => id !== optionId);
   }
 
-  function vote(optionId: string) {
+  function choose(optionId: string) {
     const optionIds = nextSelection(optionId);
     if (optionIds.length === 0) return;
     setError("");
     setSelected(optionIds);
     setPulseOptionId(optionId);
-    scheduleSync(optionIds);
     window.setTimeout(() => setPulseOptionId(null), 520);
   }
 
-  function scheduleSync(optionIds: string[]) {
-    syncVersion.current += 1;
-    const version = syncVersion.current;
-    if (syncTimer.current) clearTimeout(syncTimer.current);
-    setSyncStatus("waiting");
-    syncTimer.current = setTimeout(() => {
-      syncTimer.current = null;
-      void syncVote(optionIds, version);
-    }, 1300);
-  }
-
-  async function syncVote(optionIds: string[], version: number) {
-    setSyncStatus("syncing");
+  async function submitVote() {
+    if (selected.length === 0 || busy) return;
+    setBusy(true);
+    setError("");
     const res = await fetch(`/api/polls/${poll.id}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ optionIds }),
+      body: JSON.stringify({ optionIds: selected }),
     });
     const d = await res.json().catch(() => null);
-    if (version !== syncVersion.current) return;
-    setSyncStatus("idle");
+    setBusy(false);
     if (res.ok) {
       setSelected(d.poll.selectedOptionIds);
       onVoted?.(d.poll);
@@ -138,7 +98,7 @@ export function PollCard({
           <span className="chip">{poll.class.name}</span>
           <span className="chip">{poll.multipleChoice ? "Mehrfachauswahl" : "Einfachauswahl"}</span>
           {poll.anonymous ? <span className="chip">Stimmen anonym</span> : <span className="chip">Stimmen sichtbar</span>}
-          {optimisticLeader && showResults && <span className="chip animate-pop">Gewinnt: {optimisticLeader.text}</span>}
+          {poll.leader && showResults && <span className="chip animate-pop">Gewinnt: {poll.leader.text}</span>}
         </div>
 
         <h2 className={`display break-words leading-[0.9] ${featured ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}>
@@ -153,12 +113,12 @@ export function PollCard({
         <div className="mt-5 space-y-2.5">
           {displayedOptions.map((option) => {
             const picked = selected.includes(option.id);
-            const winner = optimisticLeader?.id === option.id && showResults;
+            const winner = poll.leader?.id === option.id && showResults;
             return (
               <button
                 key={option.id}
                 type="button"
-                onClick={() => vote(option.id)}
+                onClick={() => choose(option.id)}
                 className={`relative w-full overflow-hidden rounded-[24px] border px-4 py-3 text-left transition-all duration-300 active:scale-[0.99] ${
                   picked ? "border-ink bg-white/42" : "border-white/45 bg-white/18 hover:bg-white/30"
                 } ${winner ? "poll-option-winner" : ""} ${pulseOptionId === option.id ? "vote-pop" : ""}`}
@@ -206,14 +166,20 @@ export function PollCard({
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-black text-ink/50">
-            {syncStatus === "waiting"
-              ? "Lokal ausgewählt..."
-              : syncStatus === "syncing"
-                ? "Synchronisiert..."
-                : poll.votedByMe
-                  ? "Du hast abgestimmt"
-                  : "Tippe auf eine Antwort"} · {optimisticTotalVotes} Person{optimisticTotalVotes === 1 ? "" : "en"}
+            {busy
+              ? "Speichert..."
+              : poll.votedByMe
+                ? changed ? "Änderung noch nicht abgegeben" : "Du hast abgestimmt"
+                : selected.length > 0 ? "Auswahl bereit" : "Wähle eine Antwort"} · {poll.totalVotes} Person{poll.totalVotes === 1 ? "" : "en"}
           </p>
+          <button
+            type="button"
+            onClick={submitVote}
+            className="btn-accent"
+            disabled={busy || selected.length === 0 || (poll.votedByMe && !changed)}
+          >
+            {busy ? "Speichert..." : poll.votedByMe ? (changed ? "Stimme ändern" : "Abgegeben") : "Umfrage abgeben"}
+          </button>
         </div>
         {error && <p className="mt-2 text-sm font-black text-coral">{error}</p>}
       </div>
