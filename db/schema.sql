@@ -114,6 +114,22 @@ CREATE TABLE IF NOT EXISTS "PollVote" (
     CONSTRAINT "PollVote_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "ImportItem" (
+    "id" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "rawName" TEXT NOT NULL,
+    "targetType" TEXT NOT NULL DEFAULT 'STUDENT',
+    "kind" TEXT NOT NULL DEFAULT 'QUOTE',
+    "text" TEXT,
+    "context" TEXT,
+    "imageUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ImportItem_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "User_name_key" ON "User"("name");
 
@@ -155,6 +171,12 @@ CREATE INDEX IF NOT EXISTS "PollVote_userId_idx" ON "PollVote"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "PollVote_optionId_userId_key" ON "PollVote"("optionId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ImportItem_classId_idx" ON "ImportItem"("classId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ImportItem_createdById_idx" ON "ImportItem"("createdById");
 
 -- AddForeignKey
 DO $$ BEGIN
@@ -234,4 +256,14 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- AddForeignKey
 DO $$ BEGIN
   ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;

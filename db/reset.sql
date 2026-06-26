@@ -3,7 +3,7 @@
 -- es gehen also KEINE echten Daten verloren.
 -- Supabase -> SQL Editor -> New query -> alles einfuegen -> Run.
 
-DROP TABLE IF EXISTS "PollVote", "PollOption", "Poll", "Like", "Comment", "Post", "Membership", "Class", "User" CASCADE;
+DROP TABLE IF EXISTS "ImportItem", "PollVote", "PollOption", "Poll", "Like", "Comment", "Post", "Membership", "Class", "User" CASCADE;
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -117,6 +117,22 @@ CREATE TABLE "PollVote" (
     CONSTRAINT "PollVote_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ImportItem" (
+    "id" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "rawName" TEXT NOT NULL,
+    "targetType" TEXT NOT NULL DEFAULT 'STUDENT',
+    "kind" TEXT NOT NULL DEFAULT 'QUOTE',
+    "text" TEXT,
+    "context" TEXT,
+    "imageUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ImportItem_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_name_key" ON "User"("name");
 
@@ -158,6 +174,12 @@ CREATE INDEX "PollVote_userId_idx" ON "PollVote"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PollVote_optionId_userId_key" ON "PollVote"("optionId", "userId");
+
+-- CreateIndex
+CREATE INDEX "ImportItem_classId_idx" ON "ImportItem"("classId");
+
+-- CreateIndex
+CREATE INDEX "ImportItem_createdById_idx" ON "ImportItem"("createdById");
 
 -- AddForeignKey
 ALTER TABLE "Class" ADD CONSTRAINT "Class_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -206,3 +228,9 @@ ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_optionId_fkey" FOREIGN KEY ("opt
 
 -- AddForeignKey
 ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

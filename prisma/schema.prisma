@@ -33,6 +33,7 @@ model User {
   likes       Like[]
   polls       Poll[]       @relation("PollAuthor")
   pollVotes   PollVote[]
+  importItems ImportItem[]
   ownedClasses Class[]     @relation("ClassOwner")
   topics      Topic[]      @relation("TopicCreator")
   teachers    Teacher[]    @relation("TeacherCreator")
@@ -54,6 +55,7 @@ model Class {
   topics      Topic[]
   teachers    Teacher[]
   polls       Poll[]
+  importItems ImportItem[]
 }
 
 // A teacher is NOT an account/member. Students create teacher entries inside
@@ -208,4 +210,23 @@ model PollVote {
   @@unique([optionId, userId])
   @@index([pollId, userId])
   @@index([userId])
+}
+
+model ImportItem {
+  id          String   @id @default(cuid())
+  classId     String
+  createdById String
+  rawName     String
+  targetType  String   @default("STUDENT") // STUDENT | TEACHER
+  kind        String   @default("QUOTE")   // QUOTE | TEXT | IMAGE
+  text        String?
+  context     String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator User  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([createdById])
 }
