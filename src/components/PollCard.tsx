@@ -39,6 +39,10 @@ type CandidateChoice = {
   accentColor?: string | null;
 };
 
+type DisplayOption = Poll["options"][number] & {
+  pending?: boolean;
+};
+
 export function PollCard({
   poll,
   featured = false,
@@ -75,6 +79,22 @@ export function PollCard({
     option.subjectMembershipId ? `student:${option.subjectMembershipId}` : option.teacherId ? `teacher:${option.teacherId}` : ""
   )).filter(Boolean)), [poll.options]);
   const pendingCandidateKeys = selected.filter((id) => id.startsWith("new:")).map((id) => id.slice(4));
+  const pendingOptions: DisplayOption[] = pendingCandidateKeys.map((key) => {
+    const [type, id] = key.split(":");
+    const candidate = candidates.find((item) => item.key === key);
+    return {
+      id: `new:${key}`,
+      text: candidate ? `${candidate.label}${candidate.sublabel ? ` (${candidate.sublabel})` : ""}` : id,
+      subjectMembershipId: type === "student" ? id : null,
+      teacherId: type === "teacher" ? id : null,
+      count: 0,
+      percent: 0,
+      selectedByMe: true,
+      voters: [],
+      pending: true,
+    };
+  });
+  const optionsForDisplay: DisplayOption[] = [...displayedOptions, ...pendingOptions];
   const availableCandidates = candidates.filter((candidate) => !optionTargetKeys.has(candidate.key) && !pendingCandidateKeys.includes(candidate.key));
 
   useEffect(() => {
@@ -146,8 +166,11 @@ export function PollCard({
   }
 
   function candidatePayload(id: string) {
-    const [, type, targetId] = id.split(":");
-    return type === "student" ? { subjectMembershipId: targetId } : { teacherId: targetId };
+    const key = id.startsWith("new:") ? id.slice(4) : id;
+    const [type, targetId] = key.split(":");
+    if (type === "student") return { subjectMembershipId: targetId };
+    if (type === "teacher") return { teacherId: targetId };
+    return {};
   }
 
   async function submitVote() {
@@ -210,40 +233,12 @@ export function PollCard({
           Erstellt von {poll.author?.name ?? "Unbekannt"}
         </p>
 
-        {poll.candidateType && (
-          <div className="mt-4 rounded-[24px] border border-white/45 bg-white/18 p-3">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <select className="input !py-2 text-sm" value={candidateKey} onChange={(e) => setCandidateKey(e.target.value)}>
-                <option value="">{poll.candidateType === "TEACHERS" ? "Lehrperson ins Rennen bringen" : "Schüler:in ins Rennen bringen"}</option>
-                {availableCandidates.map((candidate) => (
-                  <option key={candidate.key} value={candidate.key}>
-                    {candidate.label}{candidate.sublabel ? ` (${candidate.sublabel})` : ""}
-                  </option>
-                ))}
-              </select>
-              <button type="button" onClick={addCandidate} className="btn-soft shrink-0" disabled={!candidateKey}>
-                Hinzufügen
-              </button>
-            </div>
-            {pendingCandidateKeys.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {pendingCandidateKeys.map((key) => {
-                  const candidate = candidates.find((item) => item.key === key);
-                  return (
-                    <span key={key} className="chip bg-white/35">
-                      neu: {candidate?.label ?? key.split(":")[1]}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="mt-5 space-y-2.5">
-          {displayedOptions.map((option) => {
+          {optionsForDisplay.map((option) => {
             const picked = selected.includes(option.id);
             const winner = poll.leader?.id === option.id && showResults;
+            const targetKey = option.subjectMembershipId ? `student:${option.subjectMembershipId}` : option.teacherId ? `teacher:${option.teacherId}` : "";
+            const candidate = candidates.find((item) => item.key === targetKey);
             return (
               <button
                 key={option.id}
@@ -262,13 +257,22 @@ export function PollCard({
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-between gap-3">
-                  <span className="min-w-0 font-black leading-tight">
+                  <span className="flex min-w-0 items-center font-black leading-tight">
                     <span className={`mr-2 inline-grid h-5 w-5 place-items-center rounded-full border text-[11px] ${picked ? "border-ink bg-ink text-white" : "border-ink/30 text-transparent"}`}>
                       ✓
                     </span>
-                    {option.text}
+                    {candidate && (
+                      <Avatar name={candidate.label} url={candidate.avatarUrl} accent={candidate.accentColor} size={24} ring={false} />
+                    )}
+                    <span className={candidate ? "ml-2 truncate" : "truncate"}>
+                      {option.text}
+                    </span>
                   </span>
-                  {showResults && (
+                  {option.pending ? (
+                    <span className="shrink-0 rounded-full bg-white/40 px-2 py-1 text-[10px] font-black text-ink/55">
+                      neu
+                    </span>
+                  ) : showResults && (
                     <span className="shrink-0 text-xs font-black text-ink/55">
                       {option.percent}% · {option.count}
                     </span>
@@ -292,12 +296,28 @@ export function PollCard({
               </button>
             );
           })}
-          {poll.candidateType && displayedOptions.length === 0 && pendingCandidateKeys.length === 0 && (
+          {poll.candidateType && optionsForDisplay.length === 0 && (
             <div className="rounded-[24px] border border-white/45 bg-white/18 p-4 text-sm font-black text-ink/55">
-              Noch niemand ist im Rennen. Wähle oben eine Person aus und gib deine Stimme ab.
+              Noch niemand ist im Rennen. Füge unten eine Person hinzu und gib deine Stimme ab.
             </div>
           )}
         </div>
+
+        {poll.candidateType && (
+          <div className="mt-3 flex flex-col gap-2 rounded-[24px] border border-white/45 bg-white/18 p-3 sm:flex-row">
+            <select className="input !py-2 text-sm" value={candidateKey} onChange={(e) => setCandidateKey(e.target.value)}>
+              <option value="">{poll.candidateType === "TEACHERS" ? "Lehrperson hinzufügen" : "Schüler:in hinzufügen"}</option>
+              {availableCandidates.map((candidate) => (
+                <option key={candidate.key} value={candidate.key}>
+                  {candidate.label}{candidate.sublabel ? ` (${candidate.sublabel})` : ""}
+                </option>
+              ))}
+            </select>
+            <button type="button" onClick={addCandidate} className="btn-soft shrink-0" disabled={!candidateKey}>
+              Ins Rennen
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-black text-ink/50">

@@ -37,6 +37,13 @@ export async function POST(
         })
         .filter((target: CandidateTarget) => target.subjectMembershipId || target.teacherId)
     : [];
+  const seenTargets = new Set<string>();
+  const uniqueCandidateTargets = candidateTargets.filter((target) => {
+    const key = target.subjectMembershipId ? `student:${target.subjectMembershipId}` : `teacher:${target.teacherId}`;
+    if (seenTargets.has(key)) return false;
+    seenTargets.add(key);
+    return true;
+  });
 
   const poll = await prisma.poll.findUnique({
     where: { id: params.pollId },
@@ -46,11 +53,11 @@ export async function POST(
 
   const membership = await getMembership(userId, poll.classId);
   if (!membership) return NextResponse.json({ error: "Du bist kein Mitglied dieser Klasse." }, { status: 403 });
-  if (!poll.candidateType && candidateTargets.length > 0) {
+  if (!poll.candidateType && uniqueCandidateTargets.length > 0) {
     return NextResponse.json({ error: "Diese Umfrage erlaubt keine Personen-Kandidaten." }, { status: 400 });
   }
-  if (optionIds.length + candidateTargets.length === 0) return NextResponse.json({ error: "Bitte eine Antwort wählen." }, { status: 400 });
-  if (!poll.multipleChoice && optionIds.length + candidateTargets.length !== 1) {
+  if (optionIds.length + uniqueCandidateTargets.length === 0) return NextResponse.json({ error: "Bitte eine Antwort wählen." }, { status: 400 });
+  if (!poll.multipleChoice && optionIds.length + uniqueCandidateTargets.length !== 1) {
     return NextResponse.json({ error: "Diese Umfrage erlaubt nur eine Antwort." }, { status: 400 });
   }
 
@@ -63,7 +70,7 @@ export async function POST(
     await prisma.$transaction(async (tx) => {
       const finalOptionIds = [...optionIds];
 
-      for (const target of candidateTargets) {
+      for (const target of uniqueCandidateTargets) {
         if (poll.candidateType === "STUDENTS") {
           const subject = target.subjectMembershipId
             ? await tx.membership.findUnique({
