@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoginCard } from "@/components/LoginCard";
+import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 
@@ -174,7 +175,8 @@ function HomeBoard({ featured, sideTiles }: { featured: Post | null; sideTiles: 
             <span className="chip bg-white/30">{featured.class.name}</span>
           </div>
           <div>
-            <h2 className="display max-w-3xl break-words text-4xl leading-[0.88] sm:text-5xl">{postHeadline(featured)}</h2>
+            <h2 className="display max-w-3xl break-words text-4xl leading-[0.88] sm:text-5xl">{homeHeadline(featured)}</h2>
+            <HomeAttribution post={featured} prominent />
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-black text-ink/60">
               <span>{featured.likeCount} Likes</span>
               <span>{featured.commentCount} Kommentare</span>
@@ -225,8 +227,9 @@ function MiniPostCard({ post, compact = false, horizontal = false }: { post: Pos
         <div>
           <p className="text-[10px] font-black uppercase text-ink/50">{postKicker(post)}</p>
           <p className={`${compact || horizontal ? "text-lg" : "text-xl"} mt-1 line-clamp-3 font-black leading-[0.98] text-ink`}>
-            {postHeadline(post)}
+            {homeHeadline(post)}
           </p>
+          <HomeAttribution post={post} compact />
         </div>
         <p className="mt-2 truncate text-[11px] font-black text-ink/50">
           {post.likeCount} ♥ · {post.commentCount} · {shortDate(post.createdAt)}
@@ -249,6 +252,9 @@ function PhotoStrip({ posts }: { posts: Post[] }) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.imageUrl!} alt="" loading="lazy" decoding="async" className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.05]" />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/72 via-ink/24 to-transparent p-2 pt-8">
+              <HomeAttribution post={p} inverted photo />
+            </div>
           </Link>
         ))}
       </div>
@@ -267,8 +273,8 @@ function QuoteStrip({ posts }: { posts: Post[] }) {
             href={postHref(p)}
             className={`postit block min-h-[104px] p-4 ${index % 2 ? "sm:mt-4" : ""}`}
           >
-            <p className="line-clamp-4 font-hand text-2xl leading-[0.96] text-ink/90">{p.text}</p>
-            <p className="mt-3 truncate text-[11px] font-black text-ink/50">{p.author?.name ?? "Anonym"}</p>
+            <p className="line-clamp-4 font-hand text-2xl leading-[0.96] text-ink/90">“{p.text}”</p>
+            <HomeAttribution post={p} compact />
           </Link>
         ))}
       </div>
@@ -302,6 +308,77 @@ function postKicker(post: Post) {
 
 function postHeadline(post: Post) {
   return post.text || post.topic?.name || post.subject?.displayName || post.teacher?.name || post.class.name;
+}
+
+function homeHeadline(post: Post) {
+  const text = postHeadline(post);
+  return post.kind === "QUOTE" && post.text ? `“${text}”` : text;
+}
+
+function targetPerson(post: Post) {
+  if (post.subject) {
+    return {
+      name: post.subject.displayName,
+      avatarUrl: post.subject.avatarUrl,
+      accentColor: post.subject.accentColor,
+      label: post.kind === "QUOTE" ? "gesagt von" : "über",
+    };
+  }
+  if (post.teacher) {
+    return {
+      name: post.teacher.name,
+      avatarUrl: post.teacher.avatarUrl,
+      accentColor: post.teacher.accentColor,
+      label: post.kind === "QUOTE" ? "gesagt von" : "über",
+    };
+  }
+  if (post.kind === "QUOTE" && post.saidByName) {
+    return { name: post.saidByName, avatarUrl: null, accentColor: null, label: "gesagt von" };
+  }
+  if (post.topic) {
+    return { name: post.topic.name, avatarUrl: null, accentColor: null, label: "aus" };
+  }
+  return {
+    name: post.author?.name ?? "Anonym",
+    avatarUrl: post.author?.avatarUrl ?? null,
+    accentColor: post.author?.accentColor ?? null,
+    label: post.kind === "QUOTE" ? "gesagt von" : "von",
+  };
+}
+
+function uploaderLabel(post: Post) {
+  return `hochgeladen von ${post.author?.name ?? "Anonym"}`;
+}
+
+function HomeAttribution({
+  post,
+  compact = false,
+  prominent = false,
+  inverted = false,
+  photo = false,
+}: {
+  post: Post;
+  compact?: boolean;
+  prominent?: boolean;
+  inverted?: boolean;
+  photo?: boolean;
+}) {
+  const target = targetPerson(post);
+  const textClass = inverted ? "text-white" : "text-ink";
+  const mutedClass = inverted ? "text-white/78" : "text-ink/52";
+  return (
+    <div className={`mt-3 flex min-w-0 items-center gap-2 ${photo ? "mt-0" : ""}`}>
+      <Avatar name={target.name} url={target.avatarUrl} accent={target.accentColor} size={prominent ? 42 : compact ? 28 : 34} ring={!inverted} />
+      <div className="min-w-0 leading-tight">
+        <p className={`${prominent ? "text-sm" : "text-[11px]"} truncate font-black ${textClass}`}>
+          {target.label} {target.name}
+        </p>
+        <p className={`truncate text-[10px] font-black ${mutedClass}`}>
+          {uploaderLabel(post)}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function shortDate(iso: string) {
