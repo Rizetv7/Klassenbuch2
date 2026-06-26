@@ -137,15 +137,14 @@ export function PollCard({
   }, [poll.candidateType, poll.class.id]);
 
   function nextSelection(optionId: string) {
+    if (!poll.multipleChoice && selected.includes(optionId)) return [];
     if (!poll.multipleChoice) return [optionId];
     if (!selected.includes(optionId)) return [...selected, optionId];
-    if (selected.length <= 1) return selected;
     return selected.filter((id) => id !== optionId);
   }
 
   function choose(optionId: string) {
     const optionIds = nextSelection(optionId);
-    if (optionIds.length === 0) return;
     setError("");
     setSelected(optionIds);
     setPulseOptionId(optionId);
@@ -174,7 +173,7 @@ export function PollCard({
   }
 
   async function submitVote() {
-    if (selected.length === 0 || busy) return;
+    if (busy || (!poll.votedByMe && selected.length === 0)) return;
     setBusy(true);
     setError("");
     const existingOptionIds = selected.filter((id) => !id.startsWith("new:"));
@@ -331,9 +330,9 @@ export function PollCard({
             type="button"
             onClick={submitVote}
             className="btn-accent"
-            disabled={busy || selected.length === 0 || (poll.votedByMe && !changed)}
+            disabled={busy || (!poll.votedByMe && selected.length === 0) || (poll.votedByMe && !changed)}
           >
-            {busy ? "Speichert..." : poll.votedByMe ? (changed ? "Stimme ändern" : "Abgegeben") : "Umfrage abgeben"}
+            {busy ? "Speichert..." : poll.votedByMe ? (changed ? (selected.length === 0 ? "Stimme zurückziehen" : "Stimme ändern") : "Abgegeben") : "Umfrage abgeben"}
           </button>
         </div>
         {error && <p className="mt-2 text-sm font-black text-coral">{error}</p>}

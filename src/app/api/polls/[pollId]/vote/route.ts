@@ -56,8 +56,8 @@ export async function POST(
   if (!poll.candidateType && uniqueCandidateTargets.length > 0) {
     return NextResponse.json({ error: "Diese Umfrage erlaubt keine Personen-Kandidaten." }, { status: 400 });
   }
-  if (optionIds.length + uniqueCandidateTargets.length === 0) return NextResponse.json({ error: "Bitte eine Antwort wählen." }, { status: 400 });
-  if (!poll.multipleChoice && optionIds.length + uniqueCandidateTargets.length !== 1) {
+  const selectionCount = optionIds.length + uniqueCandidateTargets.length;
+  if (!poll.multipleChoice && selectionCount > 1) {
     return NextResponse.json({ error: "Diese Umfrage erlaubt nur eine Antwort." }, { status: 400 });
   }
 
@@ -132,10 +132,12 @@ export async function POST(
 
       const uniqueFinalOptionIds = Array.from(new Set(finalOptionIds));
       await tx.pollVote.deleteMany({ where: { pollId: poll.id, userId } });
-      await tx.pollVote.createMany({
-        data: uniqueFinalOptionIds.map((optionId) => ({ pollId: poll.id, optionId, userId })),
-        skipDuplicates: true,
-      });
+      if (uniqueFinalOptionIds.length > 0) {
+        await tx.pollVote.createMany({
+          data: uniqueFinalOptionIds.map((optionId) => ({ pollId: poll.id, optionId, userId })),
+          skipDuplicates: true,
+        });
+      }
       await tx.$executeRawUnsafe(
         `DELETE FROM "PollOption" option
          WHERE option."pollId" = $1
