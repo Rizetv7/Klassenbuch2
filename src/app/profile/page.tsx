@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
 import { IconPencil } from "@/components/Icons";
 import { uploadImageFile } from "@/lib/uploadImage";
@@ -19,17 +20,27 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
+        if (!active) return;
         if (!d.user) return router.push("/login");
         setName(d.user.name);
         setAccent(d.user.accentColor);
         setAvatarUrl(d.user.avatarUrl);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (active) setLoading(false);
       });
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   async function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -106,7 +117,10 @@ export default function ProfilePage() {
     }
   }
 
+  if (loading) return <PageLoading />;
+
   return (
+    <PageReveal>
     <div className="space-y-4">
       <div className="hero-frame flex flex-col items-center p-6 text-center">
         <label className="cursor-pointer relative">
@@ -183,5 +197,6 @@ export default function ProfilePage() {
         <button onClick={logout} className="btn-soft flex-1 text-coral">Abmelden</button>
       </div>
     </div>
+    </PageReveal>
   );
 }

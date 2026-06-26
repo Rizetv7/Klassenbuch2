@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 
 type ClassItem = { id: string; name: string; role: string; memberCount: number; postCount: number };
 
@@ -71,11 +72,12 @@ export default function ClassesPage() {
     }
   }
 
-  if (classes === null) return <p className="text-muted">Lädt…</p>;
+  if (classes === null) return <PageLoading />;
 
   // User already in classes (more than one) -> let them pick.
   if (classes.length > 0) {
     return (
+      <PageReveal>
       <div className="space-y-6">
         <header>
           <p className="section-label mb-2">Auswahl</p>
@@ -105,11 +107,13 @@ export default function ClassesPage() {
           ))}
         </div>
       </div>
+      </PageReveal>
     );
   }
 
   // No class yet -> join or create.
   return (
+    <PageReveal>
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
       <section className="hero-frame p-5 text-center sm:p-7">
         <p className="section-label mb-2">Einladungscode</p>
@@ -152,5 +156,6 @@ export default function ClassesPage() {
         )}
       </section>
     </div>
+    </PageReveal>
   );
 }

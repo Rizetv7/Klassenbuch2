@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreatePoll } from "@/components/CreatePoll";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { PollCard, type Poll } from "@/components/PollCard";
 
 type ClassItem = { id: string; name: string };
@@ -47,9 +48,10 @@ export default function PollsPage() {
   }
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
-  if (polls === null) return <p className="text-muted">Lädt…</p>;
+  if (polls === null) return <PageLoading />;
 
   return (
+    <PageReveal>
     <div className="space-y-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -88,5 +90,6 @@ export default function PollsPage() {
         </div>
       )}
     </div>
+    </PageReveal>
   );
 }

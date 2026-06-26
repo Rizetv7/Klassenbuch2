@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { InlineLoading, PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
 
 type Member = {
@@ -53,12 +54,13 @@ export default function ClassPage() {
   }, [id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
-  if (!data) return <p className="text-muted">Lädt…</p>;
+  if (!data) return <PageLoading />;
 
   const canMod = data.myRole === "OWNER" || data.myRole === "MODERATOR";
   const students = data.members;
 
   return (
+    <PageReveal>
     <div className="space-y-6">
       {/* Banner */}
       <div className="hero-frame p-5 sm:p-7">
@@ -114,6 +116,7 @@ export default function ClassPage() {
         />
       )}
     </div>
+    </PageReveal>
   );
 }
 
@@ -163,7 +166,7 @@ function ProjectsTab({ classId }: { classId: string }) {
       </form>
 
       {topics === null ? (
-        <p className="text-muted">Lädt…</p>
+        <InlineLoading />
       ) : topics.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Projekte. Erstelle das erste!</div>
       ) : (
@@ -263,7 +266,7 @@ function TeachersTab({ classId }: { classId: string }) {
       </form>
 
       {teachers === null ? (
-        <p className="text-muted">Lädt…</p>
+        <InlineLoading />
       ) : teachers.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Lehrpersonen. Erstelle die erste!</div>
       ) : (

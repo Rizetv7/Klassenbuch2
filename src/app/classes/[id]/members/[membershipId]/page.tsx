@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
 
 type Member = { id: string; displayName: string; memberType: string; avatarUrl: string | null; manualAvatarUrl: string | null; accentColor: string | null };
@@ -35,7 +36,7 @@ export default function MemberPage() {
     })();
   }, [id, membershipId]);
 
-  if (loading) return <p className="text-muted">Lädt…</p>;
+  if (loading) return <PageLoading />;
   if (!member) return <p className="text-coral font-bold">Person nicht gefunden.</p>;
 
   const isTeacher = member.memberType === "TEACHER";
@@ -59,6 +60,7 @@ export default function MemberPage() {
   }
 
   return (
+    <PageReveal>
     <div className="space-y-6">
       <Link href={`/classes/${id}`} className="text-sm font-black text-ink/60">← {className}</Link>
 
@@ -116,5 +118,6 @@ export default function MemberPage() {
         )}
       </div>
     </div>
+    </PageReveal>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
 
 type Teacher = {
@@ -61,7 +62,7 @@ export default function TeacherPage() {
     if (res.ok) router.push(`/classes/${id}?tab=Lehrpersonen`);
   }
 
-  if (loading) return <p className="text-muted">Lädt…</p>;
+  if (loading) return <PageLoading />;
   if (!teacher) return <p className="text-coral font-bold">Lehrperson nicht gefunden.</p>;
 
   const cover = posts.find((p) => p.imageUrl);
@@ -71,6 +72,7 @@ export default function TeacherPage() {
   ));
 
   return (
+    <PageReveal>
     <div className="space-y-4">
       <Link href={`/classes/${id}?tab=Lehrpersonen`} className="text-sm text-muted">← {teacher.className}</Link>
 
@@ -117,5 +119,6 @@ export default function TeacherPage() {
         )}
       </div>
     </div>
+    </PageReveal>
   );
 }

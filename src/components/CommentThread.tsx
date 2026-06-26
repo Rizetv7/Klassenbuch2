@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { InlineLoading } from "./LoadingState";
 import { Avatar } from "./Nav";
 
 export type CommentNode = {
@@ -203,7 +204,7 @@ export function CommentThread({
   return (
     <div className="space-y-3">
       {comments === null ? (
-        <p className="text-sm text-muted">Lädt…</p>
+        <InlineLoading />
       ) : roots.length === 0 ? (
         <p className="text-sm font-bold text-ink/45">Noch keine Kommentare. Schreib den ersten!</p>
       ) : (

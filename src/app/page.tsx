@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoginCard } from "@/components/LoginCard";
 import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 
 export default function HomePage() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function HomePage() {
     })();
   }, [router]);
 
-  if (loading) return <Skeleton />;
+  if (loading) return <PageLoading />;
 
   if (!me) {
     return <LoginCard />;
@@ -129,9 +130,9 @@ export default function HomePage() {
 
 function Reveal({ order, children }: { order: number; children: React.ReactNode }) {
   return (
-    <div className="home-reveal" style={{ "--reveal-delay": `${order * 92}ms` } as CSSProperties}>
+    <PageReveal delay={order * 92}>
       {children}
-    </div>
+    </PageReveal>
   );
 }
 
@@ -307,75 +308,6 @@ function QuoteStrip({ posts }: { posts: Post[] }) {
         ))}
       </div>
     </section>
-  );
-}
-
-function Skeleton() {
-  return (
-    <div className="home-loading space-y-5">
-      <header className="space-y-3">
-        <div className="skeleton-pill h-4 w-40" />
-        <div className="skeleton-line h-14 w-64 max-w-full rounded-[28px]" />
-        <div className="skeleton-line h-5 w-full max-w-xl rounded-full" />
-      </header>
-
-      <section className="grid gap-3 lg:grid-cols-[1.18fr_0.82fr]">
-        <div className="skeleton-card min-h-[310px] rounded-[34px] p-5">
-          <div className="flex gap-2">
-            <div className="skeleton-pill h-8 w-20" />
-            <div className="skeleton-pill h-8 w-28" />
-          </div>
-          <div className="mt-24 max-w-2xl space-y-3">
-            <div className="skeleton-line h-12 w-11/12 rounded-[24px]" />
-            <div className="skeleton-line h-12 w-8/12 rounded-[24px]" />
-            <div className="mt-5 flex items-center gap-3">
-              <div className="skeleton-avatar h-11 w-11" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="skeleton-line h-4 w-44 rounded-full" />
-                <div className="skeleton-line h-3 w-32 rounded-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          {[0, 1, 2].map((item) => (
-            <div key={item} className="skeleton-card grid min-h-[96px] grid-cols-[86px_1fr] gap-3 rounded-[30px] p-2">
-              <div className="skeleton-photo rounded-[24px]" />
-              <div className="space-y-2 py-2">
-                <div className="skeleton-line h-3 w-16 rounded-full" />
-                <div className="skeleton-line h-5 w-full rounded-full" />
-                <div className="skeleton-line h-5 w-9/12 rounded-full" />
-                <div className="skeleton-line h-3 w-24 rounded-full" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        {[0, 1].map((section) => (
-          <section key={section} className="space-y-3">
-            <div className="flex justify-between">
-              <div className="skeleton-pill h-4 w-36" />
-              <div className="skeleton-pill h-7 w-24" />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[0, 1, 2, 3].map((item) => (
-                <div key={item} className="skeleton-card grid min-h-[126px] grid-cols-[82px_1fr] gap-3 rounded-[30px] p-2">
-                  <div className="skeleton-photo rounded-[24px]" />
-                  <div className="space-y-2 py-2">
-                    <div className="skeleton-line h-3 w-14 rounded-full" />
-                    <div className="skeleton-line h-5 w-full rounded-full" />
-                    <div className="skeleton-line h-5 w-8/12 rounded-full" />
-                    <div className="skeleton-line h-3 w-28 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
   );
 }
 

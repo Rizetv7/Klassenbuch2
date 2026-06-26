@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { IconClose } from "@/components/Icons";
+import { PageLoading, PageReveal } from "@/components/LoadingState";
 
 type TopicDetail = { id: string; name: string; classId: string; className: string; canDelete: boolean };
 type Person = { id: string; name: string };
@@ -51,7 +52,7 @@ export default function TopicPage() {
     setLightbox(null);
   }
 
-  if (loading) return <p className="text-muted">Lädt…</p>;
+  if (loading) return <PageLoading />;
   if (!topic) return <p className="text-coral font-bold">Projekt nicht gefunden.</p>;
 
   const cover = posts.find((p) => p.imageUrl);
@@ -59,6 +60,7 @@ export default function TopicPage() {
   const others = posts.filter((p) => p.kind !== "IMAGE");
 
   return (
+    <PageReveal>
     <div className="space-y-6">
       <Link href={`/classes/${id}?tab=Projekte`} className="text-sm font-black text-ink/60">← {topic.className}</Link>
 
@@ -132,5 +134,6 @@ export default function TopicPage() {
         </div>
       )}
     </div>
+    </PageReveal>
   );
 }
