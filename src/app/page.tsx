@@ -115,6 +115,12 @@ function HomePollDeck({ polls, onChange }: { polls: Poll[]; onChange: (polls: Po
     onChange(polls.map((poll) => (poll.id === updated.id ? updated : poll)));
   }
 
+  function removePoll(id: string) {
+    const next = polls.filter((poll) => poll.id !== id);
+    onChange(next);
+    setIndex((currentIndex) => Math.min(currentIndex, Math.max(next.length - 1, 0)));
+  }
+
   const hasNext = current.votedByMe && index < polls.length - 1;
   const finished = current.votedByMe && index >= polls.length - 1;
 
@@ -124,7 +130,7 @@ function HomePollDeck({ polls, onChange }: { polls: Poll[]; onChange: (polls: Po
         <h2 className="section-label">Offene Umfragen</h2>
         <span className="chip">{index + 1}/{polls.length}</span>
       </div>
-      <PollCard poll={current} featured onVoted={updatePoll} />
+      <PollCard poll={current} featured onVoted={updatePoll} onDeleted={removePoll} />
       {(hasNext || finished) && (
         <div className="flex justify-end">
           {hasNext ? (

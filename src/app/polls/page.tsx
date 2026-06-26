@@ -42,6 +42,10 @@ export default function PollsPage() {
     });
   }
 
+  function removePoll(id: string) {
+    setPolls((current) => (current ?? []).filter((poll) => poll.id !== id));
+  }
+
   if (error) return <p className="text-coral font-bold">{error}</p>;
   if (polls === null) return <p className="text-muted">Lädt…</p>;
 
@@ -79,7 +83,7 @@ export default function PollsPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {polls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} onVoted={upsertPoll} />
+            <PollCard key={poll.id} poll={poll} onVoted={upsertPoll} onDeleted={removePoll} />
           ))}
         </div>
       )}

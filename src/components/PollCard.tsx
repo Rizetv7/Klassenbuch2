@@ -24,16 +24,19 @@ export type Poll = {
   votedByMe: boolean;
   totalVotes: number;
   leader: { id: string; text: string; count: number; percent: number } | null;
+  viewerCanDelete?: boolean;
 };
 
 export function PollCard({
   poll,
   featured = false,
   onVoted,
+  onDeleted,
 }: {
   poll: Poll;
   featured?: boolean;
   onVoted?: (poll: Poll) => void;
+  onDeleted?: (pollId: string) => void;
 }) {
   const [selected, setSelected] = useState<string[]>(poll.selectedOptionIds);
   const [busy, setBusy] = useState(false);
@@ -91,6 +94,20 @@ export function PollCard({
     }
   }
 
+  async function deletePoll() {
+    if (busy || !window.confirm("Diese Umfrage wirklich löschen?")) return;
+    setBusy(true);
+    setError("");
+    const res = await fetch(`/api/polls/${poll.id}`, { method: "DELETE" });
+    const d = await res.json().catch(() => null);
+    setBusy(false);
+    if (res.ok) {
+      onDeleted?.(poll.id);
+    } else {
+      setError(d?.error || "Löschen fehlgeschlagen.");
+    }
+  }
+
   return (
     <article className={`${featured ? "hero-frame p-5 sm:p-7" : "glass-card p-4"} overflow-hidden`}>
       <div className="relative z-10">
@@ -99,6 +116,11 @@ export function PollCard({
           <span className="chip">{poll.multipleChoice ? "Mehrfachauswahl" : "Einfachauswahl"}</span>
           {poll.anonymous ? <span className="chip">Stimmen anonym</span> : <span className="chip">Stimmen sichtbar</span>}
           {poll.leader && showResults && <span className="chip animate-pop">Gewinnt: {poll.leader.text}</span>}
+          {poll.viewerCanDelete && (
+            <button type="button" onClick={deletePoll} className="chip text-coral transition hover:bg-white/55" disabled={busy}>
+              Umfrage löschen
+            </button>
+          )}
         </div>
 
         <h2 className={`display break-words leading-[0.9] ${featured ? "text-5xl sm:text-6xl" : "text-3xl sm:text-4xl"}`}>

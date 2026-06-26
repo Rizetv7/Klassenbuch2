@@ -1,4 +1,7 @@
 import { prisma } from "./db";
+import { canModerate } from "./classAccess";
+
+type PollAccessMap = Record<string, string | undefined>;
 
 export function pollInclude(viewerId: string) {
   return {
@@ -21,7 +24,7 @@ export function pollInclude(viewerId: string) {
   };
 }
 
-export function serializePollRows(rows: any[]) {
+export function serializePollRows(rows: any[], viewerId?: string, access: PollAccessMap = {}) {
   return rows.map((poll) => {
     const voterIds = new Set<string>();
     for (const option of poll.options) {
@@ -61,6 +64,7 @@ export function serializePollRows(rows: any[]) {
       createdAt: poll.createdAt,
       class: poll.class,
       author: poll.author,
+      viewerCanDelete: poll.authorId === viewerId || canModerate(access[poll.classId] || ""),
       options,
       selectedOptionIds,
       votedByMe: selectedOptionIds.length > 0,
@@ -76,6 +80,12 @@ export async function serializePolls(pollIds: string[], viewerId: string) {
     where: { id: { in: pollIds } },
     include: pollInclude(viewerId),
   });
+  const classIds = Array.from(new Set(rows.map((row) => row.classId)));
+  const memberships = await prisma.membership.findMany({
+    where: { userId: viewerId, classId: { in: classIds } },
+    select: { classId: true, role: true },
+  });
+  const access = Object.fromEntries(memberships.map((m) => [m.classId, m.role]));
   const byId = new Map(rows.map((row) => [row.id, row]));
-  return serializePollRows(pollIds.map((id) => byId.get(id)).filter(Boolean));
+  return serializePollRows(pollIds.map((id) => byId.get(id)).filter(Boolean), viewerId, access);
 }

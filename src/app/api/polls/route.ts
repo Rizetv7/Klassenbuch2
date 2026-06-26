@@ -17,18 +17,22 @@ export async function GET(req: Request) {
   const limit = Math.min(Number(url.searchParams.get("limit")) || 40, 100);
   const where: Record<string, unknown> = {};
 
+  let access: Record<string, string> = {};
+
   if (classId) {
     const membership = await getMembership(userId, classId);
     if (!membership) return NextResponse.json({ error: "Du bist kein Mitglied dieser Klasse." }, { status: 403 });
     where.classId = classId;
+    access = { [classId]: membership.role };
   } else {
     const memberships = await prisma.membership.findMany({
       where: { userId },
-      select: { classId: true },
+      select: { classId: true, role: true },
     });
     const classIds = memberships.map((m) => m.classId);
     if (classIds.length === 0) return NextResponse.json({ polls: [] });
     where.classId = { in: classIds };
+    access = Object.fromEntries(memberships.map((m) => [m.classId, m.role]));
   }
 
   const rows = await prisma.poll.findMany({
@@ -38,7 +42,7 @@ export async function GET(req: Request) {
     include: pollInclude(userId),
   });
 
-  let polls = serializePollRows(rows);
+  let polls = serializePollRows(rows, userId, access);
   if (pending) polls = polls.filter((poll) => !poll.votedByMe).slice(0, limit);
   return NextResponse.json({ polls });
 }
