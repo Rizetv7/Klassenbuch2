@@ -12,6 +12,7 @@ export async function ensurePollSchema() {
       "authorId" TEXT NOT NULL,
       "question" TEXT NOT NULL,
       "description" TEXT,
+      "candidateType" TEXT,
       "anonymous" BOOLEAN NOT NULL DEFAULT false,
       "multipleChoice" BOOLEAN NOT NULL DEFAULT false,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -22,6 +23,8 @@ export async function ensurePollSchema() {
       "pollId" TEXT NOT NULL,
       "text" TEXT NOT NULL,
       "position" INTEGER NOT NULL,
+      "subjectMembershipId" TEXT,
+      "teacherId" TEXT,
       CONSTRAINT "PollOption_pkey" PRIMARY KEY ("id")
     )`,
     `CREATE TABLE IF NOT EXISTS "PollVote" (
@@ -32,9 +35,16 @@ export async function ensurePollSchema() {
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "PollVote_pkey" PRIMARY KEY ("id")
     )`,
+    `ALTER TABLE "Poll" ADD COLUMN IF NOT EXISTS "candidateType" TEXT`,
+    `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "subjectMembershipId" TEXT`,
+    `ALTER TABLE "PollOption" ADD COLUMN IF NOT EXISTS "teacherId" TEXT`,
     `CREATE INDEX IF NOT EXISTS "Poll_classId_idx" ON "Poll"("classId")`,
     `CREATE INDEX IF NOT EXISTS "Poll_authorId_idx" ON "Poll"("authorId")`,
     `CREATE INDEX IF NOT EXISTS "PollOption_pollId_idx" ON "PollOption"("pollId")`,
+    `CREATE INDEX IF NOT EXISTS "PollOption_subjectMembershipId_idx" ON "PollOption"("subjectMembershipId")`,
+    `CREATE INDEX IF NOT EXISTS "PollOption_teacherId_idx" ON "PollOption"("teacherId")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_subjectMembershipId_key" ON "PollOption"("pollId", "subjectMembershipId") WHERE "subjectMembershipId" IS NOT NULL`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_teacherId_key" ON "PollOption"("pollId", "teacherId") WHERE "teacherId" IS NOT NULL`,
     `CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_position_key" ON "PollOption"("pollId", "position")`,
     `CREATE INDEX IF NOT EXISTS "PollVote_pollId_userId_idx" ON "PollVote"("pollId", "userId")`,
     `CREATE INDEX IF NOT EXISTS "PollVote_userId_idx" ON "PollVote"("userId")`,
@@ -47,6 +57,12 @@ export async function ensurePollSchema() {
     EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     `DO $$ BEGIN
       ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+    `DO $$ BEGIN
+      ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_subjectMembershipId_fkey" FOREIGN KEY ("subjectMembershipId") REFERENCES "Membership"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+    `DO $$ BEGIN
+      ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE CASCADE ON UPDATE CASCADE;
     EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
     `DO $$ BEGIN
       ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;

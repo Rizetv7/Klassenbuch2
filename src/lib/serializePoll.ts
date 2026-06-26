@@ -37,6 +37,8 @@ export function serializePollRows(rows: any[], viewerId?: string, access: PollAc
       return {
         id: option.id,
         text: option.text,
+        subjectMembershipId: option.subjectMembershipId,
+        teacherId: option.teacherId,
         count,
         percent: totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0,
         selectedByMe: selectedOptionIds.includes(option.id),
@@ -59,6 +61,7 @@ export function serializePollRows(rows: any[], viewerId?: string, access: PollAc
       id: poll.id,
       question: poll.question,
       description: poll.description,
+      candidateType: poll.candidateType,
       anonymous: poll.anonymous,
       multipleChoice: poll.multipleChoice,
       createdAt: poll.createdAt,

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Poll } from "./PollCard";
 
 type ClassOption = { id: string; name: string };
+type PollMode = "CUSTOM" | "STUDENTS" | "TEACHERS";
 
 export function CreatePoll({
   classes,
@@ -15,6 +16,7 @@ export function CreatePoll({
   const [classId, setClassId] = useState(classes[0]?.id ?? "");
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
+  const [mode, setMode] = useState<PollMode>("CUSTOM");
   const [options, setOptions] = useState(["", ""]);
   const [anonymous, setAnonymous] = useState(false);
   const [multipleChoice, setMultipleChoice] = useState(false);
@@ -35,7 +37,15 @@ export function CreatePoll({
     const res = await fetch("/api/polls", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classId, question, description, options: cleanOptions, anonymous, multipleChoice }),
+      body: JSON.stringify({
+        classId,
+        question,
+        description,
+        options: mode === "CUSTOM" ? cleanOptions : [],
+        candidateType: mode === "CUSTOM" ? null : mode,
+        anonymous,
+        multipleChoice,
+      }),
     });
     const d = await res.json().catch(() => null);
     setBusy(false);
@@ -43,6 +53,7 @@ export function CreatePoll({
       onCreated(d.poll);
       setQuestion("");
       setDescription("");
+      setMode("CUSTOM");
       setOptions(["", ""]);
       setAnonymous(false);
       setMultipleChoice(false);
@@ -81,30 +92,54 @@ export function CreatePoll({
         maxLength={260}
       />
 
-      <div className="space-y-2">
-        {options.map((option, index) => (
-          <div key={index} className="flex gap-2">
-            <input
-              className="input"
-              placeholder={`Antwort ${index + 1}`}
-              value={option}
-              onChange={(e) => setOption(index, e.target.value)}
-              maxLength={120}
-              required={index < 2}
-            />
-            {options.length > 2 && (
-              <button type="button" onClick={() => setOptions((current) => current.filter((_, i) => i !== index))} className="btn-soft px-4">
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-        {options.length < 8 && (
-          <button type="button" onClick={() => setOptions((current) => [...current, ""])} className="btn-soft text-sm">
-            Antwort hinzufügen
+      <div className="grid gap-2 sm:grid-cols-3">
+        {([
+          ["CUSTOM", "Antworten", "selber schreiben"],
+          ["STUDENTS", "Alle Schüler:innen", "Personen werden beim Abstimmen ergänzt"],
+          ["TEACHERS", "Alle Lehrpersonen", "Lehrer:innen werden beim Abstimmen ergänzt"],
+        ] as const).map(([value, title, subtitle]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMode(value)}
+            className={`glass-card p-3 text-left transition ${mode === value ? "border-ink bg-white/55" : "hover:bg-white/35"}`}
+          >
+            <span className="block text-sm font-black">{title}</span>
+            <span className="mt-1 block text-[11px] font-bold text-ink/50">{subtitle}</span>
           </button>
-        )}
+        ))}
       </div>
+
+      {mode === "CUSTOM" ? (
+        <div className="space-y-2">
+          {options.map((option, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                className="input"
+                placeholder={`Antwort ${index + 1}`}
+                value={option}
+                onChange={(e) => setOption(index, e.target.value)}
+                maxLength={120}
+                required={index < 2}
+              />
+              {options.length > 2 && (
+                <button type="button" onClick={() => setOptions((current) => current.filter((_, i) => i !== index))} className="btn-soft px-4">
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {options.length < 8 && (
+            <button type="button" onClick={() => setOptions((current) => [...current, ""])} className="btn-soft text-sm">
+              Antwort hinzufügen
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="glass-card p-4 text-sm font-black text-ink/60">
+          Die Antwortliste startet leer. Beim Abstimmen wählt man eine Person aus der Klasse aus; sobald sie Stimmen hat, erscheint sie im Rennen. Fällt sie auf 0 Stimmen, verschwindet sie automatisch wieder.
+        </div>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="glass-card flex cursor-pointer items-center gap-3 p-3 text-sm font-black text-ink/70">
@@ -118,7 +153,7 @@ export function CreatePoll({
       </div>
 
       {error && <p className="text-sm font-black text-coral">{error}</p>}
-      <button className="btn-accent w-full" disabled={busy || cleanOptions.length < 2}>
+      <button className="btn-accent w-full" disabled={busy || (mode === "CUSTOM" && cleanOptions.length < 2)}>
         {busy ? "Erstellt..." : "Umfrage erstellen"}
       </button>
     </form>

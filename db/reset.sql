@@ -89,6 +89,7 @@ CREATE TABLE "Poll" (
     "authorId" TEXT NOT NULL,
     "question" TEXT NOT NULL,
     "description" TEXT,
+    "candidateType" TEXT,
     "anonymous" BOOLEAN NOT NULL DEFAULT false,
     "multipleChoice" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -102,6 +103,8 @@ CREATE TABLE "PollOption" (
     "pollId" TEXT NOT NULL,
     "text" TEXT NOT NULL,
     "position" INTEGER NOT NULL,
+    "subjectMembershipId" TEXT,
+    "teacherId" TEXT,
 
     CONSTRAINT "PollOption_pkey" PRIMARY KEY ("id")
 );
@@ -164,7 +167,19 @@ CREATE INDEX "Poll_authorId_idx" ON "Poll"("authorId");
 CREATE INDEX "PollOption_pollId_idx" ON "PollOption"("pollId");
 
 -- CreateIndex
+CREATE INDEX "PollOption_subjectMembershipId_idx" ON "PollOption"("subjectMembershipId");
+
+-- CreateIndex
+CREATE INDEX "PollOption_teacherId_idx" ON "PollOption"("teacherId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PollOption_pollId_position_key" ON "PollOption"("pollId", "position");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PollOption_pollId_subjectMembershipId_key" ON "PollOption"("pollId", "subjectMembershipId") WHERE "subjectMembershipId" IS NOT NULL;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PollOption_pollId_teacherId_key" ON "PollOption"("pollId", "teacherId") WHERE "teacherId" IS NOT NULL;
 
 -- CreateIndex
 CREATE INDEX "PollVote_pollId_userId_idx" ON "PollVote"("pollId", "userId");
@@ -219,6 +234,12 @@ ALTER TABLE "Poll" ADD CONSTRAINT "Poll_authorId_fkey" FOREIGN KEY ("authorId") 
 
 -- AddForeignKey
 ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_subjectMembershipId_fkey" FOREIGN KEY ("subjectMembershipId") REFERENCES "Membership"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;

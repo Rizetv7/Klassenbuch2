@@ -7,6 +7,7 @@ export type Poll = {
   id: string;
   question: string;
   description: string | null;
+  candidateType: "STUDENTS" | "TEACHERS" | null;
   anonymous: boolean;
   multipleChoice: boolean;
   createdAt: string;
@@ -15,6 +16,8 @@ export type Poll = {
   options: {
     id: string;
     text: string;
+    subjectMembershipId?: string | null;
+    teacherId?: string | null;
     count: number;
     percent: number;
     selectedByMe: boolean;
@@ -25,6 +28,15 @@ export type Poll = {
   totalVotes: number;
   leader: { id: string; text: string; count: number; percent: number } | null;
   viewerCanDelete?: boolean;
+};
+
+type CandidateChoice = {
+  key: string;
+  id: string;
+  label: string;
+  sublabel?: string | null;
+  avatarUrl?: string | null;
+  accentColor?: string | null;
 };
 
 export function PollCard({
@@ -42,6 +54,8 @@ export function PollCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [pulseOptionId, setPulseOptionId] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<CandidateChoice[]>([]);
+  const [candidateKey, setCandidateKey] = useState("");
 
   useEffect(() => {
     setSelected(poll.selectedOptionIds);
@@ -57,6 +71,50 @@ export function PollCard({
     if (!showResults) return poll.options;
     return [...poll.options].sort((a, b) => b.count - a.count || (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0));
   }, [originalIndex, poll.options, showResults]);
+  const optionTargetKeys = useMemo(() => new Set(poll.options.map((option) => (
+    option.subjectMembershipId ? `student:${option.subjectMembershipId}` : option.teacherId ? `teacher:${option.teacherId}` : ""
+  )).filter(Boolean)), [poll.options]);
+  const pendingCandidateKeys = selected.filter((id) => id.startsWith("new:")).map((id) => id.slice(4));
+  const availableCandidates = candidates.filter((candidate) => !optionTargetKeys.has(candidate.key) && !pendingCandidateKeys.includes(candidate.key));
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCandidates() {
+      if (!poll.candidateType) {
+        setCandidates([]);
+        return;
+      }
+      const url = poll.candidateType === "TEACHERS"
+        ? `/api/classes/${poll.class.id}/teachers`
+        : `/api/classes/${poll.class.id}`;
+      const data = await fetch(url).then((r) => r.json()).catch(() => null);
+      if (cancelled) return;
+      if (poll.candidateType === "TEACHERS") {
+        setCandidates((data?.teachers ?? []).map((teacher: any) => ({
+          key: `teacher:${teacher.id}`,
+          id: teacher.id,
+          label: teacher.name,
+          sublabel: teacher.subject,
+          avatarUrl: teacher.avatarUrl,
+          accentColor: teacher.accentColor,
+        })));
+      } else {
+        setCandidates((data?.members ?? [])
+          .filter((member: any) => member.memberType === "STUDENT")
+          .map((member: any) => ({
+            key: `student:${member.id}`,
+            id: member.id,
+            label: member.displayName,
+            avatarUrl: member.avatarUrl,
+            accentColor: member.accentColor,
+          })));
+      }
+    }
+    loadCandidates();
+    return () => {
+      cancelled = true;
+    };
+  }, [poll.candidateType, poll.class.id]);
 
   function nextSelection(optionId: string) {
     if (!poll.multipleChoice) return [optionId];
@@ -74,14 +132,34 @@ export function PollCard({
     window.setTimeout(() => setPulseOptionId(null), 520);
   }
 
+  function addCandidate() {
+    if (!candidateKey) return;
+    const optionId = `new:${candidateKey}`;
+    setSelected((current) => {
+      if (current.includes(optionId)) return current;
+      return poll.multipleChoice ? [...current, optionId] : [optionId];
+    });
+    setCandidateKey("");
+    setError("");
+    setPulseOptionId(optionId);
+    window.setTimeout(() => setPulseOptionId(null), 520);
+  }
+
+  function candidatePayload(id: string) {
+    const [, type, targetId] = id.split(":");
+    return type === "student" ? { subjectMembershipId: targetId } : { teacherId: targetId };
+  }
+
   async function submitVote() {
     if (selected.length === 0 || busy) return;
     setBusy(true);
     setError("");
+    const existingOptionIds = selected.filter((id) => !id.startsWith("new:"));
+    const candidateTargets = selected.filter((id) => id.startsWith("new:")).map(candidatePayload);
     const res = await fetch(`/api/polls/${poll.id}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ optionIds: selected }),
+      body: JSON.stringify({ optionIds: existingOptionIds, candidateTargets }),
     });
     const d = await res.json().catch(() => null);
     setBusy(false);
@@ -131,6 +209,36 @@ export function PollCard({
           {poll.author && <Avatar name={poll.author.name} url={poll.author.avatarUrl} accent={poll.author.accentColor} size={24} ring={false} />}
           Erstellt von {poll.author?.name ?? "Unbekannt"}
         </p>
+
+        {poll.candidateType && (
+          <div className="mt-4 rounded-[24px] border border-white/45 bg-white/18 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <select className="input !py-2 text-sm" value={candidateKey} onChange={(e) => setCandidateKey(e.target.value)}>
+                <option value="">{poll.candidateType === "TEACHERS" ? "Lehrperson ins Rennen bringen" : "Schüler:in ins Rennen bringen"}</option>
+                {availableCandidates.map((candidate) => (
+                  <option key={candidate.key} value={candidate.key}>
+                    {candidate.label}{candidate.sublabel ? ` (${candidate.sublabel})` : ""}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={addCandidate} className="btn-soft shrink-0" disabled={!candidateKey}>
+                Hinzufügen
+              </button>
+            </div>
+            {pendingCandidateKeys.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {pendingCandidateKeys.map((key) => {
+                  const candidate = candidates.find((item) => item.key === key);
+                  return (
+                    <span key={key} className="chip bg-white/35">
+                      neu: {candidate?.label ?? key.split(":")[1]}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-5 space-y-2.5">
           {displayedOptions.map((option) => {
@@ -184,6 +292,11 @@ export function PollCard({
               </button>
             );
           })}
+          {poll.candidateType && displayedOptions.length === 0 && pendingCandidateKeys.length === 0 && (
+            <div className="rounded-[24px] border border-white/45 bg-white/18 p-4 text-sm font-black text-ink/55">
+              Noch niemand ist im Rennen. Wähle oben eine Person aus und gib deine Stimme ab.
+            </div>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

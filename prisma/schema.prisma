@@ -170,6 +170,7 @@ model Poll {
   authorId       String
   question       String
   description    String?
+  candidateType  String?  // null | STUDENTS | TEACHERS
   anonymous      Boolean  @default(false)
   multipleChoice Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -184,16 +185,20 @@ model Poll {
 }
 
 model PollOption {
-  id       String @id @default(cuid())
-  pollId   String
-  text     String
-  position Int
+  id                  String  @id @default(cuid())
+  pollId              String
+  text                String
+  position            Int
+  subjectMembershipId String?
+  teacherId           String?
 
   poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes PollVote[]
 
   @@unique([pollId, position])
   @@index([pollId])
+  @@index([subjectMembershipId])
+  @@index([teacherId])
 }
 
 model PollVote {

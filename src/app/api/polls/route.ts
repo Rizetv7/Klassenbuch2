@@ -57,6 +57,7 @@ export async function POST(req: Request) {
   const classId = typeof body.classId === "string" ? body.classId : "";
   const question = typeof body.question === "string" ? body.question.trim() : "";
   const description = typeof body.description === "string" && body.description.trim() ? body.description.trim() : null;
+  const candidateType = body.candidateType === "STUDENTS" || body.candidateType === "TEACHERS" ? body.candidateType : null;
   const multipleChoice = !!body.multipleChoice;
   const anonymous = !!body.anonymous;
   const options = Array.isArray(body.options)
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
   const membership = await getMembership(userId, classId);
   if (!membership) return NextResponse.json({ error: "Du bist kein Mitglied dieser Klasse." }, { status: 403 });
   if (question.length < 3) return NextResponse.json({ error: "Die Frage ist zu kurz." }, { status: 400 });
-  if (options.length < 2) return NextResponse.json({ error: "Mindestens zwei Antworten sind nötig." }, { status: 400 });
+  if (!candidateType && options.length < 2) return NextResponse.json({ error: "Mindestens zwei Antworten sind nötig." }, { status: 400 });
 
   const poll = await prisma.poll.create({
     data: {
@@ -75,14 +76,19 @@ export async function POST(req: Request) {
       authorId: userId,
       question: question.slice(0, 180),
       description: description ? description.slice(0, 260) : null,
+      candidateType,
       anonymous,
       multipleChoice,
-      options: {
-        create: options.map((text: string, index: number) => ({
-          text: text.slice(0, 120),
-          position: index,
-        })),
-      },
+      ...(candidateType
+        ? {}
+        : {
+            options: {
+              create: options.map((text: string, index: number) => ({
+                text: text.slice(0, 120),
+                position: index,
+              })),
+            },
+          }),
     },
   });
 
