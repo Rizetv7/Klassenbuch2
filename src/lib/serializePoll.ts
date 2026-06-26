@@ -23,8 +23,11 @@ export function pollInclude(viewerId: string) {
 
 export function serializePollRows(rows: any[]) {
   return rows.map((poll) => {
-    const counts = poll.options.map((option: any) => option._count.votes as number);
-    const totalVotes = counts.reduce((sum: number, count: number) => sum + count, 0);
+    const voterIds = new Set<string>();
+    for (const option of poll.options) {
+      for (const vote of option.votes) voterIds.add(vote.userId);
+    }
+    const totalVotes = voterIds.size;
     const selectedOptionIds = poll.votes.map((vote: any) => vote.optionId as string);
     const options = poll.options.map((option: any) => {
       const count = option._count.votes as number;
