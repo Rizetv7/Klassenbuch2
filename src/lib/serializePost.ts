@@ -6,7 +6,7 @@ export function postInclude(viewerId: string) {
   return {
     author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
     class: { select: { id: true, name: true } },
-    subject: { select: { id: true, displayName: true, memberType: true, user: { select: { avatarUrl: true, accentColor: true } } } },
+    subject: { select: { id: true, displayName: true, memberType: true, user: { select: { name: true, avatarUrl: true, accentColor: true } } } },
     teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
     topic: { select: { id: true, name: true } },
     _count: { select: { likes: true, comments: true } },
@@ -44,7 +44,8 @@ export async function serializePostRows(posts: any[]) {
       subject: p.subject
         ? {
             id: p.subject.id,
-            displayName: p.subject.displayName,
+            // follow the live account name, not the stale membership snapshot
+            displayName: p.subject.user.name ?? p.subject.displayName,
             memberType: p.subject.memberType,
             avatarUrl: p.subject.user.avatarUrl ?? subjectImg.get(p.subject.id) ?? null,
             accentColor: p.subject.user.accentColor,

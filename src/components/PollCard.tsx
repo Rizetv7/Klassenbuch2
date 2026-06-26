@@ -264,7 +264,7 @@ export function PollCard({
                       <Avatar name={candidate.label} url={candidate.avatarUrl} accent={candidate.accentColor} size={24} ring={false} />
                     )}
                     <span className={candidate ? "ml-2 truncate" : "truncate"}>
-                      {option.text}
+                      {candidate?.label ?? option.text}
                     </span>
                   </span>
                   {option.pending ? (

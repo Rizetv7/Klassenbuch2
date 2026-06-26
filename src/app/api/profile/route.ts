@@ -37,5 +37,12 @@ export async function PATCH(req: Request) {
     data,
     select: { id: true, name: true, email: true, avatarUrl: true, accentColor: true },
   });
+
+  // Keep the per-class display snapshots in sync with the account name so
+  // sorting and newly created poll options use the current name too.
+  if (data.name) {
+    await prisma.membership.updateMany({ where: { userId }, data: { displayName: data.name } });
+  }
+
   return NextResponse.json({ user });
 }
