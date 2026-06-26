@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Nav";
+import { CommentThread } from "./CommentThread";
 import { IconHeart, IconComment, IconClose, IconDownload } from "./Icons";
 
 export type Post = {
@@ -23,13 +24,6 @@ export type Post = {
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
-};
-
-type Comment = {
-  id: string;
-  text: string;
-  createdAt: string;
-  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null };
 };
 
 function timeAgo(iso: string): string {
@@ -55,10 +49,7 @@ export function PostCard({
   const [liked, setLiked] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [open, setOpen] = useState(false);
-  const [comments, setComments] = useState<Comment[] | null>(null);
   const [commentCount, setCommentCount] = useState(post.commentCount);
-  const [commentText, setCommentText] = useState("");
-  const [busy, setBusy] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -86,39 +77,8 @@ export function PostCard({
     }
   }
 
-  async function toggleComments() {
-    const next = !open;
-    setOpen(next);
-    if (next && comments === null) {
-      const res = await fetch(`/api/posts/${post.id}/comments`);
-      if (res.ok) setComments((await res.json()).comments);
-    }
-  }
-
-  async function addComment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    setBusy(true);
-    const res = await fetch(`/api/posts/${post.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: commentText }),
-    });
-    setBusy(false);
-    if (res.ok) {
-      const d = await res.json();
-      setComments((c) => [...(c ?? []), d.comment]);
-      setCommentCount((n) => n + 1);
-      setCommentText("");
-    }
-  }
-
-  async function deleteComment(id: string) {
-    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setComments((c) => (c ?? []).filter((x) => x.id !== id));
-      setCommentCount((n) => Math.max(0, n - 1));
-    }
+  function toggleComments() {
+    setOpen((v) => !v);
   }
 
   async function deletePost() {
@@ -255,36 +215,8 @@ export function PostCard({
 
       {/* comments */}
       {open && (
-        <div className="soft-divider relative z-10 mt-3 space-y-3 pt-3">
-          {comments === null ? (
-            <p className="text-sm text-muted">Lädt…</p>
-          ) : (
-            comments.map((c) => (
-              <div key={c.id} className="flex items-start gap-2 text-sm group">
-                <Avatar name={c.author.name} url={c.author.avatarUrl} accent={c.author.accentColor} size={28} />
-                <div className="flex-1 rounded-[20px] border border-white/40 bg-white/20 px-3 py-2">
-                  <span className="font-black">{c.author.name}</span> <span>{c.text}</span>
-                </div>
-                <button
-                  onClick={() => deleteComment(c.id)}
-                  className="text-ink/20 opacity-0 transition hover:text-coral group-hover:opacity-100"
-                >
-                  <IconClose size={14} />
-                </button>
-              </div>
-            ))
-          )}
-          <form onSubmit={addComment} className="flex gap-2">
-            <input
-              className="input !py-2"
-              placeholder="Kommentieren…"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-            />
-            <button className="btn-primary" disabled={busy}>
-              Senden
-            </button>
-          </form>
+        <div className="soft-divider relative z-10 mt-3 pt-3">
+          <CommentThread postId={post.id} onCountChange={setCommentCount} />
         </div>
       )}
 

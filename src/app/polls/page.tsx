@@ -81,9 +81,11 @@ export default function PollsPage() {
       ) : polls.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Umfragen. Erstelle die erste!</div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="gap-4 lg:columns-2 [column-fill:_balance]">
           {polls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} onVoted={upsertPoll} onDeleted={removePoll} />
+            <div key={poll.id} className="mb-4 break-inside-avoid">
+              <PollCard poll={poll} onVoted={upsertPoll} onDeleted={removePoll} />
+            </div>
           ))}
         </div>
       )}

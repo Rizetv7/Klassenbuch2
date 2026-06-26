@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership, canModerate } from "@/lib/classAccess";
+import { ensureCommentSchema } from "@/lib/commentSchema";
 
 // Delete a comment: allowed for its author or a class moderator/owner.
+// Replies cascade away with their parent (DB-level ON DELETE CASCADE).
 export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+
+  await ensureCommentSchema();
 
   const comment = await prisma.comment.findUnique({
     where: { id: params.id },
