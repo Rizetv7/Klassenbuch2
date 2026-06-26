@@ -109,7 +109,7 @@ export function CreatePoll({
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="glass-card flex cursor-pointer items-center gap-3 p-3 text-sm font-black text-ink/70">
           <input type="checkbox" className="h-4 w-4 accent-hotpink" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
-          Anonym erstellen
+          Stimmen anonym halten
         </label>
         <label className="glass-card flex cursor-pointer items-center gap-3 p-3 text-sm font-black text-ink/70">
           <input type="checkbox" className="h-4 w-4 accent-hotpink" checked={multipleChoice} onChange={(e) => setMultipleChoice(e.target.checked)} />

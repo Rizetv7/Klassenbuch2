@@ -8,7 +8,13 @@ export function pollInclude(viewerId: string) {
       orderBy: { position: "asc" as const },
       include: {
         _count: { select: { votes: true } },
-        votes: { where: { userId: viewerId }, select: { id: true } },
+        votes: {
+          orderBy: { createdAt: "asc" as const },
+          select: {
+            userId: true,
+            user: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
+          },
+        },
       },
     },
     votes: { where: { userId: viewerId }, select: { optionId: true } },
@@ -27,7 +33,15 @@ export function serializePollRows(rows: any[]) {
         text: option.text,
         count,
         percent: totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0,
-        selectedByMe: option.votes.length > 0,
+        selectedByMe: selectedOptionIds.includes(option.id),
+        voters: poll.anonymous
+          ? []
+          : option.votes.map((vote: any) => ({
+              id: vote.user.id,
+              name: vote.user.name,
+              avatarUrl: vote.user.avatarUrl,
+              accentColor: vote.user.accentColor,
+            })),
       };
     });
     let leader: any | null = null;
@@ -43,7 +57,7 @@ export function serializePollRows(rows: any[]) {
       multipleChoice: poll.multipleChoice,
       createdAt: poll.createdAt,
       class: poll.class,
-      author: poll.anonymous ? null : poll.author,
+      author: poll.author,
       options,
       selectedOptionIds,
       votedByMe: selectedOptionIds.length > 0,
