@@ -188,6 +188,7 @@ function EmptyHome({ hasClass }: { hasClass: boolean }) {
 
 function HomeBoard({ featured, sideTiles }: { featured: Post | null; sideTiles: Post[] }) {
   if (!featured) return null;
+  const featuredTarget = targetPerson(featured);
   return (
     <section className="grid gap-3 lg:grid-cols-[1.18fr_0.82fr]">
       <Link href={postHref(featured)} className="group relative min-h-[310px] overflow-hidden rounded-[34px] border border-white/40 bg-white/10 p-5 shadow-soft transition hover:-translate-y-0.5">
@@ -201,6 +202,7 @@ function HomeBoard({ featured, sideTiles }: { featured: Post | null; sideTiles: 
         <div className="relative z-10 flex h-full max-w-2xl flex-col justify-between gap-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip bg-white/30">{postKicker(featured)}</span>
+            {featuredTarget && <span className="chip bg-white/30">{featuredTarget.name}</span>}
             <span className="chip bg-white/30">{featured.class.name}</span>
           </div>
           <div>
@@ -235,6 +237,7 @@ function SectionHead({ title, meta }: { title: string; meta?: string }) {
 
 function MiniPostCard({ post, compact = false, horizontal = false }: { post: Post; compact?: boolean; horizontal?: boolean }) {
   const image = post.imageUrl;
+  const target = targetPerson(post);
   return (
     <Link
       href={postHref(post)}
@@ -247,14 +250,15 @@ function MiniPostCard({ post, compact = false, horizontal = false }: { post: Pos
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]" />
         ) : (
-          <div className="grid h-full min-h-[84px] place-items-center bg-[radial-gradient(circle_at_30%_24%,rgba(255,255,255,0.54),transparent_36%),radial-gradient(circle_at_72%_80%,rgba(255,47,191,0.42),transparent_55%)]">
-            <span className="font-hand text-4xl leading-none text-hotpink">{post.kind === "QUOTE" ? "“" : "✦"}</span>
-          </div>
+          <HomePreviewPortrait post={post} target={target} />
         )}
       </div>
       <div className="flex min-w-0 flex-col justify-between py-1 pr-1">
         <div>
-          <p className="text-[10px] font-black uppercase text-ink/50">{postKicker(post)}</p>
+          <p className="truncate text-[10px] font-black uppercase text-ink/50">
+            <span>{postKicker(post)}</span>
+            {target && <span className="text-ink/65"> · {target.name}</span>}
+          </p>
           <p className={`${compact || horizontal ? "text-lg" : "text-xl"} mt-1 line-clamp-3 font-black leading-[0.98] text-ink`}>
             {homeHeadline(post)}
           </p>
@@ -265,6 +269,24 @@ function MiniPostCard({ post, compact = false, horizontal = false }: { post: Pos
         </p>
       </div>
     </Link>
+  );
+}
+
+function HomePreviewPortrait({ post, target }: { post: Post; target: ReturnType<typeof targetPerson> }) {
+  const portrait = target ?? uploaderPerson(post);
+  if (portrait.avatarUrl) {
+    return (
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={portrait.avatarUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/24 via-transparent to-white/20" />
+      </>
+    );
+  }
+  return (
+    <div className="grid h-full min-h-[84px] place-items-center bg-[radial-gradient(circle_at_30%_24%,rgba(255,255,255,0.54),transparent_36%),radial-gradient(circle_at_72%_80%,rgba(255,47,191,0.42),transparent_55%)] p-2">
+      <Avatar name={portrait.name} accent={portrait.accentColor} size={post.kind === "QUOTE" ? 58 : 62} ring={false} />
+    </div>
   );
 }
 
@@ -340,7 +362,6 @@ function targetPerson(post: Post) {
       name: post.subject.displayName,
       avatarUrl: post.subject.avatarUrl,
       accentColor: post.subject.accentColor,
-      label: post.kind === "QUOTE" ? "gesagt von" : "über",
     };
   }
   if (post.teacher) {
@@ -348,25 +369,26 @@ function targetPerson(post: Post) {
       name: post.teacher.name,
       avatarUrl: post.teacher.avatarUrl,
       accentColor: post.teacher.accentColor,
-      label: post.kind === "QUOTE" ? "gesagt von" : "über",
     };
   }
   if (post.kind === "QUOTE" && post.saidByName) {
-    return { name: post.saidByName, avatarUrl: null, accentColor: null, label: "gesagt von" };
+    return { name: post.saidByName, avatarUrl: null, accentColor: null };
   }
   if (post.topic) {
-    return { name: post.topic.name, avatarUrl: null, accentColor: null, label: "aus" };
+    return { name: post.topic.name, avatarUrl: null, accentColor: null };
   }
-  return {
-    name: post.author?.name ?? "Anonym",
-    avatarUrl: post.author?.avatarUrl ?? null,
-    accentColor: post.author?.accentColor ?? null,
-    label: post.kind === "QUOTE" ? "gesagt von" : "von",
-  };
+  return null;
 }
 
-function uploaderLabel(post: Post) {
-  return `hochgeladen von ${post.author?.name ?? "Anonym"}`;
+function uploaderPerson(post: Post) {
+  if (post.anonymous || !post.author) {
+    return { name: "Anonym", avatarUrl: null, accentColor: null };
+  }
+  return {
+    name: post.author.name,
+    avatarUrl: post.author.avatarUrl,
+    accentColor: post.author.accentColor ?? null,
+  };
 }
 
 function HomeAttribution({
@@ -383,17 +405,20 @@ function HomeAttribution({
   photo?: boolean;
 }) {
   const target = targetPerson(post);
+  const uploader = uploaderPerson(post);
+  const primaryName = target?.name ?? uploader.name;
+  const secondaryName = target ? uploader.name : post.class.name;
   const textClass = inverted ? "text-white" : "text-ink";
   const mutedClass = inverted ? "text-white/78" : "text-ink/52";
   return (
     <div className={`mt-3 flex min-w-0 items-center gap-2 ${photo ? "mt-0" : ""}`}>
-      <Avatar name={target.name} url={target.avatarUrl} accent={target.accentColor} size={prominent ? 42 : compact ? 28 : 34} ring={!inverted} />
+      <Avatar name={uploader.name} url={uploader.avatarUrl} accent={uploader.accentColor} size={prominent ? 36 : compact ? 25 : 30} ring={!inverted} />
       <div className="min-w-0 leading-tight">
         <p className={`${prominent ? "text-sm" : "text-[11px]"} truncate font-black ${textClass}`}>
-          {target.label} {target.name}
+          {primaryName}
         </p>
         <p className={`truncate text-[10px] font-black ${mutedClass}`}>
-          {uploaderLabel(post)}
+          {secondaryName}
         </p>
       </div>
     </div>

@@ -26,6 +26,14 @@ export type Post = {
   likedByMe: boolean;
 };
 
+type CardPerson = {
+  name: string;
+  avatarUrl: string | null;
+  accent?: string | null;
+  label: string;
+  href?: string | null;
+};
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
@@ -110,7 +118,7 @@ export function PostCard({
   }
 
   // Who/what the post is about (shown prominently in the header).
-  const about = post.subject
+  const about: CardPerson | null = post.subject
     ? {
         name: post.subject.displayName,
         avatarUrl: post.subject.avatarUrl,
@@ -131,23 +139,46 @@ export function PostCard({
         : null;
 
   const authorName = post.anonymous || !post.author ? "Anonym" : post.author.name;
-  const saidBy = post.kind === "QUOTE" ? (post.subject?.displayName || post.teacher?.name || post.saidByName || null) : null;
+  const authorAvatar = post.anonymous || !post.author ? null : post.author.avatarUrl;
+  const authorAccent = post.anonymous || !post.author ? null : post.author.accentColor;
+  const displayTarget: CardPerson | null = about ?? (post.kind === "QUOTE" && post.saidByName
+    ? { name: post.saidByName, avatarUrl: null, accent: null, label: "Zitat", href: null }
+    : null);
+  const saidBy = post.kind === "QUOTE" && !displayTarget ? post.saidByName || null : null;
+  const kindLabel = post.kind === "QUOTE" ? "Zitat" : post.kind === "IMAGE" ? "Bild" : post.kind === "TEXT" ? "Notiz" : "Beitrag";
 
   return (
     <article className="post-card">
-      {/* header: who/what it is about */}
-      <div className="relative z-10 flex items-center gap-3">
-        {about ? (
-          <Link href={about.href} className="flex min-w-0 items-center gap-3 group/head">
-            <Avatar name={about.name} url={about.avatarUrl} accent={about.accent} size={46} />
-            <div className="min-w-0 leading-tight">
-              <p className="font-black truncate group-hover/head:underline">{about.name}</p>
-              <p className="text-xs font-bold text-muted">{about.label}</p>
-            </div>
-          </Link>
+      <div className="relative z-10 grid grid-cols-[76px_minmax(0,1fr)_auto] items-start gap-3">
+        {displayTarget ? (
+          displayTarget.href ? (
+            <Link href={displayTarget.href} className="group/head">
+              <Avatar name={displayTarget.name} url={displayTarget.avatarUrl} accent={displayTarget.accent} size={76} />
+            </Link>
+          ) : (
+            <Avatar name={displayTarget.name} url={displayTarget.avatarUrl} accent={displayTarget.accent} size={76} />
+          )
         ) : (
-          <div className="font-black">Beitrag</div>
+          <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-white/35 font-hand text-4xl text-hotpink">✦</div>
         )}
+        <div className="min-w-0">
+          <p className="section-label">{kindLabel}</p>
+          {displayTarget ? (
+            displayTarget.href ? (
+              <Link href={displayTarget.href} className="mt-1 block truncate text-xl font-black leading-none text-ink hover:underline">
+                {displayTarget.name}
+              </Link>
+            ) : (
+              <p className="mt-1 truncate text-xl font-black leading-none text-ink">{displayTarget.name}</p>
+            )
+          ) : (
+            <p className="mt-1 truncate text-xl font-black leading-none text-ink">{post.class.name}</p>
+          )}
+          <div className="mt-3 flex min-w-0 items-center gap-2">
+            <Avatar name={authorName} url={authorAvatar} accent={authorAccent} size={25} ring={false} />
+            <p className="truncate text-xs font-black text-ink/60">{authorName}</p>
+          </div>
+        </div>
         <button onClick={deletePost} title="Löschen" className="ml-auto rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral hover:rotate-90">
           <IconClose size={16} />
         </button>
@@ -190,14 +221,12 @@ export function PostCard({
 
       {/* footer: small attribution */}
       <p className="relative z-10 mt-3 text-xs font-bold text-muted">
-        von <span className="text-ink/70">{authorName}</span>
         {showContext && (
           <>
-            {" · "}
             <Link href={`/classes/${post.class.id}`} className="hover:underline">{post.class.name}</Link>
+            {" · "}
           </>
         )}
-        {" · "}
         {timeAgo(post.createdAt)}
       </p>
 
