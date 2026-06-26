@@ -126,7 +126,7 @@ export function PollCard({
                 {showResults && (
                   <span
                     className={`absolute inset-y-0 left-0 rounded-[24px] transition-all duration-700 ease-out ${
-                      winner ? "bg-hotpink/35" : "bg-white/28"
+                      winner ? "bg-hotpink/45" : "bg-cyan/30"
                     }`}
                     style={{ width: `${option.percent}%` }}
                   />
