@@ -38,10 +38,10 @@ export async function PATCH(req: Request, { params }: { params: { teacherId: str
   if (!membership) return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
 
   const { name, subject, avatarUrl } = await req.json().catch(() => ({}));
-  const data: { name?: string; subject?: string | null; avatarUrl?: string } = {};
+  const data: { name?: string; subject?: string | null; avatarUrl?: string | null } = {};
   if (typeof name === "string" && name.trim()) data.name = name.trim();
   if (typeof subject === "string") data.subject = subject.trim() || null;
-  if (typeof avatarUrl === "string") data.avatarUrl = avatarUrl;
+  if (typeof avatarUrl === "string" || avatarUrl === null) data.avatarUrl = typeof avatarUrl === "string" && avatarUrl.trim() ? avatarUrl.trim() : null;
 
   const updated = await prisma.teacher.update({ where: { id: params.teacherId }, data });
   return NextResponse.json({ id: updated.id });

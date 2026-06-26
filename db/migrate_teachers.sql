@@ -1,4 +1,4 @@
--- Klassenbuch: Lehrpersonen-Einträge, anonyme Zitate, "wer hat's gesagt".
+-- Maturaziitig: Lehrpersonen-Einträge, anonyme Zitate, "wer hat's gesagt".
 -- Additiv & idempotent, KEIN Datenverlust.
 -- Supabase -> SQL Editor -> New query -> einfügen -> Run.
 

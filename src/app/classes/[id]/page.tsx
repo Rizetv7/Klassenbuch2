@@ -37,9 +37,9 @@ export default function ClassPage() {
     ? (search.get("tab") as Tab)
     : "Schüler";
   const [data, setData] = useState<ClassDetail | null>(null);
-  const [teacherCount, setTeacherCount] = useState(0);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [showManage, setShowManage] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [error, setError] = useState("");
 
   async function loadClass() {
@@ -50,7 +50,6 @@ export default function ClassPage() {
   }
   useEffect(() => {
     loadClass();
-    fetch(`/api/classes/${id}/teachers`).then((r) => r.json()).then((d) => setTeacherCount((d.teachers ?? []).length)).catch(() => {});
   }, [id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
@@ -71,7 +70,7 @@ export default function ClassPage() {
           </div>
           <div className="grid grid-cols-3 gap-2 md:w-[330px]">
             <Stat value={students.length} label="Schüler" />
-            <Stat value={teacherCount} label="Lehrpersonen" />
+            <Stat value={data.counts.teachers} label="Lehrpersonen" />
             <Stat value={data.counts.memories} label="Erinnerungen" />
           </div>
         </div>
@@ -97,6 +96,23 @@ export default function ClassPage() {
       {tab === "Schüler" && <MemberGrid members={students} classId={id} empty="Noch keine Schüler:innen beigetreten." />}
       {tab === "Lehrpersonen" && <TeachersTab classId={id} />}
       {tab === "Projekte" && <ProjectsTab classId={id} />}
+
+      <div className="pt-3">
+        <button onClick={() => setShowImport(true)} className="glass-card w-full p-4 text-left transition hover:-translate-y-0.5">
+          <span className="section-label">Werkzeug</span>
+          <span className="mt-1 block text-lg font-black">Daten importieren</span>
+          <span className="mt-1 block text-sm font-bold text-ink/55">Zitate, Notizen und Bild-URLs aus einer Textliste übernehmen.</span>
+        </button>
+      </div>
+
+      {showImport && (
+        <DataImportModal
+          classId={id}
+          members={data.members}
+          onClose={() => setShowImport(false)}
+          onImported={loadClass}
+        />
+      )}
     </div>
   );
 }
@@ -151,26 +167,26 @@ function ProjectsTab({ classId }: { classId: string }) {
       ) : topics.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Projekte. Erstelle das erste!</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topics.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden transition hover:-translate-y-1">
-              <div className="project-cover h-48 rounded-b-none border-0">
+            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden p-2 transition hover:-translate-y-1">
+              <div className="project-cover h-36 rounded-[24px] border-0">
                 {t.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+                  <img src={t.coverImageUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
                 ) : (
                   <div className="grid h-full place-items-center px-6 text-center">
-                    <span className="display text-6xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>
+                    <span className="display text-5xl leading-none text-ink/40">{t.name.slice(0, 2).toUpperCase()}</span>
                   </div>
                 )}
               </div>
-              <div className="relative z-10 p-5">
+              <div className="relative z-10 p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="display break-words text-5xl leading-[0.88]">{t.name}</h3>
+                  <h3 className="display break-words text-3xl leading-[0.9]">{t.name}</h3>
                   <span className="chip shrink-0">{t.postCount}</span>
                 </div>
-                {t.latestText && <p className="mt-4 font-hand text-3xl leading-[0.98] text-hotpink">{t.latestText}</p>}
-                <p className="mt-5 text-xs font-black uppercase text-ink/50">Projekt öffnen</p>
+                {t.latestText && <p className="mt-3 line-clamp-2 font-hand text-2xl leading-[0.98] text-hotpink">{t.latestText}</p>}
+                <p className="mt-4 text-[11px] font-black uppercase text-ink/50">Projekt öffnen</p>
               </div>
             </Link>
           ))}
@@ -182,17 +198,25 @@ function ProjectsTab({ classId }: { classId: string }) {
 
 function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
+  const ordered = [...members].sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {members.map((m) => (
-        <Link key={m.id} href={`/classes/${classId}/members/${m.id}`} className="glass-card group flex min-h-[178px] flex-col items-center justify-center gap-2 p-4 text-center transition hover:-translate-y-1">
-          <div className="transition group-hover:scale-[1.04]">
-            <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={72} />
-          </div>
-          <span className="text-base font-black leading-tight">{m.displayName.split(" ")[0]}</span>
-          <span className="chip">{m.postCount} Beiträge</span>
-        </Link>
-      ))}
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
+      {ordered.map((m) => {
+        const firstName = m.displayName.split(" ")[0];
+        return (
+          <Link
+            key={m.id}
+            href={`/classes/${classId}/members/${m.id}`}
+            className="glass-card group flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5"
+          >
+            <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={38} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black leading-tight">{firstName}</p>
+              <p className="truncate text-[11px] font-bold text-ink/50">{m.postCount} Beiträge</p>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -243,18 +267,337 @@ function TeachersTab({ classId }: { classId: string }) {
       ) : teachers.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Lehrpersonen. Erstelle die erste!</div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
           {teachers.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex items-center gap-3 p-4 transition hover:-translate-y-1">
-              <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={52} />
+            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5">
+              <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={38} />
               <div className="min-w-0">
-                <p className="font-black truncate">{t.name}</p>
-                <p className="text-xs font-bold text-muted">{t.subject ? `${t.subject} · ` : ""}{t.postCount} Beiträge</p>
+                <p className="truncate text-sm font-black leading-tight">{t.name}</p>
+                <p className="truncate text-[11px] font-bold text-ink/50">{t.subject ? `${t.subject} · ` : ""}{t.postCount} Beiträge</p>
               </div>
             </Link>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type ImportEntry = {
+  id: string;
+  line: number;
+  rawName: string;
+  targetType: "STUDENT" | "TEACHER";
+  kind: "QUOTE" | "TEXT" | "IMAGE";
+  typeLabel: string;
+  text: string | null;
+  context: string | null;
+  imageUrl: string | null;
+  matchKey: string;
+  error?: string;
+};
+
+type PendingImport = {
+  id: string;
+  rawName: string;
+  targetType: string;
+  kind: string;
+  text: string | null;
+  context: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+};
+
+const IMPORT_EXAMPLE = `# Format pro Zeile:
+# Name | Typ | Inhalt | Kontext oder Beschreibung optional
+
+Isai Graf | Zitat | "Das wird schon." | vor Mathe
+Mia Keller | Notiz | Hat immer die besten Zusammenfassungen
+Frau Meier | Lehrerzitat | Morgen gibt es keinen Test
+Lea Sommer | Bild | https://example.com/foto.jpg | Maturareise`;
+
+function normalizeImportName(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function splitMatchKey(value: string) {
+  const [type, id] = value.split(":");
+  return {
+    subjectMembershipId: type === "student" ? id : undefined,
+    teacherId: type === "teacher" ? id : undefined,
+  };
+}
+
+function detectImportType(label: string): Pick<ImportEntry, "kind" | "targetType" | "typeLabel"> {
+  const normalized = normalizeImportName(label);
+  const targetType = normalized.includes("lehrer") || normalized.includes("lehrperson") ? "TEACHER" : "STUDENT";
+  const kind = normalized.includes("bild") || normalized.includes("foto")
+    ? "IMAGE"
+    : normalized.includes("notiz") || normalized.includes("note")
+      ? "TEXT"
+      : "QUOTE";
+  return { kind, targetType, typeLabel: label || kind };
+}
+
+function guessMatchKey(rawName: string, targetType: "STUDENT" | "TEACHER", members: Member[], teachers: TeacherItem[]) {
+  const wanted = normalizeImportName(rawName);
+  if (!wanted) return "";
+  const memberCandidates = members.filter((m) => m.memberType !== "TEACHER");
+  const teacherCandidates = teachers;
+  const findExactMember = memberCandidates.find((m) => normalizeImportName(m.displayName) === wanted);
+  const findExactTeacher = teacherCandidates.find((t) => normalizeImportName(t.name) === wanted);
+  if (targetType === "TEACHER" && findExactTeacher) return `teacher:${findExactTeacher.id}`;
+  if (targetType === "STUDENT" && findExactMember) return `student:${findExactMember.id}`;
+
+  const memberFirst = memberCandidates.filter((m) => normalizeImportName(m.displayName.split(" ")[0]) === wanted);
+  const teacherFirst = teacherCandidates.filter((t) => normalizeImportName(t.name.split(" ")[0]) === wanted);
+  if (targetType === "TEACHER" && teacherFirst.length === 1) return `teacher:${teacherFirst[0].id}`;
+  if (targetType === "STUDENT" && memberFirst.length === 1) return `student:${memberFirst[0].id}`;
+  return "";
+}
+
+function parseImportText(text: string, members: Member[], teachers: TeacherItem[]) {
+  return text
+    .split("\n")
+    .map((raw, index) => ({ raw: raw.trim(), line: index + 1 }))
+    .filter(({ raw }) => raw && !raw.startsWith("#"))
+    .map(({ raw, line }) => {
+      const parts = raw.split("|").map((part) => part.trim());
+      if (parts.length < 3) {
+        return {
+          id: `${line}`,
+          line,
+          rawName: parts[0] || "",
+          targetType: "STUDENT" as const,
+          kind: "TEXT" as const,
+          typeLabel: parts[1] || "",
+          text: parts[2] || null,
+          context: null,
+          imageUrl: null,
+          matchKey: "",
+          error: "Zu wenige Spalten. Nutze: Name | Typ | Inhalt | optionaler Kontext",
+        };
+      }
+
+      const detected = detectImportType(parts[1]);
+      const imageUrl = detected.kind === "IMAGE" ? parts[2] || null : null;
+      const bodyText = detected.kind === "IMAGE" ? parts[3] || null : parts[2] || null;
+      const context = detected.kind === "QUOTE" ? parts[3] || null : null;
+      return {
+        id: `${line}-${parts[0]}`,
+        line,
+        rawName: parts[0],
+        ...detected,
+        text: bodyText,
+        context,
+        imageUrl,
+        matchKey: guessMatchKey(parts[0], detected.targetType, members, teachers),
+        error: detected.kind === "IMAGE" && !imageUrl ? "Bild braucht eine URL in der dritten Spalte." : undefined,
+      };
+    });
+}
+
+function DataImportModal({
+  classId,
+  members,
+  onClose,
+  onImported,
+}: {
+  classId: string;
+  members: Member[];
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [pending, setPending] = useState<PendingImport[]>([]);
+  const [pendingMatches, setPendingMatches] = useState<Record<string, string>>({});
+  const [raw, setRaw] = useState("");
+  const [entries, setEntries] = useState<ImportEntry[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function loadImportData() {
+    const [teacherData, pendingData] = await Promise.all([
+      fetch(`/api/classes/${classId}/teachers`).then((r) => r.json()),
+      fetch(`/api/classes/${classId}/import`).then((r) => r.json()),
+    ]);
+    const teacherList = teacherData.teachers ?? [];
+    const pendingList = pendingData.pending ?? [];
+    setTeachers(teacherList);
+    setPending(pendingList);
+    setPendingMatches(Object.fromEntries(pendingList.map((item: PendingImport) => [
+      item.id,
+      guessMatchKey(item.rawName, item.targetType === "TEACHER" ? "TEACHER" : "STUDENT", members, teacherList),
+    ])));
+  }
+
+  useEffect(() => {
+    loadImportData();
+  }, [classId]);
+
+  function preview() {
+    setEntries(parseImportText(raw, members, teachers));
+    setMsg("");
+  }
+
+  function updateEntryMatch(id: string, matchKey: string) {
+    setEntries((current) => current.map((entry) => entry.id === id ? { ...entry, matchKey } : entry));
+  }
+
+  async function submitImport() {
+    const list = entries.length ? entries : parseImportText(raw, members, teachers);
+    if (list.length === 0) return setMsg("Bitte zuerst Daten einfügen.");
+    if (list.some((entry) => entry.error)) return setMsg("Bitte korrigiere die markierten Zeilen.");
+
+    setBusy(true);
+    const res = await fetch(`/api/classes/${classId}/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entries: list.map((entry) => ({
+          rawName: entry.rawName,
+          targetType: entry.targetType,
+          kind: entry.kind,
+          text: entry.text,
+          context: entry.context,
+          imageUrl: entry.imageUrl,
+          ...splitMatchKey(entry.matchKey),
+        })),
+      }),
+    });
+    const d = await res.json().catch(() => null);
+    setBusy(false);
+    if (res.ok) {
+      setRaw("");
+      setEntries([]);
+      setMsg(`${d.imported} importiert, ${d.pending} offen zum späteren Matchen.`);
+      await loadImportData();
+      onImported();
+    } else {
+      setMsg(d?.error || "Import fehlgeschlagen.");
+    }
+  }
+
+  async function resolvePending(item: PendingImport) {
+    const matchKey = pendingMatches[item.id] || "";
+    if (!matchKey) return setMsg("Bitte zuerst eine Person auswählen.");
+    setBusy(true);
+    const res = await fetch(`/api/classes/${classId}/import`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: item.id, ...splitMatchKey(matchKey) }),
+    });
+    const d = await res.json().catch(() => null);
+    setBusy(false);
+    if (res.ok) {
+      setMsg(`${item.rawName} wurde zugeordnet.`);
+      await loadImportData();
+      onImported();
+    } else {
+      setMsg(d?.error || "Zuordnung fehlgeschlagen.");
+    }
+  }
+
+  const MatchSelect = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <select className="input !py-2" value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Noch nicht matchen</option>
+      <optgroup label="Schüler:innen">
+        {members.filter((m) => m.memberType !== "TEACHER").map((m) => (
+          <option key={m.id} value={`student:${m.id}`}>{m.displayName}</option>
+        ))}
+      </optgroup>
+      <optgroup label="Lehrpersonen">
+        {teachers.map((t) => (
+          <option key={t.id} value={`teacher:${t.id}`}>{t.name}{t.subject ? ` (${t.subject})` : ""}</option>
+        ))}
+      </optgroup>
+    </select>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/55 px-3 py-6 backdrop-blur-sm">
+      <div className="mx-auto max-w-5xl rounded-[34px] border border-white/50 bg-white/80 p-4 shadow-soft sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="section-label mb-2">Import</p>
+            <h2 className="display text-5xl leading-[0.9]">Daten importieren</h2>
+            <p className="mt-2 max-w-2xl text-sm font-black text-ink/60">
+              Füge bestehende Zitate, Notizen und Bild-Links ein. Nicht erkannte Namen kannst du direkt matchen oder unten später zuordnen.
+            </p>
+          </div>
+          <button onClick={onClose} className="btn-soft px-4">Schliessen</button>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="glass-card p-4">
+            <p className="section-label mb-2">Textformat</p>
+            <p className="text-sm font-bold text-ink/65">
+              Eine Zeile pro Eintrag, getrennt mit senkrechtem Strich:
+            </p>
+            <pre className="mt-3 whitespace-pre-wrap rounded-[22px] bg-ink/90 p-4 text-xs font-bold leading-relaxed text-white">{IMPORT_EXAMPLE}</pre>
+          </section>
+
+          <section className="space-y-3">
+            <textarea
+              className="input min-h-[260px] font-mono text-xs leading-relaxed"
+              placeholder={IMPORT_EXAMPLE}
+              value={raw}
+              onChange={(e) => setRaw(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button onClick={preview} className="btn-soft" disabled={busy}>Vorschau erstellen</button>
+              <button onClick={submitImport} className="btn-accent" disabled={busy}>{busy ? "Importiert..." : "Importieren"}</button>
+            </div>
+            {msg && <p className="text-sm font-black text-ink/60">{msg}</p>}
+          </section>
+        </div>
+
+        {entries.length > 0 && (
+          <section className="mt-5 space-y-2">
+            <p className="section-label">Vorschau & Matching</p>
+            <div className="grid gap-2">
+              {entries.map((entry) => (
+                <div key={entry.id} className="glass-card grid gap-3 p-3 lg:grid-cols-[1.2fr_0.9fr] lg:items-center">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black">{entry.rawName} · {entry.typeLabel}</p>
+                    <p className="line-clamp-2 text-xs font-bold text-ink/55">
+                      Zeile {entry.line}: {entry.imageUrl || entry.text}{entry.context ? ` · ${entry.context}` : ""}
+                    </p>
+                    {entry.error && <p className="mt-1 text-xs font-black text-coral">{entry.error}</p>}
+                  </div>
+                  <MatchSelect value={entry.matchKey} onChange={(value) => updateEntryMatch(entry.id, value)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {pending.length > 0 && (
+          <section className="mt-5 space-y-2">
+            <p className="section-label">Noch offene Zuordnungen</p>
+            <div className="grid gap-2">
+              {pending.map((item) => (
+                <div key={item.id} className="glass-card grid gap-3 p-3 lg:grid-cols-[1.1fr_0.9fr_auto] lg:items-center">
+                  <div>
+                    <p className="text-sm font-black">{item.rawName} · {item.kind}</p>
+                    <p className="line-clamp-2 text-xs font-bold text-ink/55">{item.imageUrl || item.text}</p>
+                  </div>
+                  <MatchSelect
+                    value={pendingMatches[item.id] || ""}
+                    onChange={(value) => setPendingMatches((current) => ({ ...current, [item.id]: value }))}
+                  />
+                  <button onClick={() => resolvePending(item)} className="btn-primary" disabled={busy}>Zuordnen</button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

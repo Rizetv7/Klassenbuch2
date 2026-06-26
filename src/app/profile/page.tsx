@@ -13,7 +13,12 @@ export default function ProfilePage() {
   const [accent, setAccent] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -52,6 +57,35 @@ export default function ProfilePage() {
     setBusy(false);
     setMsg(res.ok ? "Gespeichert ✓" : "Fehler beim Speichern.");
     if (res.ok) router.refresh();
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordMsg("");
+    if (newPassword.length < 6) {
+      setPasswordMsg("Das neue Passwort muss mindestens 6 Zeichen lang sein.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg("Die neuen Passwörter stimmen nicht überein.");
+      return;
+    }
+    setPasswordBusy(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const d = await res.json().catch(() => null);
+    setPasswordBusy(false);
+    if (res.ok) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordMsg("Passwort geändert ✓");
+    } else {
+      setPasswordMsg(d?.error || "Passwort konnte nicht geändert werden.");
+    }
   }
 
   async function logout() {
@@ -95,6 +129,49 @@ export default function ProfilePage() {
           {busy ? "Speichert…" : "Speichern"}
         </button>
       </div>
+
+      <form onSubmit={changePassword} className="glass-card p-5 space-y-3">
+        <div>
+          <p className="section-label mb-2">Passwort ändern</p>
+          <label className="label">Aktuelles Passwort</label>
+          <input
+            className="input"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <div>
+          <label className="label">Neues Passwort</label>
+          <input
+            className="input"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
+            required
+          />
+        </div>
+        <div>
+          <label className="label">Neues Passwort wiederholen</label>
+          <input
+            className="input"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
+            required
+          />
+        </div>
+        {passwordMsg && <p className="text-sm font-black text-ink/60">{passwordMsg}</p>}
+        <button className="btn-primary w-full" disabled={passwordBusy}>
+          {passwordBusy ? "Ändert..." : "Passwort ändern"}
+        </button>
+      </form>
 
       <Link href="/classes" className="glass-card p-4 flex items-center justify-between hover:shadow-soft transition">
         <span className="font-black">Meine Klasse</span>

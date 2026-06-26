@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
+import { firstImageByTeacher } from "@/lib/effectiveAvatar";
 
 const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
 
@@ -19,12 +20,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     orderBy: { name: "asc" },
   });
 
+  // Fall back to the newest posted image for teachers without a chosen avatar.
+  const fallbackImg = await firstImageByTeacher(
+    teachers.filter((t) => !t.avatarUrl).map((t) => t.id),
+  );
+
   return NextResponse.json({
     teachers: teachers.map((t) => ({
       id: t.id,
       name: t.name,
       subject: t.subject,
-      avatarUrl: t.avatarUrl,
+      avatarUrl: t.avatarUrl ?? fallbackImg.get(t.id) ?? null,
+      manualAvatarUrl: t.avatarUrl,
       accentColor: t.accentColor,
       postCount: t._count.posts,
     })),

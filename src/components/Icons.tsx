@@ -37,6 +37,17 @@ export function IconUsers({ className, size }: P) {
   );
 }
 
+export function IconPoll({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M5 19V9" />
+      <path d="M12 19V5" />
+      <path d="M19 19v-7" />
+      <path d="M3.5 19.5h17" />
+    </svg>
+  );
+}
+
 export function IconGrid({ className, size }: P) {
   return (
     <svg {...base(size, className)}>
@@ -94,6 +105,16 @@ export function IconPencil({ className, size }: P) {
     <svg {...base(size, className)}>
       <path d="M4 20h4l10-10-4-4L4 16z" />
       <path d="M13.5 6.5l4 4" />
+    </svg>
+  );
+}
+
+export function IconDownload({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 4v10" />
+      <path d="m7.5 10 4.5 4.5L16.5 10" />
+      <path d="M5 19h14" />
     </svg>
   );
 }

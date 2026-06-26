@@ -98,7 +98,7 @@ export function CreatePost({
       <div className="relative z-10 mb-4 flex flex-wrap gap-2">
         <Btn k="QUOTE" label="Zitat" />
         <Btn k="IMAGE" label="Bild" />
-        {isTopic && <Btn k="TEXT" label="Notiz" />}
+        <Btn k="TEXT" label="Post-it" />
       </div>
 
       {kind === "IMAGE" ? (
@@ -117,7 +117,7 @@ export function CreatePost({
               {previews.map((src, i) => (
                 <div key={i} className={`polaroid w-28 ${i % 2 ? "rotate-2" : "-rotate-1"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="h-24 w-full rounded-[18px] object-cover" />
+                  <img src={src} alt="" decoding="async" className="h-24 w-full rounded-[18px] object-cover" />
                 </div>
               ))}
             </div>

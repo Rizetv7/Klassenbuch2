@@ -12,7 +12,7 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const me = await getMembership(userId, params.id);
-  if (!me || !canModerate(me.role)) {
+  if (!me) {
     return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
   }
 
@@ -20,20 +20,41 @@ export async function PATCH(
   if (!target || target.classId !== params.id) {
     return NextResponse.json({ error: "Mitglied nicht gefunden." }, { status: 404 });
   }
-  if (target.role === "OWNER") {
-    return NextResponse.json({ error: "Die Ersteller:in kann nicht verändert werden." }, { status: 400 });
-  }
 
-  const { role, memberType } = await req.json().catch(() => ({}));
+  const { role, memberType, avatarUrl } = await req.json().catch(() => ({}));
   const data: { role?: string; memberType?: string } = {};
   if (role === "MODERATOR" || role === "MEMBER") data.role = role;
   if (memberType === "STUDENT" || memberType === "TEACHER") data.memberType = memberType;
 
-  const updated = await prisma.membership.update({
-    where: { id: params.membershipId },
-    data,
+  if (Object.keys(data).length > 0) {
+    if (!canModerate(me.role)) return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
+    if (target.role === "OWNER") {
+      return NextResponse.json({ error: "Die Ersteller:in kann nicht verändert werden." }, { status: 400 });
+    }
+  }
+
+  let nextAvatarUrl: string | null | undefined;
+  if (typeof avatarUrl === "string" || avatarUrl === null) {
+    const canEditAvatar = target.userId === userId || canModerate(me.role);
+    if (!canEditAvatar) return NextResponse.json({ error: "Keine Berechtigung für dieses Profilbild." }, { status: 403 });
+    const user = await prisma.user.update({
+      where: { id: target.userId },
+      data: { avatarUrl: typeof avatarUrl === "string" && avatarUrl.trim() ? avatarUrl.trim() : null },
+      select: { avatarUrl: true },
+    });
+    nextAvatarUrl = user.avatarUrl;
+  }
+
+  const updated = Object.keys(data).length > 0
+    ? await prisma.membership.update({ where: { id: params.membershipId }, data })
+    : target;
+
+  return NextResponse.json({
+    id: updated.id,
+    role: updated.role,
+    memberType: updated.memberType,
+    avatarUrl: nextAvatarUrl,
   });
-  return NextResponse.json({ id: updated.id, role: updated.role, memberType: updated.memberType });
 }
 
 // Remove a member from the class (moderators only; or remove yourself).

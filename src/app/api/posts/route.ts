@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
-import { serializePosts } from "@/lib/serializePost";
+import { postInclude, serializePostRows, serializePosts } from "@/lib/serializePost";
 
 // GET /api/posts
 //   ?classId=...            -> posts in a class
@@ -48,11 +48,14 @@ export async function GET(req: Request) {
 
   // Random "memory of the day": pick one random matching post.
   if (random === "1") {
-    const ids = await prisma.post.findMany({ where, select: { id: true }, take: 200 });
-    if (ids.length === 0) return NextResponse.json({ posts: [] });
-    const pick = ids[Math.floor(Math.random() * ids.length)].id;
-    const posts = await serializePosts([pick], userId);
-    return NextResponse.json({ posts });
+    const rows = await prisma.post.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 80,
+      include: postInclude(userId),
+    });
+    if (rows.length === 0) return NextResponse.json({ posts: [] });
+    return NextResponse.json({ posts: await serializePostRows([rows[Math.floor(Math.random() * rows.length)]]) });
   }
 
   const orderBy =
@@ -64,11 +67,10 @@ export async function GET(req: Request) {
     where,
     orderBy,
     take: limit,
-    select: { id: true },
+    include: postInclude(userId),
   });
 
-  const posts = await serializePosts(rows.map((r) => r.id), userId);
-  return NextResponse.json({ posts });
+  return NextResponse.json({ posts: await serializePostRows(rows) });
 }
 
 // POST /api/posts  -> create a quote / image / post-it

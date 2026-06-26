@@ -1,4 +1,4 @@
--- Klassenbuch: Projekte/Themen hinzufügen (additiv, idempotent).
+-- Maturaziitig: Projekte/Themen hinzufügen (additiv, idempotent).
 -- Legt die Tabelle "Topic" und die Spalte "Post.topicId" an.
 -- KEIN Datenverlust. Supabase -> SQL Editor -> New query -> einfügen -> Run.
 

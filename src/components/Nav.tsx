@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconUsers, IconUser } from "./Icons";
+import { useEffect, useState } from "react";
+import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
 
 const ACCENTS = ["#ff2fbf", "#ec35d6", "#28d9f2", "#72eadf", "#b9a7ff", "#ffc4a3"];
 export function deriveAccent(seed: string): string {
@@ -40,7 +41,7 @@ export function Avatar({
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt={name} className="h-full w-full object-cover" />
+        <img src={url} alt={name} decoding="async" className="h-full w-full object-cover" />
       ) : (
         initials
       )}
@@ -51,8 +52,15 @@ export function Avatar({
 const ITEMS = [
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/classes", label: "Klasse", Icon: IconUsers },
+  { href: "/polls", label: "Umfragen", Icon: IconPoll },
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
+
+type NavUser = {
+  name: string;
+  avatarUrl?: string | null;
+  accentColor?: string | null;
+};
 
 function useActive() {
   const path = usePathname();
@@ -63,57 +71,94 @@ function useActive() {
 // bottom bar on phones.
 export function SiteNav() {
   const path = usePathname();
+  const [me, setMe] = useState<NavUser | null>(null);
+
+  useEffect(() => {
+    if (path === "/login" || path === "/register") return;
+    let active = true;
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active) setMe(d?.user ?? null);
+      })
+      .catch(() => {
+        if (active) setMe(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [path]);
+
   if (path === "/login" || path === "/register") return null;
   return (
     <>
-      <TopNav />
-      <BottomNav />
+      <TopNav me={me} />
+      <BottomNav me={me} />
     </>
   );
 }
 
-function TopNav() {
+function TopNav({ me }: { me: NavUser | null }) {
   const isActive = useActive();
   return (
     <header className="sticky top-0 z-30 hidden lg:block">
       <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
-        <Link href="/" className="display mr-2 text-2xl leading-none">Klassenbuch</Link>
+        <Link href="/" className="display mr-2 text-2xl leading-none">Maturaziitig</Link>
         <nav className="ml-auto flex items-center gap-1">
-          {ITEMS.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              className={`rounded-full px-4 py-2 text-sm font-black transition ${
-                isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/70 hover:bg-white/40 hover:text-ink"
-              }`}
-            >
-              {it.label}
-            </Link>
-          ))}
+          {ITEMS.map((it) => {
+            const profile = it.href === "/profile" && me;
+            return (
+              <Link
+                key={it.href}
+                href={it.href}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition ${
+                  isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/70 hover:bg-white/40 hover:text-ink"
+                }`}
+              >
+                <span>{it.label}</span>
+                {profile && (
+                  <Avatar
+                    name={me.name}
+                    url={me.avatarUrl}
+                    accent={me.accentColor}
+                    size={26}
+                    ring={false}
+                  />
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </header>
   );
 }
 
-function BottomNav() {
+function BottomNav({ me }: { me: NavUser | null }) {
   const isActive = useActive();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-sm px-4 pb-4">
         <div className="surface flex items-center justify-around px-3 py-2">
-          {ITEMS.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition ${
-                isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/50"
-              }`}
-            >
-              <it.Icon size={21} className="transition" />
-              {it.label}
-            </Link>
-          ))}
+          {ITEMS.map((it) => {
+            const profile = it.href === "/profile" && me;
+            return (
+              <Link
+                key={it.href}
+                href={it.href}
+                className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition ${
+                  isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/50"
+                }`}
+              >
+                {profile ? (
+                  <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={22} ring={false} />
+                ) : (
+                  <it.Icon size={21} className="transition" />
+                )}
+                {it.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

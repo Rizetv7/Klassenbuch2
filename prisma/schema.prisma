@@ -1,4 +1,4 @@
-// Prisma schema for the Klassenbuch app.
+// Prisma schema for the Maturaziitig app.
 //
 // Local development uses SQLite (zero setup). For production switch the
 // provider to "postgresql" and point DATABASE_URL at a managed Postgres
@@ -31,6 +31,9 @@ model User {
   posts       Post[]       @relation("PostAuthor")
   comments    Comment[]
   likes       Like[]
+  polls       Poll[]       @relation("PollAuthor")
+  pollVotes   PollVote[]
+  importItems ImportItem[]
   ownedClasses Class[]     @relation("ClassOwner")
   topics      Topic[]      @relation("TopicCreator")
   teachers    Teacher[]    @relation("TeacherCreator")
@@ -51,6 +54,8 @@ model Class {
   posts       Post[]
   topics      Topic[]
   teachers    Teacher[]
+  polls       Poll[]
+  importItems ImportItem[]
 }
 
 // A teacher is NOT an account/member. Students create teacher entries inside
@@ -157,4 +162,76 @@ model Like {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+}
+
+model Poll {
+  id             String   @id @default(cuid())
+  classId        String
+  authorId       String
+  question       String
+  description    String?
+  candidateType  String?  // null | STUDENTS | TEACHERS
+  anonymous      Boolean  @default(false)
+  multipleChoice Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  class   Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  author  User         @relation("PollAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([classId])
+  @@index([authorId])
+}
+
+model PollOption {
+  id                  String  @id @default(cuid())
+  pollId              String
+  text                String
+  position            Int
+  subjectMembershipId String?
+  teacherId           String?
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@unique([pollId, position])
+  @@index([pollId])
+  @@index([subjectMembershipId])
+  @@index([teacherId])
+}
+
+model PollVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([pollId, userId])
+  @@index([userId])
+}
+
+model ImportItem {
+  id          String   @id @default(cuid())
+  classId     String
+  createdById String
+  rawName     String
+  targetType  String   @default("STUDENT") // STUDENT | TEACHER
+  kind        String   @default("QUOTE")   // QUOTE | TEXT | IMAGE
+  text        String?
+  context     String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator User  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([createdById])
 }

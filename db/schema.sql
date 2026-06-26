@@ -1,4 +1,4 @@
--- Klassenbuch: Datenbank-Schema (idempotent).
+-- Maturaziitig: Datenbank-Schema (idempotent).
 -- Sicher mehrfach ausführbar — legt nur an, was noch fehlt.
 -- Supabase -> SQL Editor -> New query -> einfügen -> Run.
 
@@ -79,6 +79,60 @@ CREATE TABLE IF NOT EXISTS "Like" (
     CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "Poll" (
+    "id" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "authorId" TEXT NOT NULL,
+    "question" TEXT NOT NULL,
+    "description" TEXT,
+    "candidateType" TEXT,
+    "anonymous" BOOLEAN NOT NULL DEFAULT false,
+    "multipleChoice" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Poll_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "PollOption" (
+    "id" TEXT NOT NULL,
+    "pollId" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "position" INTEGER NOT NULL,
+    "subjectMembershipId" TEXT,
+    "teacherId" TEXT,
+
+    CONSTRAINT "PollOption_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "PollVote" (
+    "id" TEXT NOT NULL,
+    "pollId" TEXT NOT NULL,
+    "optionId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PollVote_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "ImportItem" (
+    "id" TEXT NOT NULL,
+    "classId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "rawName" TEXT NOT NULL,
+    "targetType" TEXT NOT NULL DEFAULT 'STUDENT',
+    "kind" TEXT NOT NULL DEFAULT 'QUOTE',
+    "text" TEXT,
+    "context" TEXT,
+    "imageUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ImportItem_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "User_name_key" ON "User"("name");
 
@@ -99,6 +153,45 @@ CREATE INDEX IF NOT EXISTS "Post_subjectMembershipId_idx" ON "Post"("subjectMemb
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Like_postId_userId_key" ON "Like"("postId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Poll_classId_idx" ON "Poll"("classId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Poll_authorId_idx" ON "Poll"("authorId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "PollOption_pollId_idx" ON "PollOption"("pollId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "PollOption_subjectMembershipId_idx" ON "PollOption"("subjectMembershipId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "PollOption_teacherId_idx" ON "PollOption"("teacherId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_position_key" ON "PollOption"("pollId", "position");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_subjectMembershipId_key" ON "PollOption"("pollId", "subjectMembershipId") WHERE "subjectMembershipId" IS NOT NULL;
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "PollOption_pollId_teacherId_key" ON "PollOption"("pollId", "teacherId") WHERE "teacherId" IS NOT NULL;
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "PollVote_pollId_userId_idx" ON "PollVote"("pollId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "PollVote_userId_idx" ON "PollVote"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "PollVote_optionId_userId_key" ON "PollVote"("optionId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ImportItem_classId_idx" ON "ImportItem"("classId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ImportItem_createdById_idx" ON "ImportItem"("createdById");
 
 -- AddForeignKey
 DO $$ BEGIN
@@ -150,3 +243,52 @@ DO $$ BEGIN
   ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "Poll" ADD CONSTRAINT "Poll_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "Poll" ADD CONSTRAINT "Poll_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_subjectMembershipId_fkey" FOREIGN KEY ("subjectMembershipId") REFERENCES "Membership"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollOption" ADD CONSTRAINT "PollOption_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_pollId_fkey" FOREIGN KEY ("pollId") REFERENCES "Poll"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_optionId_fkey" FOREIGN KEY ("optionId") REFERENCES "PollOption"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "PollVote" ADD CONSTRAINT "PollVote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- AddForeignKey
+DO $$ BEGIN
+  ALTER TABLE "ImportItem" ADD CONSTRAINT "ImportItem_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
