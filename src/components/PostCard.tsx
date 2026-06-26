@@ -216,7 +216,7 @@ export function PostCard({
       {/* comments */}
       {open && (
         <div className="soft-divider relative z-10 mt-3 pt-3">
-          <CommentThread postId={post.id} onCountChange={setCommentCount} />
+          <CommentThread commentsPath={`/api/posts/${post.id}/comments`} onCountChange={setCommentCount} />
         </div>
       )}
 

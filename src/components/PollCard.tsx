@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "./Nav";
+import { CommentThread } from "./CommentThread";
+import { IconComment } from "./Icons";
 
 export type Poll = {
   id: string;
@@ -60,6 +62,8 @@ export function PollCard({
   const [pulseOptionId, setPulseOptionId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<CandidateChoice[]>([]);
   const [candidateKey, setCandidateKey] = useState("");
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
 
   useEffect(() => {
     setSelected(poll.selectedOptionIds);
@@ -336,6 +340,22 @@ export function PollCard({
           </button>
         </div>
         {error && <p className="mt-2 text-sm font-black text-coral">{error}</p>}
+
+        <div className="soft-divider mt-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setCommentsOpen((v) => !v)}
+            className="flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1.5 text-sm font-black text-ink/65 transition hover:text-ink"
+          >
+            <IconComment size={18} />
+            Kommentare{commentCount !== null ? ` · ${commentCount}` : ""}
+          </button>
+          {commentsOpen && (
+            <div className="mt-3">
+              <CommentThread commentsPath={`/api/polls/${poll.id}/comments`} onCountChange={setCommentCount} />
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );

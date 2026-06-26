@@ -45,10 +45,11 @@ function CommentBody({ text }: { text: string }) {
 }
 
 export function CommentThread({
-  postId,
+  commentsPath,
   onCountChange,
 }: {
-  postId: string;
+  // collection endpoint, e.g. "/api/posts/{id}/comments" or "/api/polls/{id}/comments"
+  commentsPath: string;
   onCountChange?: (n: number) => void;
 }) {
   const [comments, setComments] = useState<CommentNode[] | null>(null);
@@ -60,7 +61,7 @@ export function CommentThread({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const res = await fetch(`/api/posts/${postId}/comments`);
+      const res = await fetch(commentsPath);
       if (cancelled) return;
       if (res.ok) {
         const list: CommentNode[] = (await res.json()).comments ?? [];
@@ -74,7 +75,7 @@ export function CommentThread({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
+  }, [commentsPath]);
 
   // children grouped by parent id (null = top level)
   const childrenOf = useMemo(() => {
@@ -91,7 +92,7 @@ export function CommentThread({
   async function submit(parentId: string | null, value: string): Promise<boolean> {
     if (!value.trim() || busy) return false;
     setBusy(true);
-    const res = await fetch(`/api/posts/${postId}/comments`, {
+    const res = await fetch(commentsPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: value, parentId }),
