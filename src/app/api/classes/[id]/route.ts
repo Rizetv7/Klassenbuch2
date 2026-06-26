@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
+import { firstImageBySubject } from "@/lib/effectiveAvatar";
 
 // Class details incl. members (the auto-generated student/teacher list).
 export async function GET(
@@ -31,12 +32,18 @@ export async function GET(
   });
   if (!klass) return NextResponse.json({ error: "Klasse nicht gefunden." }, { status: 404 });
 
+  // For members without a manually chosen avatar, fall back to the newest
+  // image posted about them so the same picture shows everywhere.
+  const fallbackImg = await firstImageBySubject(
+    klass.memberships.filter((m) => !m.user.avatarUrl).map((m) => m.id),
+  );
   const members = klass.memberships.map((m) => ({
     id: m.id,
     displayName: m.displayName,
     memberType: m.memberType,
     role: m.role,
-    avatarUrl: m.user.avatarUrl,
+    avatarUrl: m.user.avatarUrl ?? fallbackImg.get(m.id) ?? null,
+    manualAvatarUrl: m.user.avatarUrl,
     accentColor: m.user.accentColor,
     postCount: m._count.subjectPosts,
   }));

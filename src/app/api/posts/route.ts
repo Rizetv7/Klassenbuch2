@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       include: postInclude(userId),
     });
     if (rows.length === 0) return NextResponse.json({ posts: [] });
-    return NextResponse.json({ posts: serializePostRows([rows[Math.floor(Math.random() * rows.length)]]) });
+    return NextResponse.json({ posts: await serializePostRows([rows[Math.floor(Math.random() * rows.length)]]) });
   }
 
   const orderBy =
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
     include: postInclude(userId),
   });
 
-  return NextResponse.json({ posts: serializePostRows(rows) });
+  return NextResponse.json({ posts: await serializePostRows(rows) });
 }
 
 // POST /api/posts  -> create a quote / image / post-it

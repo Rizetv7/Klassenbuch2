@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { firstImageBySubject, firstImageByTeacher } from "./effectiveAvatar";
 
 // Shape used everywhere the frontend renders a post.
 export function postInclude(viewerId: string) {
@@ -13,7 +14,20 @@ export function postInclude(viewerId: string) {
   };
 }
 
-export function serializePostRows(posts: any[]) {
+export async function serializePostRows(posts: any[]) {
+  // Resolve the "newest posted image" fallback for any subject/teacher that
+  // has no manually chosen avatar, so their effective picture shows on cards.
+  const subjectNeed = posts
+    .filter((p) => p.subject && !p.subject.user.avatarUrl)
+    .map((p) => p.subject.id);
+  const teacherNeed = posts
+    .filter((p) => p.teacher && !p.teacher.avatarUrl)
+    .map((p) => p.teacher.id);
+  const [subjectImg, teacherImg] = await Promise.all([
+    firstImageBySubject(subjectNeed),
+    firstImageByTeacher(teacherNeed),
+  ]);
+
   return posts.map((p) => ({
       id: p.id,
       board: p.board,
@@ -32,11 +46,19 @@ export function serializePostRows(posts: any[]) {
             id: p.subject.id,
             displayName: p.subject.displayName,
             memberType: p.subject.memberType,
-            avatarUrl: p.subject.user.avatarUrl,
+            avatarUrl: p.subject.user.avatarUrl ?? subjectImg.get(p.subject.id) ?? null,
             accentColor: p.subject.user.accentColor,
           }
         : null,
-      teacher: p.teacher,
+      teacher: p.teacher
+        ? {
+            id: p.teacher.id,
+            name: p.teacher.name,
+            subject: p.teacher.subject,
+            avatarUrl: p.teacher.avatarUrl ?? teacherImg.get(p.teacher.id) ?? null,
+            accentColor: p.teacher.accentColor,
+          }
+        : null,
       topic: p.topic,
       likeCount: p._count.likes,
       commentCount: p._count.comments,
@@ -54,5 +76,5 @@ export async function serializePosts(postIds: string[], viewerId: string) {
 
   // preserve incoming order
   const byId = new Map(posts.map((p) => [p.id, p]));
-  return serializePostRows(postIds.map((id) => byId.get(id)).filter(Boolean));
+  return await serializePostRows(postIds.map((id) => byId.get(id)).filter(Boolean));
 }

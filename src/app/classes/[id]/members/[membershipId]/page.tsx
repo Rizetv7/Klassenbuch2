@@ -7,7 +7,7 @@ import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
 
-type Member = { id: string; displayName: string; memberType: string; avatarUrl: string | null; accentColor: string | null };
+type Member = { id: string; displayName: string; memberType: string; avatarUrl: string | null; manualAvatarUrl: string | null; accentColor: string | null };
 
 const TABS = ["Alle", "Zitate", "Bilder", "Post-its"] as const;
 type Tab = (typeof TABS)[number];
@@ -55,7 +55,7 @@ export default function MemberPage() {
     });
     const d = await res.json().catch(() => null);
     if (!res.ok) throw new Error(d?.error || "Profilbild konnte nicht gespeichert werden.");
-    setMember((current) => (current ? { ...current, avatarUrl: d.avatarUrl ?? null } : current));
+    setMember((current) => (current ? { ...current, manualAvatarUrl: d.avatarUrl ?? null } : current));
   }
 
   return (
@@ -72,7 +72,7 @@ export default function MemberPage() {
           <ProfileImagePicker
             name={member.displayName}
             accent={member.accentColor}
-            manualUrl={member.avatarUrl}
+            manualUrl={member.manualAvatarUrl}
             fallbackUrl={cover?.imageUrl ?? null}
             images={imageUrls}
             onChange={updateAvatar}
