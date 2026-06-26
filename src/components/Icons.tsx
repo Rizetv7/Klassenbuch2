@@ -37,6 +37,17 @@ export function IconUsers({ className, size }: P) {
   );
 }
 
+export function IconPoll({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M5 19V9" />
+      <path d="M12 19V5" />
+      <path d="M19 19v-7" />
+      <path d="M3.5 19.5h17" />
+    </svg>
+  );
+}
+
 export function IconGrid({ className, size }: P) {
   return (
     <svg {...base(size, className)}>

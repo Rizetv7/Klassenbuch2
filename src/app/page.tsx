@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoginCard } from "@/components/LoginCard";
 import type { Post } from "@/components/PostCard";
+import { PollCard, type Poll } from "@/components/PollCard";
 
 export default function HomePage() {
   const router = useRouter();
   const [me, setMe] = useState<{ name: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [polls, setPolls] = useState<Poll[]>([]);
   const [memory, setMemory] = useState<Post | null>(null);
   const [hasClass, setHasClass] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,7 @@ export default function HomePage() {
       }
       setMe(home.user);
       setPosts(home.posts ?? []);
+      setPolls(home.polls ?? []);
       setMemory(home.memory ?? null);
       setHasClass(!!home.hasClass);
       setLoading(false);
@@ -67,6 +70,8 @@ export default function HomePage() {
         </div>
       </header>
 
+      {polls.length > 0 && <HomePollDeck polls={polls} onChange={setPolls} />}
+
       {posts.length === 0 ? (
         <EmptyHome hasClass={hasClass} />
       ) : (
@@ -98,6 +103,38 @@ export default function HomePage() {
         </>
       )}
     </div>
+  );
+}
+
+function HomePollDeck({ polls, onChange }: { polls: Poll[]; onChange: (polls: Poll[]) => void }) {
+  const [index, setIndex] = useState(0);
+  const current = polls[Math.min(index, polls.length - 1)];
+  if (!current) return null;
+
+  function updatePoll(updated: Poll) {
+    onChange(polls.map((poll) => (poll.id === updated.id ? updated : poll)));
+  }
+
+  const hasNext = current.votedByMe && index < polls.length - 1;
+  const finished = current.votedByMe && index >= polls.length - 1;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="section-label">Offene Umfragen</h2>
+        <span className="chip">{index + 1}/{polls.length}</span>
+      </div>
+      <PollCard poll={current} featured onVoted={updatePoll} />
+      {(hasNext || finished) && (
+        <div className="flex justify-end">
+          {hasNext ? (
+            <button className="btn-primary" onClick={() => setIndex((i) => i + 1)}>Nächste Umfrage</button>
+          ) : (
+            <button className="btn-soft" onClick={() => onChange(polls.filter((poll) => !poll.votedByMe))}>Ausblenden</button>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 

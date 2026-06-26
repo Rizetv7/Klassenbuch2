@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IconHome, IconUsers, IconUser } from "./Icons";
+import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
 
 const ACCENTS = ["#ff2fbf", "#ec35d6", "#28d9f2", "#72eadf", "#b9a7ff", "#ffc4a3"];
 export function deriveAccent(seed: string): string {
@@ -52,6 +52,7 @@ export function Avatar({
 const ITEMS = [
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/classes", label: "Klasse", Icon: IconUsers },
+  { href: "/polls", label: "Umfragen", Icon: IconPoll },
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
 

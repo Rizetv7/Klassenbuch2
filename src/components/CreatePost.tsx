@@ -98,7 +98,7 @@ export function CreatePost({
       <div className="relative z-10 mb-4 flex flex-wrap gap-2">
         <Btn k="QUOTE" label="Zitat" />
         <Btn k="IMAGE" label="Bild" />
-        {isTopic && <Btn k="TEXT" label="Notiz" />}
+        <Btn k="TEXT" label="Notiz" />
       </div>
 
       {kind === "IMAGE" ? (
