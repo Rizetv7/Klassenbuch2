@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoginCard } from "@/components/LoginCard";
@@ -59,6 +59,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-5">
+      <Reveal order={0}>
       <header className="flex items-end justify-between gap-4">
         <div>
           <p className="section-label mb-2">Aus deiner Maturaziitig</p>
@@ -70,15 +71,25 @@ export default function HomePage() {
           </p>
         </div>
       </header>
+      </Reveal>
 
-      {polls.length > 0 && <HomePollDeck polls={polls} onChange={setPolls} />}
+      {polls.length > 0 && (
+        <Reveal order={1}>
+          <HomePollDeck polls={polls} onChange={setPolls} />
+        </Reveal>
+      )}
 
       {posts.length === 0 ? (
-        <EmptyHome hasClass={hasClass} />
+        <Reveal order={2}>
+          <EmptyHome hasClass={hasClass} />
+        </Reveal>
       ) : (
         <>
+          <Reveal order={2}>
           <HomeBoard featured={featured} sideTiles={sideTiles} />
+          </Reveal>
 
+          <Reveal order={3}>
           <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
             <section className="space-y-3">
               <SectionHead title="Interessant gerade" meta={popular.length ? `${popular.length} Fundstücke` : ""} />
@@ -98,11 +109,28 @@ export default function HomePage() {
               </div>
             </section>
           </div>
+          </Reveal>
 
-          {gallery.length > 0 && <PhotoStrip posts={gallery} />}
-          {quoteStrip.length > 0 && <QuoteStrip posts={quoteStrip} />}
+          {gallery.length > 0 && (
+            <Reveal order={4}>
+              <PhotoStrip posts={gallery} />
+            </Reveal>
+          )}
+          {quoteStrip.length > 0 && (
+            <Reveal order={5}>
+              <QuoteStrip posts={quoteStrip} />
+            </Reveal>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+function Reveal({ order, children }: { order: number; children: React.ReactNode }) {
+  return (
+    <div className="home-reveal" style={{ "--reveal-delay": `${order * 92}ms` } as CSSProperties}>
+      {children}
     </div>
   );
 }
@@ -284,10 +312,69 @@ function QuoteStrip({ posts }: { posts: Post[] }) {
 
 function Skeleton() {
   return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-16 w-52 rounded-full bg-white/40" />
-      <div className="h-80 rounded-[38px] bg-white/40" />
-      <div className="h-48 rounded-[30px] bg-white/40" />
+    <div className="home-loading space-y-5">
+      <header className="space-y-3">
+        <div className="skeleton-pill h-4 w-40" />
+        <div className="skeleton-line h-14 w-64 max-w-full rounded-[28px]" />
+        <div className="skeleton-line h-5 w-full max-w-xl rounded-full" />
+      </header>
+
+      <section className="grid gap-3 lg:grid-cols-[1.18fr_0.82fr]">
+        <div className="skeleton-card min-h-[310px] rounded-[34px] p-5">
+          <div className="flex gap-2">
+            <div className="skeleton-pill h-8 w-20" />
+            <div className="skeleton-pill h-8 w-28" />
+          </div>
+          <div className="mt-24 max-w-2xl space-y-3">
+            <div className="skeleton-line h-12 w-11/12 rounded-[24px]" />
+            <div className="skeleton-line h-12 w-8/12 rounded-[24px]" />
+            <div className="mt-5 flex items-center gap-3">
+              <div className="skeleton-avatar h-11 w-11" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="skeleton-line h-4 w-44 rounded-full" />
+                <div className="skeleton-line h-3 w-32 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="skeleton-card grid min-h-[96px] grid-cols-[86px_1fr] gap-3 rounded-[30px] p-2">
+              <div className="skeleton-photo rounded-[24px]" />
+              <div className="space-y-2 py-2">
+                <div className="skeleton-line h-3 w-16 rounded-full" />
+                <div className="skeleton-line h-5 w-full rounded-full" />
+                <div className="skeleton-line h-5 w-9/12 rounded-full" />
+                <div className="skeleton-line h-3 w-24 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        {[0, 1].map((section) => (
+          <section key={section} className="space-y-3">
+            <div className="flex justify-between">
+              <div className="skeleton-pill h-4 w-36" />
+              <div className="skeleton-pill h-7 w-24" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="skeleton-card grid min-h-[126px] grid-cols-[82px_1fr] gap-3 rounded-[30px] p-2">
+                  <div className="skeleton-photo rounded-[24px]" />
+                  <div className="space-y-2 py-2">
+                    <div className="skeleton-line h-3 w-14 rounded-full" />
+                    <div className="skeleton-line h-5 w-full rounded-full" />
+                    <div className="skeleton-line h-5 w-8/12 rounded-full" />
+                    <div className="skeleton-line h-3 w-28 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
