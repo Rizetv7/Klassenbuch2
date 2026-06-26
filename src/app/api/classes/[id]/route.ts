@@ -23,10 +23,10 @@ export async function GET(
       _count: { select: { posts: true, teachers: true } },
       memberships: {
         include: {
-          user: { select: { avatarUrl: true, accentColor: true } },
+          user: { select: { name: true, avatarUrl: true, accentColor: true } },
           _count: { select: { subjectPosts: true } },
         },
-        orderBy: [{ memberType: "asc" }, { displayName: "asc" }],
+        orderBy: [{ memberType: "asc" }, { user: { name: "asc" } }],
       },
     },
   });
@@ -39,7 +39,9 @@ export async function GET(
   );
   const members = klass.memberships.map((m) => ({
     id: m.id,
-    displayName: m.displayName,
+    // The shown name always follows the current account name, so a profile
+    // rename is reflected everywhere (displayName is only a stale snapshot).
+    displayName: m.user.name ?? m.displayName,
     memberType: m.memberType,
     role: m.role,
     avatarUrl: m.user.avatarUrl ?? fallbackImg.get(m.id) ?? null,
