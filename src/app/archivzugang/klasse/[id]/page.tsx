@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -229,15 +230,31 @@ function PeopleView({ data, onUserSaved }: { data: ClassDetail; onUserSaved: (us
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {data.members.map((member) => (
-            <article key={member.id} className="glass-card flex min-h-[118px] items-start gap-3 p-3">
-              <Avatar name={member.user.name} url={member.user.avatarUrl} accent={member.user.accentColor} size={48} />
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate font-black">{member.user.name}</h3>
-                <p className="truncate text-xs font-bold text-ink/45">{member.user.email || "Keine E-Mail"}</p>
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  <span className="chip !px-2 !py-0.5">{member.role}</span>
-                  <span className="text-xs font-black text-ink/45">{member._count.subjectPosts} Einträge</span>
-                </div>
+            <article key={member.id} className="glass-card min-h-[118px] p-3">
+              <div className="flex items-start gap-3">
+                <Link
+                  href={`/archivzugang/klasse/${data.class.id}/person/${member.id}`}
+                  className="flex min-w-0 flex-1 items-start gap-3 rounded-[22px] transition hover:bg-white/15"
+                >
+                  <Avatar name={member.user.name} url={member.user.avatarUrl} accent={member.user.accentColor} size={48} />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-black">{member.user.name}</h3>
+                    <p className="truncate text-xs font-bold text-ink/45">{member.user.email || "Keine E-Mail"}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      <span className="chip !px-2 !py-0.5">{member.role}</span>
+                      <span className="text-xs font-black text-ink/45">{member._count.subjectPosts} Einträge</span>
+                    </div>
+                  </div>
+                </Link>
+                <Link
+                  href={`/archivzugang/klasse/${data.class.id}/person/${member.id}`}
+                  aria-label={`${member.user.name} öffnen`}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-white transition active:scale-95"
+                >
+                  →
+                </Link>
+              </div>
+              <div className="ml-[60px]">
                 <RenameUser user={member.user} onSaved={onUserSaved} />
               </div>
             </article>

@@ -192,18 +192,30 @@ export default function InternalOverviewPage() {
             <section className="grid gap-2 lg:grid-cols-2">
               {visibleUsers.map((user) => (
                 <article key={user.id} className="glass-card flex min-h-[108px] items-start gap-3 p-3.5">
-                  <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={52} />
+                  {user.memberships[0] ? (
+                    <Link href={`/archivzugang/klasse/${user.memberships[0].class.id}/person/${user.memberships[0].id}`}>
+                      <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={52} />
+                    </Link>
+                  ) : (
+                    <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={52} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h2 className="truncate text-base font-black">{user.name}</h2>
+                        <h2 className="truncate text-base font-black">
+                          {user.memberships[0] ? (
+                            <Link className="hover:underline" href={`/archivzugang/klasse/${user.memberships[0].class.id}/person/${user.memberships[0].id}`}>
+                              {user.name}
+                            </Link>
+                          ) : user.name}
+                        </h2>
                         <p className="truncate text-xs font-bold text-ink/45">{user.email || "Keine E-Mail"}</p>
                       </div>
                       <p className="text-xs font-black text-ink/45">{user._count.posts} Beiträge</p>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {user.memberships.length ? user.memberships.map((membership) => (
-                        <Link key={membership.id} href={`/archivzugang/klasse/${membership.class.id}`} className="chip !py-1 hover:bg-white/35">
+                        <Link key={membership.id} href={`/archivzugang/klasse/${membership.class.id}/person/${membership.id}`} className="chip !py-1 hover:bg-white/35">
                           {membership.class.name} · {membership.role === "OWNER" ? "Owner" : membership.role === "MODERATOR" ? "Mod" : "Mitglied"}
                         </Link>
                       )) : <span className="text-xs font-bold text-ink/40">Noch ohne Klasse</span>}
