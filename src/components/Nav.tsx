@@ -72,9 +72,10 @@ function useActive() {
 export function SiteNav() {
   const path = usePathname();
   const [me, setMe] = useState<NavUser | null>(null);
+  const isInternal = path.startsWith("/archivzugang");
 
   useEffect(() => {
-    if (path === "/login" || path === "/register") return;
+    if (path === "/login" || path === "/register" || isInternal) return;
     let active = true;
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -87,9 +88,9 @@ export function SiteNav() {
     return () => {
       active = false;
     };
-  }, [path]);
+  }, [isInternal, path]);
 
-  if (path === "/login" || path === "/register") return null;
+  if (path === "/login" || path === "/register" || isInternal) return null;
   return (
     <>
       <TopNav me={me} />
