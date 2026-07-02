@@ -2,161 +2,103 @@
 
 import { useEffect, useRef } from "react";
 
-type Blob = {
+// Watercolor background, built from scratch.
+//
+// The look: pigments bleeding into wet paper. Pale sky blue and mint pool in
+// the top left, soft lavender in the top right, a milky white haze through
+// the middle, rose and saturated magenta flooding up from the bottom.
+//
+// The technique: every pigment is drawn as three stacked, slightly larger and
+// fainter layers with irregular sine-wobbled edges — that layered feathering
+// is what reads as watercolor instead of a plain gradient. Everything drifts
+// very slowly. Rendered at low resolution and low FPS, paused while
+// scrolling and while the tab is hidden.
+
+type Pigment = {
   color: string;
-  colors?: string[];
-  x: number;
+  x: number; // 0..1 viewport space
   y: number;
-  radius: number;
+  r: number; // radius relative to max(viewport)
   alpha: number;
-  drift: number;
+  drift: number; // movement speed
   phase: number;
-  scaleX?: number;
-  scaleY?: number;
+  sx?: number; // horizontal stretch
+  sy?: number; // vertical stretch
+  soft?: number; // 0..1 where the pigment starts feathering out
 };
 
-const POINTS = 46;
-const LAYER_ALPHA = [0.44, 0.19, 0.1];
-
-const WASH_THEMES: Record<string, string>[] = [
-  {},
-  {
-    "--wash-cool-x": "108%",
-    "--wash-cool-y": "20%",
-    "--wash-warm-x": "-8%",
-    "--wash-warm-y": "16%",
-    "--wash-pink-x": "58%",
-    "--wash-pink-y": "48%",
-    "--wash-bottom-x": "46%",
-    "--wash-linear-angle": "210deg",
-  },
-  {
-    "--wash-cool-x": "8%",
-    "--wash-cool-y": "10%",
-    "--wash-warm-x": "92%",
-    "--wash-warm-y": "10%",
-    "--wash-pink-x": "70%",
-    "--wash-pink-y": "52%",
-    "--wash-bottom-x": "24%",
-    "--wash-base-b": "#b9a7ff",
-    "--wash-linear-angle": "135deg",
-  },
-  {
-    "--wash-cool-x": "86%",
-    "--wash-cool-y": "8%",
-    "--wash-warm-x": "18%",
-    "--wash-warm-y": "22%",
-    "--wash-pink-x": "34%",
-    "--wash-pink-y": "44%",
-    "--wash-bottom-x": "72%",
-    "--wash-base-c": "#ec35d6",
-    "--wash-linear-angle": "245deg",
-  },
+// Paint order matters (later = on top): milky haze and pinks first, the
+// blue/mint/lavender pools last so nothing washes them out.
+const PIGMENTS: Pigment[] = [
+  // middle: milky haze + first soft pinks
+  { color: "#fdf7f3", x: 0.52, y: 0.14, r: 0.44, alpha: 0.8, drift: 0.13, phase: 2.7, sx: 1.25, sy: 0.6 },
+  { color: "#ffffff", x: 0.46, y: 0.36, r: 0.34, alpha: 0.42, drift: 0.12, phase: 3.6, sx: 1.25, sy: 0.7 },
+  { color: "#f9c3de", x: 0.72, y: 0.44, r: 0.5, alpha: 0.75, drift: 0.16, phase: 2.2, sx: 1.2, sy: 0.9 },
+  { color: "#f59ccb", x: 0.24, y: 0.52, r: 0.46, alpha: 0.7, drift: 0.18, phase: 1.2, sx: 1.05, sy: 0.95 },
+  // bottom: rose into saturated magenta
+  { color: "#f377bd", x: 0.88, y: 0.78, r: 0.5, alpha: 0.8, drift: 0.16, phase: 5.8, sx: 1.1, sy: 0.85, soft: 0.4 },
+  { color: "#ee4fb3", x: 0.42, y: 0.86, r: 0.56, alpha: 0.85, drift: 0.14, phase: 0.9, sx: 1.35, sy: 0.7, soft: 0.4 },
+  { color: "#e73dab", x: 0.06, y: 1.05, r: 0.55, alpha: 0.9, drift: 0.15, phase: 4.6, sx: 1.25, sy: 0.75, soft: 0.38 },
+  // top right: lavender
+  { color: "#d9cbfa", x: 0.84, y: 0.18, r: 0.36, alpha: 0.75, drift: 0.15, phase: 5.3, sx: 1.0, sy: 0.85 },
+  { color: "#bda6f2", x: 1.04, y: 0.0, r: 0.46, alpha: 0.95, drift: 0.18, phase: 4.1, sx: 1.1, sy: 0.9, soft: 0.4 },
+  // top left: sky blue into mint (painted last so they stay clearly visible)
+  { color: "#9fe5cf", x: 0.24, y: -0.04, r: 0.4, alpha: 0.9, drift: 0.17, phase: 1.9, sx: 1.15, sy: 0.85, soft: 0.38 },
+  { color: "#7cc7ee", x: -0.06, y: 0.04, r: 0.48, alpha: 1, drift: 0.2, phase: 0.3, sx: 1.05, sy: 1.0, soft: 0.4 },
 ];
 
-const BLOBS: Blob[] = [
-  { color: "#ff2fbf", colors: ["#ff2fbf", "#ec35d6", "#ff6ad5"], x: 0.54, y: 1.17, radius: 0.58, alpha: 0.88, drift: 0.14, phase: 0.9, scaleX: 1.58, scaleY: 0.62 },
-  { color: "#ec35d6", colors: ["#ec35d6", "#ff2fbf", "#ff6ad5"], x: 0.12, y: 0.88, radius: 0.54, alpha: 0.62, drift: 0.16, phase: 4.8, scaleX: 1.12, scaleY: 0.78 },
-  { color: "#ff6ad5", colors: ["#ff6ad5", "#ec35d6", "#ffc4a3"], x: 0.86, y: 0.82, radius: 0.58, alpha: 0.54, drift: 0.17, phase: 5.6, scaleX: 1.08, scaleY: 0.82 },
-  { color: "#b9a7ff", colors: ["#b9a7ff", "#ff6ad5", "#72eadf"], x: 0.22, y: 0.62, radius: 0.50, alpha: 0.42, drift: 0.18, phase: 1.1, scaleX: 0.94, scaleY: 1.02 },
-  { color: "#ff6ad5", colors: ["#ff6ad5", "#ff2fbf", "#b9a7ff"], x: 0.32, y: 0.58, radius: 0.46, alpha: 0.45, drift: 0.17, phase: 2.8, scaleX: 1.06, scaleY: 0.96 },
-  { color: "#ff2fbf", colors: ["#ff2fbf", "#ff6ad5", "#b9a7ff"], x: 0.47, y: 0.44, radius: 0.48, alpha: 0.52, drift: 0.15, phase: 2.0, scaleX: 1.02, scaleY: 1.08 },
-  { color: "#ffc4a3", colors: ["#ffc4a3", "#ffd2a1", "#ff6ad5"], x: 0.78, y: 0.36, radius: 0.56, alpha: 0.52, drift: 0.16, phase: 5.1, scaleX: 1.18, scaleY: 0.90 },
-  { color: "#ffd2a1", colors: ["#ffd2a1", "#ffc4a3", "#f8f1df"], x: 1.00, y: 0.24, radius: 0.55, alpha: 0.62, drift: 0.17, phase: 4.2, scaleX: 1.06, scaleY: 0.94 },
-  { color: "#f8f1df", colors: ["#f8f1df", "#ffd2a1", "#ffc4a3"], x: 0.82, y: 0.05, radius: 0.64, alpha: 0.50, drift: 0.18, phase: 2.6, scaleX: 1.30, scaleY: 0.48 },
-  { color: "#f8f1df", colors: ["#f8f1df", "#ffc4a3", "#b9a7ff"], x: 0.50, y: 0.12, radius: 0.62, alpha: 0.40, drift: 0.15, phase: 3.3, scaleX: 1.42, scaleY: 0.46 },
-  { color: "#72eadf", colors: ["#72eadf", "#28d9f2", "#b9a7ff"], x: 0.10, y: 0.24, radius: 0.42, alpha: 0.60, drift: 0.19, phase: 1.7, scaleX: 0.92, scaleY: 1.02 },
-  { color: "#28d9f2", colors: ["#28d9f2", "#72eadf", "#b9a7ff"], x: -0.08, y: 0.20, radius: 0.44, alpha: 0.68, drift: 0.20, phase: 0.2, scaleX: 0.82, scaleY: 1.02 },
-  { color: "#f8f1df", colors: ["#f8f1df", "#72eadf", "#ffc4a3"], x: 0.25, y: 0.14, radius: 0.32, alpha: 0.22, drift: 0.12, phase: 4.7, scaleX: 0.96, scaleY: 0.72 },
+// three feathering layers per pigment: core, bleed, outer wash
+const LAYERS = [
+  { scale: 1.0, alpha: 0.68 },
+  { scale: 1.16, alpha: 0.26 },
+  { scale: 1.34, alpha: 0.12 },
 ];
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
+const EDGE_POINTS = 38;
 
-function seededRandom(seed: number) {
-  let state = seed >>> 0;
-  return () => {
-    state += 0x6d2b79f5;
-    let next = state;
-    next = Math.imul(next ^ (next >>> 15), next | 1);
-    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
-    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function makePaintBlobs(seed: number, layout: number) {
-  const random = seededRandom(seed);
-  return BLOBS.map((blob) => {
-    const colors = blob.colors ?? [blob.color];
-    const flipX = layout === 1 || layout === 3;
-    const shiftX = layout === 2 ? 0.12 : layout === 3 ? -0.10 : 0;
-    return {
-      ...blob,
-      color: colors[Math.floor(random() * colors.length)] ?? blob.color,
-      x: clamp((flipX ? 1 - blob.x : blob.x) + shiftX + (random() - 0.5) * 0.11, -0.18, 1.18),
-      y: clamp(blob.y + (random() - 0.5) * 0.095, -0.12, 1.22),
-      radius: blob.radius * (0.84 + random() * 0.34),
-      alpha: clamp(blob.alpha * (0.78 + random() * 0.42), 0.12, 0.90),
-      drift: blob.drift * (1.08 + random() * 0.55),
-      phase: blob.phase + random() * Math.PI * 2,
-      scaleX: (blob.scaleX ?? 1) * (0.86 + random() * 0.30),
-      scaleY: (blob.scaleY ?? 1) * (0.86 + random() * 0.30),
-    };
-  });
-}
-
-function applyWashTheme(layout: number) {
-  const root = document.documentElement;
-  const theme = WASH_THEMES[layout] ?? WASH_THEMES[0];
-  for (const [key, value] of Object.entries(theme)) root.style.setProperty(key, value);
-  return () => {
-    for (const key of Object.keys(theme)) root.style.removeProperty(key);
-  };
-}
-
-function edgeNoise(angle: number, blob: Blob, t: number, layer: number) {
+function edgeWobble(angle: number, phase: number, t: number, layer: number) {
   return (
-    Math.sin(angle * 2.15 + t * 0.08 + blob.phase + layer * 0.8) * 0.045 +
-    Math.sin(angle * 4.55 - t * 0.10 + blob.phase * 1.7 + layer) * 0.032 +
-    Math.cos(angle * 7.4 + t * 0.06 + blob.phase * 0.6 + layer * 1.4) * 0.018
+    1 +
+    Math.sin(angle * 2.3 + t * 0.09 + phase + layer * 0.9) * 0.055 +
+    Math.sin(angle * 4.7 - t * 0.07 + phase * 1.6 + layer) * 0.034 +
+    Math.cos(angle * 7.9 + t * 0.05 + phase * 0.7 + layer * 1.4) * 0.02
   );
 }
 
-function drawBlob(ctx: CanvasRenderingContext2D, blob: Blob, w: number, h: number, t: number) {
+function drawPigment(ctx: CanvasRenderingContext2D, p: Pigment, w: number, h: number, t: number) {
   const size = Math.max(w, h);
-  const wobbleX = Math.sin(t * blob.drift + blob.phase) * 0.040 + Math.sin(t * 0.12 + blob.phase * 2.1) * 0.018;
-  const wobbleY = Math.cos(t * blob.drift * 0.82 + blob.phase) * 0.036 + Math.sin(t * 0.13 + blob.phase * 1.7) * 0.016;
-  const pulse = 1 + Math.sin(t * 0.18 + blob.phase) * 0.036 + Math.cos(t * 0.11 + blob.phase * 1.9) * 0.020;
-  const x = (blob.x + wobbleX) * w;
-  const y = (blob.y + wobbleY) * h;
-  const r = blob.radius * size * pulse;
-  const scaleX = (blob.scaleX ?? 1) * (1 + Math.sin(t * 0.11 + blob.phase) * 0.032);
-  const scaleY = (blob.scaleY ?? 1) * (1 + Math.cos(t * 0.10 + blob.phase * 1.3) * 0.032);
+  // three motion scales, all with incommensurate periods so the image
+  // keeps flowing and effectively never repeats:
+  // 1) a very slow wander (minutes-long loops, different per pigment)
+  const wanderX = Math.cos(t * (0.021 + p.drift * 0.05) + p.phase * 2.3) * 0.07;
+  const wanderY = Math.sin(t * (0.017 + p.drift * 0.04) + p.phase * 1.3) * 0.06;
+  // 2) a gentle drift  3) fine ripple
+  const x = (p.x + wanderX + Math.sin(t * p.drift + p.phase) * 0.035 + Math.sin(t * 0.11 + p.phase * 2.1) * 0.016) * w;
+  const y = (p.y + wanderY + Math.cos(t * p.drift * 0.8 + p.phase) * 0.032 + Math.sin(t * 0.14 + p.phase * 1.7) * 0.015) * h;
+  const r = p.r * size * (1 + Math.sin(t * 0.16 + p.phase) * 0.04 + Math.sin(t * 0.031 + p.phase * 1.9) * 0.05);
+  const soft = p.soft ?? 0.32;
+  // slow breathing of the pigment strength
+  const breathe = 0.88 + 0.12 * Math.sin(t * 0.045 + p.phase * 1.6);
 
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(Math.sin(t * 0.075 + blob.phase) * 0.055);
-  ctx.scale(scaleX, scaleY);
+  ctx.rotate(Math.sin(t * 0.06 + p.phase) * 0.06);
+  ctx.scale(p.sx ?? 1, p.sy ?? 1);
 
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-  gradient.addColorStop(0, blob.color);
-  gradient.addColorStop(0.34, `${blob.color}e8`);
-  gradient.addColorStop(0.68, `${blob.color}7a`);
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.34);
+  gradient.addColorStop(0, p.color);
+  gradient.addColorStop(soft, p.color);
   gradient.addColorStop(1, "rgba(255,255,255,0)");
-
   ctx.fillStyle = gradient;
-  for (let layer = 0; layer < LAYER_ALPHA.length; layer++) {
-    const layerScale = 1 + layer * 0.11 + Math.sin(t * 0.05 + blob.phase + layer) * 0.018;
-    const offsetX = Math.sin(t * 0.065 + blob.phase * 1.4 + layer) * r * 0.024;
-    const offsetY = Math.cos(t * 0.06 + blob.phase * 1.1 + layer) * r * 0.022;
-    ctx.globalAlpha = blob.alpha * LAYER_ALPHA[layer];
+
+  for (let layer = 0; layer < LAYERS.length; layer++) {
+    ctx.globalAlpha = p.alpha * breathe * LAYERS[layer].alpha;
     ctx.beginPath();
-    for (let i = 0; i <= POINTS; i++) {
-      const angle = (i / POINTS) * Math.PI * 2;
-      const jitter = 1 + edgeNoise(angle, blob, t, layer);
-      const px = Math.cos(angle) * r * layerScale * jitter + offsetX;
-      const py = Math.sin(angle) * r * layerScale * jitter + offsetY;
+    for (let i = 0; i <= EDGE_POINTS; i++) {
+      const angle = (i / EDGE_POINTS) * Math.PI * 2;
+      const rr = r * LAYERS[layer].scale * edgeWobble(angle, p.phase, t, layer);
+      const px = Math.cos(angle) * rr;
+      const py = Math.sin(angle) * rr;
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
@@ -172,22 +114,17 @@ export function LiquidBackground() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const scale = window.devicePixelRatio > 1.5 ? 0.42 : 0.48;
-    const seed = Math.floor(performance.timeOrigin + performance.now() + window.innerWidth * 17 + window.innerHeight * 31);
-    const themeRandom = seededRandom(seed ^ 0x9e3779b9);
-    const layout = Math.floor(themeRandom() * WASH_THEMES.length);
-    const resetWashTheme = applyWashTheme(layout);
-    const paintBlobs = makePaintBlobs(seed, layout);
+    const scale = window.devicePixelRatio > 1.5 ? 0.24 : 0.3;
     let width = 1;
     let height = 1;
 
     const resize = () => {
-      width = Math.max(1, Math.min(760, Math.floor(window.innerWidth * scale)));
-      height = Math.max(1, Math.min(430, Math.floor(window.innerHeight * scale)));
+      width = Math.max(1, Math.min(720, Math.floor(window.innerWidth * scale)));
+      height = Math.max(1, Math.min(460, Math.floor(window.innerHeight * scale)));
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -198,24 +135,27 @@ export function LiquidBackground() {
       resize();
       const t = time / 1000;
 
-      ctx.globalCompositeOperation = "source-over";
+      // wet paper base: light blue-white up top, deep pink pooling below
       ctx.globalAlpha = 1;
-      ctx.clearRect(0, 0, width, height);
+      const base = ctx.createLinearGradient(0, 0, width * 0.4, height);
+      base.addColorStop(0, "#bfe3f7");
+      base.addColorStop(0.28, "#fdf5f7");
+      base.addColorStop(0.55, "#f8c6e4");
+      base.addColorStop(0.8, "#f172c0");
+      base.addColorStop(1, "#e846ae");
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, width, height);
 
-      ctx.globalCompositeOperation = "source-over";
-      for (const blob of paintBlobs) drawBlob(ctx, blob, width, height, t);
+      for (const pigment of PIGMENTS) drawPigment(ctx, pigment, width, height, t);
 
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 0.035;
-      for (let i = 0; i < 2; i++) {
-        const y = (Math.sin(t * 0.08 + i * 1.7) * 0.16 + 0.46 + i * 0.06) * height;
-        const grd = ctx.createLinearGradient(0, y - height * 0.12, width, y + height * 0.12);
-        grd.addColorStop(0, "rgba(255,255,255,0)");
-        grd.addColorStop(0.5, i % 2 ? "#f8f1df" : "#b9a7ff");
-        grd.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, y - height * 0.18, width, height * 0.36);
-      }
+      // one broad white wash for the milky watercolor light
+      ctx.globalAlpha = 0.12;
+      const milk = ctx.createRadialGradient(width * 0.5, height * 0.26, 0, width * 0.5, height * 0.26, Math.max(width, height) * 0.7);
+      milk.addColorStop(0, "#ffffff");
+      milk.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = milk;
+      ctx.fillRect(0, 0, width, height);
+      ctx.globalAlpha = 1;
     };
 
     resize();
@@ -224,7 +164,7 @@ export function LiquidBackground() {
     let last = 0;
     let scrolling = false;
     let scrollTimer = 0;
-    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 12;
+    const frameMs = prefersReducedMotion.matches ? 1000 : 1000 / 14;
 
     const loop = (now: number) => {
       if (!running) return;
@@ -238,12 +178,13 @@ export function LiquidBackground() {
     render(performance.now());
     raf = window.requestAnimationFrame(loop);
     window.addEventListener("resize", resize);
+
+    // freeze the animation while scrolling — keeps scrolling perfectly smooth
     const onScroll = () => {
       scrolling = true;
       window.clearTimeout(scrollTimer);
       scrollTimer = window.setTimeout(() => {
         scrolling = false;
-        render(performance.now());
       }, 160);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -262,7 +203,6 @@ export function LiquidBackground() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
-      resetWashTheme();
     };
   }, []);
 
@@ -271,7 +211,7 @@ export function LiquidBackground() {
       ref={ref}
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-[2] h-full w-full"
-      style={{ width: "100vw", height: "100vh", opacity: 0.5 }}
+      style={{ width: "100vw", height: "100vh" }}
     />
   );
 }

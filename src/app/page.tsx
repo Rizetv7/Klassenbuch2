@@ -207,7 +207,7 @@ function HomeBoard({ featured, sideTiles }: { featured: Post | null; sideTiles: 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={featured.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
         ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_16%,rgba(40,217,242,0.42),transparent_38%),radial-gradient(circle_at_80%_8%,rgba(255,196,163,0.62),transparent_42%),radial-gradient(circle_at_44%_95%,rgba(255,47,191,0.68),transparent_58%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_16%,rgba(169,221,245,0.6),transparent_38%),radial-gradient(circle_at_80%_8%,rgba(205,188,245,0.65),transparent_42%),radial-gradient(circle_at_44%_95%,rgba(238,79,179,0.62),transparent_58%)]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/20 to-hotpink/35" />
         <div className="relative z-10 flex h-full max-w-2xl flex-col justify-between gap-8">
@@ -295,7 +295,7 @@ function HomePreviewPortrait({ post, target }: { post: Post; target: ReturnType<
     );
   }
   return (
-    <div className="grid h-full min-h-[84px] place-items-center bg-[radial-gradient(circle_at_30%_24%,rgba(255,255,255,0.54),transparent_36%),radial-gradient(circle_at_72%_80%,rgba(255,47,191,0.42),transparent_55%)] p-2">
+    <div className="grid h-full min-h-[84px] place-items-center bg-[radial-gradient(circle_at_30%_24%,rgba(255,255,255,0.54),transparent_36%),radial-gradient(circle_at_72%_80%,rgba(238,79,179,0.36),transparent_55%)] p-2">
       <Avatar name={portrait.name} accent={portrait.accentColor} size={post.kind === "QUOTE" ? 58 : 62} ring={false} />
     </div>
   );

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
 import { swrJson } from "@/lib/swr";
 
-const ACCENTS = ["#ff2fbf", "#ec35d6", "#28d9f2", "#72eadf", "#b9a7ff", "#ffc4a3"];
+const ACCENTS = ["#ee4fb3", "#f584c3", "#7ec4ec", "#8fdcc9", "#b9a7ff", "#f4b8d2"];
 export function deriveAccent(seed: string): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;

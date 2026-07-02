@@ -11,41 +11,43 @@
   --glass: rgba(255, 255, 255, 0.09);
   --glass-strong: rgba(255, 255, 255, 0.18);
   --glass-line: rgba(255, 255, 255, 0.34);
-  --pink-shadow: rgba(255, 47, 191, 0.16);
-  --cyan-shadow: rgba(40, 217, 242, 0.15);
+  --pink-shadow: rgba(238, 79, 179, 0.14);
+  --cyan-shadow: rgba(169, 221, 245, 0.2);
+  /* watercolor wash: pale blue/mint top left, milky centre, lavender top
+     right, rose + saturated pink bleeding in from below */
   --wash-cool-x: -7%;
-  --wash-cool-y: 18%;
-  --wash-cool-a: #28d9f2;
-  --wash-cool-b: #72eadf;
-  --wash-cool-c: rgba(114, 234, 223, 0.44);
+  --wash-cool-y: 14%;
+  --wash-cool-a: #a9ddf5;
+  --wash-cool-b: #bfeee2;
+  --wash-cool-c: rgba(191, 238, 226, 0.5);
   --wash-milk-x: 54%;
   --wash-milk-y: 6%;
-  --wash-milk-a: #f8f1df;
-  --wash-milk-b: rgba(248, 241, 223, 0.8);
+  --wash-milk-a: #fdf6f2;
+  --wash-milk-b: rgba(253, 246, 242, 0.85);
   --wash-warm-x: 106%;
-  --wash-warm-y: 18%;
-  --wash-warm-a: #f8f1df;
-  --wash-warm-b: #ffd2a1;
-  --wash-warm-c: rgba(255, 196, 163, 0.66);
+  --wash-warm-y: 16%;
+  --wash-warm-a: #dccffa;
+  --wash-warm-b: #cdbcf5;
+  --wash-warm-c: rgba(205, 188, 245, 0.6);
   --wash-pink-x: 40%;
-  --wash-pink-y: 46%;
-  --wash-pink-a: rgba(255, 47, 191, 0.84);
-  --wash-pink-b: rgba(255, 106, 213, 0.62);
-  --wash-pink-c: rgba(185, 167, 255, 0.46);
+  --wash-pink-y: 48%;
+  --wash-pink-a: rgba(245, 132, 195, 0.8);
+  --wash-pink-b: rgba(249, 192, 221, 0.66);
+  --wash-pink-c: rgba(205, 188, 245, 0.4);
   --wash-bottom-x: 50%;
   --wash-bottom-y: 108%;
-  --wash-bottom-a: #ff2fbf;
-  --wash-bottom-b: #ec35d6;
-  --wash-bottom-c: rgba(255, 106, 213, 0.68);
-  --wash-linear-angle: 150deg;
-  --wash-base-a: #f8f1df;
-  --wash-base-b: #ffc4a3;
-  --wash-base-c: #ff6ad5;
-  --wash-base-d: #ff2fbf;
+  --wash-bottom-a: #e845ad;
+  --wash-bottom-b: #ee4fb3;
+  --wash-bottom-c: rgba(245, 132, 195, 0.72);
+  --wash-linear-angle: 160deg;
+  --wash-base-a: #cfeaf9;
+  --wash-base-b: #fdf6f7;
+  --wash-base-c: #f7c4e3;
+  --wash-base-d: #ee4fb3;
 }
 
 html {
-  background: #ff6ad5;
+  background: #f2a9d8;
 }
 
 body {
@@ -86,7 +88,7 @@ body::after {
 }
 
 ::selection {
-  background: rgba(255, 47, 191, 0.32);
+  background: rgba(238, 79, 179, 0.3);
 }
 
 @layer components {
@@ -201,7 +203,7 @@ body::after {
   }
 
   .postit:nth-child(3n + 1) {
-    background: rgba(255, 196, 163, 0.74);
+    background: rgba(249, 192, 221, 0.72);
     transform: rotate(-0.6deg);
   }
 
@@ -258,10 +260,10 @@ body::after {
   .project-cover {
     @apply relative overflow-hidden rounded-[34px] border border-white/60;
     background:
-      radial-gradient(70% 60% at 12% 18%, rgba(40,217,242,0.72), transparent 60%),
-      radial-gradient(72% 58% at 86% 10%, rgba(255,196,163,0.86), transparent 63%),
-      radial-gradient(76% 68% at 48% 100%, rgba(255,47,191,0.95), transparent 72%),
-      rgba(255,255,255,0.28);
+      radial-gradient(70% 60% at 12% 18%, rgba(169,221,245,0.8), transparent 60%),
+      radial-gradient(72% 58% at 86% 10%, rgba(205,188,245,0.85), transparent 63%),
+      radial-gradient(76% 68% at 48% 100%, rgba(238,79,179,0.9), transparent 72%),
+      rgba(255,255,255,0.32);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
   }
 
