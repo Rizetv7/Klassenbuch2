@@ -118,13 +118,17 @@ export function LiquidBackground() {
     if (!ctx) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const scale = window.devicePixelRatio > 1.5 ? 0.24 : 0.3;
+    // Higher render resolution than before: at very low res the browser
+    // dithers the smooth gradients, and upscaling magnified that dither into
+    // a visible cross-hatch texture. A CSS blur on the element (below) then
+    // removes any last faceting and reads as watercolor bleed.
+    const scale = window.devicePixelRatio > 1.5 ? 0.36 : 0.44;
     let width = 1;
     let height = 1;
 
     const resize = () => {
-      width = Math.max(1, Math.min(720, Math.floor(window.innerWidth * scale)));
-      height = Math.max(1, Math.min(460, Math.floor(window.innerHeight * scale)));
+      width = Math.max(1, Math.min(1080, Math.floor(window.innerWidth * scale)));
+      height = Math.max(1, Math.min(720, Math.floor(window.innerHeight * scale)));
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -210,8 +214,15 @@ export function LiquidBackground() {
     <canvas
       ref={ref}
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-[2] h-full w-full"
-      style={{ width: "100vw", height: "100vh" }}
+      // oversized by 28px each side so the blur never reveals a hard edge
+      className="pointer-events-none fixed -z-[2]"
+      style={{
+        top: -28,
+        left: -28,
+        width: "calc(100vw + 56px)",
+        height: "calc(100vh + 56px)",
+        filter: "blur(16px)",
+      }}
     />
   );
 }
