@@ -3,7 +3,7 @@ import "./globals.css";
 import { SiteNav } from "@/components/Nav";
 import { LiquidBackground } from "@/components/LiquidBackground";
 import { PwaSetup } from "@/components/PwaSetup";
-import { InstallTip } from "@/components/InstallTip";
+import { NotifyBanner } from "@/components/NotifyBanner";
 
 export const metadata: Metadata = {
   title: "Maturaziitig · Erinnerungen",
@@ -37,10 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans">
         <PwaSetup />
-        <InstallTip />
         <LiquidBackground />
         <SiteNav />
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:pb-16 lg:pt-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:pb-16 lg:pt-8">
+          <NotifyBanner />
+          {children}
+        </main>
       </body>
     </html>
   );

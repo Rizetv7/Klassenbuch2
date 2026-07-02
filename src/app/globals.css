@@ -74,19 +74,6 @@ body::before {
     linear-gradient(var(--wash-linear-angle), var(--wash-base-a) 0%, var(--wash-base-b) 30%, var(--wash-base-c) 58%, var(--wash-base-d) 100%);
 }
 
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.055;
-  mix-blend-mode: soft-light;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E");
-  background-size: 260px 260px;
-}
-
 ::selection {
   background: rgba(238, 79, 179, 0.3);
 }

@@ -152,12 +152,10 @@ export function CreatePost({
         </div>
       )}
 
-      {kind !== "IMAGE" && (
-        <label className="relative z-10 mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-bold text-ink/70">
-          <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-4 w-4 accent-hotpink" />
-          Anonym posten (dein Name wird nicht angezeigt)
-        </label>
-      )}
+      <label className="relative z-10 mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-bold text-ink/70">
+        <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="h-4 w-4 accent-hotpink" />
+        Anonym posten (dein Name wird nicht angezeigt)
+      </label>
 
       {error && <p className="relative z-10 mt-2 break-words text-sm font-black text-coral">{error}</p>}
 
