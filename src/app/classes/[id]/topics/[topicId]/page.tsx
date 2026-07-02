@@ -7,6 +7,7 @@ import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { IconClose } from "@/components/Icons";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { swrJson } from "@/lib/swr";
 
 type TopicDetail = { id: string; name: string; classId: string; className: string; canDelete: boolean };
 type Person = { id: string; name: string };
@@ -22,23 +23,44 @@ export default function TopicPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const t = await fetch(`/api/topics/${topicId}`);
-      if (t.status === 401) return router.push("/login");
-      if (!t.ok) return setLoading(false);
-      setTopic(await t.json());
-
-      const [d, cls, teach] = await Promise.all([
-        fetch(`/api/posts?classId=${id}&topicId=${topicId}&limit=100`).then((r) => r.json()),
-        fetch(`/api/classes/${id}`).then((r) => r.json()),
-        fetch(`/api/classes/${id}/teachers`).then((r) => r.json()),
-      ]);
-      setPosts(d.posts ?? []);
-      const members: Person[] = (cls.members ?? []).map((m: { id: string; displayName: string }) => ({ id: m.id, name: m.displayName }));
-      const teachers: Person[] = (teach.teachers ?? []).map((tt: { id: string; name: string }) => ({ id: `t_${tt.id}`, name: tt.name }));
-      setPeople([...members, ...teachers]);
-      setLoading(false);
-    })();
+    // everything in parallel, cache-first: the page shows as soon as topic + posts are in
+    let gotTopic = false;
+    let gotPosts = false;
+    const done = () => {
+      if (gotTopic && gotPosts) setLoading(false);
+    };
+    let members: Person[] = [];
+    let teachers: Person[] = [];
+    const cancels = [
+      swrJson<TopicDetail>(`/api/topics/${topicId}`, (t, meta) => {
+        if (!t) {
+          if (meta.status === 401) return router.push("/login");
+          if (!meta.fromCache) setLoading(false);
+          return;
+        }
+        setTopic(t);
+        gotTopic = true;
+        done();
+      }),
+      swrJson<{ posts?: Post[] }>(`/api/posts?classId=${id}&topicId=${topicId}&limit=100`, (d) => {
+        if (!d) return;
+        setPosts(d.posts ?? []);
+        gotPosts = true;
+        done();
+      }),
+      // people for the "wer hat's gesagt" dropdown — not needed for first paint
+      swrJson<{ members?: { id: string; displayName: string }[] }>(`/api/classes/${id}`, (cls) => {
+        if (!cls) return;
+        members = (cls.members ?? []).map((m) => ({ id: m.id, name: m.displayName }));
+        setPeople([...members, ...teachers]);
+      }),
+      swrJson<{ teachers?: { id: string; name: string }[] }>(`/api/classes/${id}/teachers`, (teach) => {
+        if (!teach) return;
+        teachers = (teach.teachers ?? []).map((tt) => ({ id: `t_${tt.id}`, name: tt.name }));
+        setPeople([...members, ...teachers]);
+      }),
+    ];
+    return () => cancels.forEach((cancel) => cancel());
   }, [id, topicId]);
 
   async function deleteTopic() {

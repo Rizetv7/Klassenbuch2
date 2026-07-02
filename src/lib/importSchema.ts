@@ -1,9 +1,32 @@
 import { prisma } from "./db";
 
 let importSchemaReady = false;
+let pending: Promise<void> | null = null;
+
+// Fast path: one probe query — if the ImportItem table exists, skip.
+async function sentinelExists(): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<unknown[]>(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ImportItem' LIMIT 1`
+  );
+  return rows.length > 0;
+}
 
 export async function ensureImportSchema() {
   if (importSchemaReady) return;
+  if (!pending) {
+    pending = run().finally(() => {
+      pending = null;
+    });
+  }
+  await pending;
+}
+
+async function run() {
+  if (importSchemaReady) return;
+  if (await sentinelExists()) {
+    importSchemaReady = true;
+    return;
+  }
 
   const statements = [
     `CREATE TABLE IF NOT EXISTS "ImportItem" (

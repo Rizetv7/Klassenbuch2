@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { InlineLoading, PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
+import { swrJson } from "@/lib/swr";
 
 type Member = {
   id: string;
@@ -43,15 +44,14 @@ export default function ClassPage() {
   const [showImport, setShowImport] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadClass() {
-    const res = await fetch(`/api/classes/${id}`);
-    if (res.status === 401) return router.push("/login");
-    if (!res.ok) return setError((await res.json()).error || "Fehler.");
-    setData(await res.json());
+  function loadClass() {
+    return swrJson<ClassDetail>(`/api/classes/${id}`, (detail, meta) => {
+      if (detail) return setData(detail);
+      if (meta.status === 401) return router.push("/login");
+      if (!meta.fromCache && meta.status !== 0) setError("Klasse konnte nicht geladen werden.");
+    });
   }
-  useEffect(() => {
-    loadClass();
-  }, [id]);
+  useEffect(() => loadClass(), [id]);
 
   if (error) return <p className="text-coral font-bold">{error}</p>;
   if (!data) return <PageLoading />;
@@ -134,13 +134,12 @@ function ProjectsTab({ classId }: { classId: string }) {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  async function load() {
-    const d = await fetch(`/api/classes/${classId}/topics`).then((r) => r.json());
-    setTopics(d.topics ?? []);
+  function load() {
+    return swrJson<{ topics?: any[] }>(`/api/classes/${classId}/topics`, (d) => {
+      if (d) setTopics(d.topics ?? []);
+    });
   }
-  useEffect(() => {
-    load();
-  }, [classId]);
+  useEffect(() => load(), [classId]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -232,13 +231,12 @@ function TeachersTab({ classId }: { classId: string }) {
   const [subject, setSubject] = useState("");
   const [creating, setCreating] = useState(false);
 
-  async function load() {
-    const d = await fetch(`/api/classes/${classId}/teachers`).then((r) => r.json());
-    setTeachers(d.teachers ?? []);
+  function load() {
+    return swrJson<{ teachers?: TeacherItem[] }>(`/api/classes/${classId}/teachers`, (d) => {
+      if (d) setTeachers(d.teachers ?? []);
+    });
   }
-  useEffect(() => {
-    load();
-  }, [classId]);
+  useEffect(() => load(), [classId]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();

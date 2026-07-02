@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
+import { swrJson } from "@/lib/swr";
 
 const ACCENTS = ["#ff2fbf", "#ec35d6", "#28d9f2", "#72eadf", "#b9a7ff", "#ffc4a3"];
 export function deriveAccent(seed: string): string {
@@ -76,18 +77,8 @@ export function SiteNav() {
 
   useEffect(() => {
     if (path === "/login" || path === "/register" || isInternal) return;
-    let active = true;
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (active) setMe(d?.user ?? null);
-      })
-      .catch(() => {
-        if (active) setMe(null);
-      });
-    return () => {
-      active = false;
-    };
+    // cache-first: the avatar shows instantly, the check refreshes in background
+    return swrJson<{ user?: NavUser }>("/api/auth/me", (d) => setMe(d?.user ?? null));
   }, [isInternal, path]);
 
   if (path === "/login" || path === "/register" || isInternal) return null;

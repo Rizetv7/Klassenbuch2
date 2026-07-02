@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CreatePoll } from "@/components/CreatePoll";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { PollCard, type Poll } from "@/components/PollCard";
+import { swrJson } from "@/lib/swr";
 
 type ClassItem = { id: string; name: string };
 
@@ -15,24 +16,33 @@ export default function PollsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
+  function load() {
     setError("");
-    const [classesRes, pollsRes] = await Promise.all([fetch("/api/classes"), fetch("/api/polls")]);
-    if (classesRes.status === 401 || pollsRes.status === 401) return router.push("/login");
-    if (!classesRes.ok || !pollsRes.ok) {
-      setError("Umfragen konnten nicht geladen werden.");
-      setPolls([]);
-      return;
-    }
-    const classesData = await classesRes.json();
-    const pollsData = await pollsRes.json();
-    setClasses(classesData.classes ?? []);
-    setPolls(pollsData.polls ?? []);
+    const cancelClasses = swrJson<{ classes?: ClassItem[] }>("/api/classes", (data, meta) => {
+      if (!data) {
+        if (meta.status === 401) router.push("/login");
+        return;
+      }
+      setClasses(data.classes ?? []);
+    });
+    const cancelPolls = swrJson<{ polls?: Poll[] }>("/api/polls", (data, meta) => {
+      if (!data) {
+        if (meta.status === 401) return router.push("/login");
+        if (!meta.fromCache) {
+          setError("Umfragen konnten nicht geladen werden.");
+          setPolls([]);
+        }
+        return;
+      }
+      setPolls(data.polls ?? []);
+    });
+    return () => {
+      cancelClasses();
+      cancelPolls();
+    };
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => load(), []);
 
   function upsertPoll(updated: Poll) {
     setPolls((current) => {

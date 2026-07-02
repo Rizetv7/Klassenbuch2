@@ -7,6 +7,7 @@ import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
+import { swrJson } from "@/lib/swr";
 
 type Member = { id: string; displayName: string; memberType: string; avatarUrl: string | null; manualAvatarUrl: string | null; accentColor: string | null };
 
@@ -24,16 +25,32 @@ export default function MemberPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const cls = await fetch(`/api/classes/${id}`);
-      if (cls.status === 401) return router.push("/login");
-      const clsData = await cls.json();
+    // both requests run in parallel and render from cache instantly on repeat visits
+    let gotClass = false;
+    let gotPosts = false;
+    const done = () => {
+      if (gotClass && gotPosts) setLoading(false);
+    };
+    const cancelClass = swrJson<{ name: string; members: Member[] }>(`/api/classes/${id}`, (clsData, meta) => {
+      if (!clsData) {
+        if (meta.status === 401) router.push("/login");
+        return;
+      }
       setClassName(clsData.name);
       setMember(clsData.members.find((m: Member) => m.id === membershipId) ?? null);
-      const d = await fetch(`/api/posts?classId=${id}&subjectMembershipId=${membershipId}`).then((r) => r.json());
+      gotClass = true;
+      done();
+    });
+    const cancelPosts = swrJson<{ posts?: Post[] }>(`/api/posts?classId=${id}&subjectMembershipId=${membershipId}`, (d) => {
+      if (!d) return;
       setPosts(d.posts ?? []);
-      setLoading(false);
-    })();
+      gotPosts = true;
+      done();
+    });
+    return () => {
+      cancelClass();
+      cancelPosts();
+    };
   }, [id, membershipId]);
 
   if (loading) return <PageLoading />;

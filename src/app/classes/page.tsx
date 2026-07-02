@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { prefetchJson, swrJson } from "@/lib/swr";
 
 type ClassItem = { id: string; name: string; role: string; memberCount: number; postCount: number };
 
@@ -21,17 +22,21 @@ export default function ClassesPage() {
   const [gradYear, setGradYear] = useState("");
 
   useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/classes");
-      if (res.status === 401) return router.push("/login");
-      const list: ClassItem[] = (await res.json()).classes ?? [];
-      // Already in exactly one class -> go straight there.
+    const cancel = swrJson<{ classes?: ClassItem[] }>("/api/classes", (data, meta) => {
+      if (!data) {
+        if (meta.status === 401) router.push("/login");
+        return;
+      }
+      const list = data.classes ?? [];
+      // Already in exactly one class -> go straight there (cache makes this instant).
       if (list.length === 1) {
+        prefetchJson(`/api/classes/${list[0].id}`);
         router.replace(`/classes/${list[0].id}`);
         return;
       }
       setClasses(list);
-    })();
+    });
+    return cancel;
   }, []);
 
   async function join(e: React.FormEvent) {

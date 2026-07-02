@@ -7,6 +7,7 @@ import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
 import { IconPencil } from "@/components/Icons";
 import { uploadImageFile } from "@/lib/uploadImage";
+import { clearApiCache } from "@/lib/swr";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -101,6 +102,7 @@ export default function ProfilePage() {
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
+    clearApiCache(); // drop this account's cached pages
     router.push("/login");
     router.refresh();
   }

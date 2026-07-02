@@ -345,6 +345,32 @@ body::after {
   animation-delay: 0.12s;
 }
 
+/* light sweep across the skeleton — waiting feels shorter than static pulsing */
+.loading-panel::after,
+.loading-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: loading-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loading-panel::after {
+  animation-delay: 0.2s;
+}
+
+@keyframes loading-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 @keyframes page-rise-in {
   0% {
     opacity: 0;
@@ -389,7 +415,9 @@ body::after {
   .page-reveal :where(h1, h2, p, .section-label),
   .page-loading,
   .loading-panel,
-  .loading-mark {
+  .loading-mark,
+  .loading-panel::after,
+  .loading-mark::after {
     animation: none;
     opacity: 1;
     transform: none;

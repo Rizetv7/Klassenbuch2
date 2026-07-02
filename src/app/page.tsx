@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { prefetchJson, swrJson } from "@/lib/swr";
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,11 +20,15 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const home = await fetch("/api/home").then((r) => r.json());
-      if (!home.user) {
-        router.replace("/login");
+    // cache-first: repeat visits render instantly, then refresh silently
+    const cancel = swrJson<any>("/api/home", (home, meta) => {
+      if (!home) {
         setLoading(false);
+        return;
+      }
+      if (!home.user) {
+        // only trust a fresh response for the redirect, never a stale cache
+        if (!meta.fromCache) router.replace("/login");
         return;
       }
       setMe(home.user);
@@ -32,7 +37,13 @@ export default function HomePage() {
       setMemory(home.memory ?? null);
       setHasClass(!!home.hasClass);
       setLoading(false);
-    })();
+      // warm the caches for the pages most likely opened next
+      if (!meta.fromCache) {
+        prefetchJson("/api/classes");
+        prefetchJson("/api/polls");
+      }
+    });
+    return cancel;
   }, [router]);
 
   if (loading) return <PageLoading />;

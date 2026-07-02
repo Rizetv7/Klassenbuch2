@@ -1,9 +1,34 @@
 import { prisma } from "./db";
 
 let pollSchemaReady = false;
+let pending: Promise<void> | null = null;
+
+// Fast path: one probe query instead of ~25 migration statements. The
+// sentinel is the newest element this migration adds — if it exists, the
+// whole migration has already run and a cold start costs 1 round trip.
+async function sentinelExists(): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<unknown[]>(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'PollOption' AND column_name = 'teacherId' LIMIT 1`
+  );
+  return rows.length > 0;
+}
 
 export async function ensurePollSchema() {
   if (pollSchemaReady) return;
+  if (!pending) {
+    pending = run().finally(() => {
+      pending = null;
+    });
+  }
+  await pending;
+}
+
+async function run() {
+  if (pollSchemaReady) return;
+  if (await sentinelExists()) {
+    pollSchemaReady = true;
+    return;
+  }
 
   const statements = [
     `CREATE TABLE IF NOT EXISTS "Poll" (

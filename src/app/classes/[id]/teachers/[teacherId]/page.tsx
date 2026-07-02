@@ -7,6 +7,7 @@ import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { ProfileImagePicker } from "@/components/ProfileImagePicker";
+import { swrJson } from "@/lib/swr";
 
 type Teacher = {
   id: string;
@@ -29,20 +30,33 @@ export default function TeacherPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  async function loadTeacher() {
-    const t = await fetch(`/api/teachers/${teacherId}`);
-    if (t.status === 401) return router.push("/login");
-    if (!t.ok) return setLoading(false);
-    setTeacher(await t.json());
-  }
-
   useEffect(() => {
-    (async () => {
-      await loadTeacher();
-      const d = await fetch(`/api/posts?classId=${id}&teacherId=${teacherId}`).then((r) => r.json());
+    // teacher + posts in parallel, cache-first on repeat visits
+    let gotTeacher = false;
+    let gotPosts = false;
+    const done = () => {
+      if (gotTeacher && gotPosts) setLoading(false);
+    };
+    const cancelTeacher = swrJson<Teacher>(`/api/teachers/${teacherId}`, (t, meta) => {
+      if (!t) {
+        if (meta.status === 401) return router.push("/login");
+        if (!meta.fromCache) setLoading(false);
+        return;
+      }
+      setTeacher(t);
+      gotTeacher = true;
+      done();
+    });
+    const cancelPosts = swrJson<{ posts?: Post[] }>(`/api/posts?classId=${id}&teacherId=${teacherId}`, (d) => {
+      if (!d) return;
       setPosts(d.posts ?? []);
-      setLoading(false);
-    })();
+      gotPosts = true;
+      done();
+    });
+    return () => {
+      cancelTeacher();
+      cancelPosts();
+    };
   }, [id, teacherId]);
 
   async function updateAvatar(url: string | null) {

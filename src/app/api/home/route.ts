@@ -17,20 +17,23 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ user: null, hasClass: false, posts: [], memory: null, polls: [] });
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      avatarUrl: true,
-      accentColor: true,
-      memberships: { select: { classId: true, role: true } },
-    },
-  });
+  // run the schema probe in parallel with the user lookup — costs no wall time
+  const [user] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        accentColor: true,
+        memberships: { select: { classId: true, role: true } },
+      },
+    }),
+    ensurePollSchema(),
+  ]);
   if (!user) return NextResponse.json({ user: null, hasClass: false, posts: [], memory: null, polls: [] });
 
   const classIds = user.memberships.map((m) => m.classId);
-  await ensurePollSchema();
   const [rows, pollRows] = classIds.length
     ? await Promise.all([
         prisma.post.findMany({

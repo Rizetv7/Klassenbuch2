@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { clearApiCache } from "@/lib/swr";
 
 export function LoginCard() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export function LoginCard() {
         body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
+        clearApiCache(); // never show another account's cached data
         router.push("/");
         router.refresh();
         return;

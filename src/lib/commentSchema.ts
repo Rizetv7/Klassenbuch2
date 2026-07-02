@@ -2,12 +2,33 @@ import { prisma } from "./db";
 import { ensurePollSchema } from "./pollSchema";
 
 let commentSchemaReady = false;
+let pending: Promise<void> | null = null;
 
-// Adds threaded-reply support and poll comments to the existing Comment table
-// without a manual migration step (the production build does not run
-// `prisma db push`). Idempotent and safe to call on every request.
+// Fast path: one probe query. If Comment.pollId exists, the whole migration
+// (threaded replies + poll comments) has already run.
+async function sentinelExists(): Promise<boolean> {
+  const rows = await prisma.$queryRawUnsafe<unknown[]>(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Comment' AND column_name = 'pollId' LIMIT 1`
+  );
+  return rows.length > 0;
+}
+
 export async function ensureCommentSchema() {
   if (commentSchemaReady) return;
+  if (!pending) {
+    pending = run().finally(() => {
+      pending = null;
+    });
+  }
+  await pending;
+}
+
+async function run() {
+  if (commentSchemaReady) return;
+  if (await sentinelExists()) {
+    commentSchemaReady = true;
+    return;
+  }
 
   // The Poll table must exist before we can add the poll foreign key.
   await ensurePollSchema();
