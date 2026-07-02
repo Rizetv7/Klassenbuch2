@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
 import { postInclude, serializePostRows, serializePosts } from "@/lib/serializePost";
+import { sendPushToUsers } from "@/lib/push";
 
 // GET /api/posts
 //   ?classId=...            -> posts in a class
@@ -100,6 +101,7 @@ export async function POST(req: Request) {
   // A post targets a student (subjectMembershipId), a teacher (teacherId)
   // or a topic/project (topicId).
   let subjectId: string | null = null;
+  let subjectUserId: string | null = null;
   let teachId: string | null = null;
   let topId: string | null = null;
   if (subjectMembershipId) {
@@ -108,6 +110,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Person gehört nicht zur Klasse." }, { status: 400 });
     }
     subjectId = subject.id;
+    subjectUserId = subject.userId;
   } else if (teacherId) {
     const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
     if (!teacher || teacher.classId !== classId) {
@@ -142,5 +145,18 @@ export async function POST(req: Request) {
   });
 
   const [serialized] = await serializePosts([post.id], userId);
+
+  // Push: tell the person that something was posted about them.
+  if (subjectUserId && subjectUserId !== userId) {
+    const who = post.anonymous ? "Jemand" : serialized?.author?.name ?? "Jemand";
+    const what = kindValue === "QUOTE" ? "ein Zitat" : kindValue === "IMAGE" ? "ein Bild" : "eine Notiz";
+    await sendPushToUsers([subjectUserId], {
+      title: "Neuer Eintrag über dich",
+      body: `${who} hat ${what} über dich gepostet${post.text ? `: „${post.text.slice(0, 80)}“` : "."}`,
+      url: `/classes/${classId}/members/${subjectId}`,
+      tag: `post-about-${subjectId}`,
+    });
+  }
+
   return NextResponse.json({ post: serialized });
 }

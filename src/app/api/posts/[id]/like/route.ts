@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
+import { sendPushToUsers } from "@/lib/push";
+
+// like counts at which the author gets a push notification
+const LIKE_MILESTONES = new Set([5, 10, 25, 50, 100]);
 
 // Toggle like for the current user on a post.
 export async function POST(
@@ -28,5 +32,25 @@ export async function POST(
   }
 
   const likeCount = await prisma.like.count({ where: { postId: params.id } });
+
+  // Push: milestone reached (only on a NEW like, and not for self-likes)
+  if (!existing && LIKE_MILESTONES.has(likeCount) && post.authorId !== userId) {
+    const target = post.subjectMembershipId
+      ? `/classes/${post.classId}/members/${post.subjectMembershipId}`
+      : post.teacherId
+        ? `/classes/${post.classId}/teachers/${post.teacherId}`
+        : post.topicId
+          ? `/classes/${post.classId}/topics/${post.topicId}`
+          : "/";
+    await sendPushToUsers([post.authorId], {
+      title: `${likeCount} Likes! 🎉`,
+      body: post.text
+        ? `Dein Beitrag „${post.text.slice(0, 80)}“ kommt richtig gut an.`
+        : "Dein Beitrag kommt richtig gut an.",
+      url: target,
+      tag: `likes-${post.id}`,
+    });
+  }
+
   return NextResponse.json({ liked: !existing, likeCount });
 }

@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
 import { ensurePollSchema } from "@/lib/pollSchema";
 import { pollInclude, serializePollRows, serializePolls } from "@/lib/serializePoll";
+import { sendPushToUsers } from "@/lib/push";
 
 export async function GET(req: Request) {
   const userId = await getSessionUserId();
@@ -93,5 +94,21 @@ export async function POST(req: Request) {
   });
 
   const [serialized] = await serializePolls([poll.id], userId);
+
+  // Push: tell all other class members about the new poll.
+  const members = await prisma.membership.findMany({
+    where: { classId, userId: { not: userId } },
+    select: { userId: true },
+  });
+  await sendPushToUsers(
+    members.map((m) => m.userId),
+    {
+      title: "Neue Umfrage 🗳️",
+      body: `„${poll.question}“ — jetzt abstimmen!`,
+      url: "/polls",
+      tag: `poll-${poll.id}`,
+    }
+  );
+
   return NextResponse.json({ poll: serialized });
 }

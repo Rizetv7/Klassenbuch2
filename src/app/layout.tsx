@@ -1,11 +1,26 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteNav } from "@/components/Nav";
 import { LiquidBackground } from "@/components/LiquidBackground";
+import { PwaSetup } from "@/components/PwaSetup";
 
 export const metadata: Metadata = {
   title: "Maturaziitig · Erinnerungen",
   description: "Euer digitales Erinnerungsbuch — Zitate, Bilder und Momente der ganzen Klasse.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Maturaziitig",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f8f1df",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-sans">
+        <PwaSetup />
         <LiquidBackground />
         <SiteNav />
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:pb-16 lg:pt-8">{children}</main>

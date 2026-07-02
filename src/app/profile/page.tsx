@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Nav";
 import { IconPencil } from "@/components/Icons";
 import { uploadImageFile } from "@/lib/uploadImage";
 import { clearApiCache } from "@/lib/swr";
+import { PushSettings } from "@/components/PushSettings";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -145,6 +146,8 @@ export default function ProfilePage() {
           {busy ? "Speichert…" : "Speichern"}
         </button>
       </div>
+
+      <PushSettings />
 
       <form onSubmit={changePassword} className="glass-card p-5 space-y-3">
         <div>

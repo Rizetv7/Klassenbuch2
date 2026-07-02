@@ -37,6 +37,27 @@ model User {
   ownedClasses Class[]     @relation("ClassOwner")
   topics      Topic[]      @relation("TopicCreator")
   teachers    Teacher[]    @relation("TeacherCreator")
+  pushSubscriptions PushSubscription[]
+}
+
+// Small key/value store (e.g. auto-generated VAPID keys for Web Push).
+model AppSetting {
+  key   String @id
+  value String
+}
+
+// One row per browser/device that enabled push notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Class {
