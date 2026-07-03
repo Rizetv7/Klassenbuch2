@@ -103,9 +103,12 @@ function TopNav({ me }: { me: NavUser | null }) {
               <Link
                 key={it.href}
                 href={it.href}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition ${
-                  isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/70 hover:bg-white/40 hover:text-ink"
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition-all duration-150 active:scale-95 ${
+                  isActive(it.href)
+                    ? "nav-item-active bg-ink text-white shadow-soft"
+                    : "text-ink/70 hover:bg-white/40 hover:text-ink"
                 }`}
+                style={isActive(it.href) ? { animation: "nav-pop 340ms cubic-bezier(0.24, 1.4, 0.36, 1) both" } : undefined}
               >
                 <span>{it.label}</span>
                 {profile && (
@@ -131,16 +134,20 @@ function BottomNav({ me }: { me: NavUser | null }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-sm px-4 pb-4">
-        <div className="surface flex items-center justify-around px-3 py-2">
+        <div className="dock flex items-center justify-around px-2.5 py-2">
           {ITEMS.map((it) => {
             const profile = it.href === "/profile" && me;
+            const active = isActive(it.href);
             return (
               <Link
                 key={it.href}
                 href={it.href}
-                className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition ${
-                  isActive(it.href) ? "bg-ink text-white shadow-soft" : "text-ink/50"
+                className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition-all duration-150 active:scale-90 ${
+                  active
+                    ? "nav-item-active bg-ink text-white shadow-soft"
+                    : "text-ink/65 hover:text-ink"
                 }`}
+                style={active ? { animation: "nav-pop 340ms cubic-bezier(0.24, 1.4, 0.36, 1) both" } : undefined}
               >
                 {profile ? (
                   <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={22} ring={false} />

@@ -232,11 +232,11 @@ export function PostCard({
 
       {/* actions */}
       <div className="soft-divider relative z-10 mt-3 flex items-center gap-5 pt-3 text-sm font-black">
-        <button onClick={toggleLike} className="group/like flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition active:scale-95">
+        <button onClick={toggleLike} className="group/like flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition-all duration-150 hover:bg-white/45 active:scale-90">
           <IconHeart size={19} filled={liked} className={`${liked ? "text-coral animate-pop" : "text-ink/60"} group-hover/like:animate-wiggle`} />
           <span className="text-ink/70">{likeCount}</span>
         </button>
-        <button onClick={toggleComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition hover:text-ink">
+        <button onClick={toggleComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90">
           <IconComment size={19} />
           <span className="text-ink/70">{commentCount}</span>
         </button>
@@ -244,7 +244,7 @@ export function PostCard({
 
       {/* comments */}
       {open && (
-        <div className="soft-divider relative z-10 mt-3 pt-3">
+        <div className="soft-divider relative z-10 mt-3 animate-fade-up pt-3">
           <CommentThread commentsPath={`/api/posts/${post.id}/comments`} onCountChange={setCommentCount} />
         </div>
       )}

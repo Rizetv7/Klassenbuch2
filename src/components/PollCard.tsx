@@ -247,7 +247,7 @@ export function PollCard({
                 key={option.id}
                 type="button"
                 onClick={() => choose(option.id)}
-                className={`relative w-full overflow-hidden rounded-[24px] border px-4 py-3 text-left transition-all duration-300 active:scale-[0.99] ${
+                className={`relative w-full overflow-hidden rounded-[24px] border px-4 py-3 text-left transition-all duration-200 ease-out active:scale-[0.975] ${
                   picked ? "border-ink bg-white/42" : "border-white/45 bg-white/18 hover:bg-white/30"
                 } ${winner ? "poll-option-winner" : ""} ${pulseOptionId === option.id ? "vote-pop" : ""}`}
               >
@@ -351,7 +351,7 @@ export function PollCard({
             Kommentare{commentCount !== null ? ` · ${commentCount}` : ""}
           </button>
           {commentsOpen && (
-            <div className="mt-3">
+            <div className="mt-3 animate-fade-up">
               <CommentThread commentsPath={`/api/polls/${poll.id}/comments`} onCountChange={setCommentCount} />
             </div>
           )}

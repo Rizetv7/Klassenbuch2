@@ -88,13 +88,13 @@ export function CreatePost({
   }
 
   const Btn = ({ k, label }: { k: Kind; label: string }) => (
-    <button type="button" onClick={() => setKind(k)} className={kind === k ? "btn-primary" : "btn-soft"}>
+    <button type="button" onClick={() => setKind(k)} className={kind === k ? "btn-primary animate-pop" : "btn-soft"}>
       {label}
     </button>
   );
 
   return (
-    <form onSubmit={submit} className="glass-panel p-4 sm:p-5">
+    <form onSubmit={submit} className="glass-panel animate-fade-up p-4 sm:p-5">
       <div className="relative z-10 mb-4 flex flex-wrap gap-2">
         <Btn k="QUOTE" label="Zitat" />
         <Btn k="IMAGE" label="Bild" />
