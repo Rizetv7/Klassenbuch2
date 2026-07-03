@@ -173,14 +173,15 @@ function HomeBoard({ featured, sideTiles }: { featured: Post | null; sideTiles: 
   const featuredTarget = targetPerson(featured);
   return (
     <section className="grid gap-3 lg:grid-cols-[1.18fr_0.82fr]">
-      <Link href={postHref(featured)} className="group relative min-h-[310px] overflow-hidden rounded-[34px] border border-white/40 bg-white/10 p-5 shadow-soft transition hover:-translate-y-0.5">
-        {featured.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={featured.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-        ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_16%,rgba(169,221,245,0.6),transparent_38%),radial-gradient(circle_at_80%_8%,rgba(205,188,245,0.65),transparent_42%),radial-gradient(circle_at_44%_95%,rgba(238,79,179,0.62),transparent_58%)]" />
+      <Link href={postHref(featured)} className="glass-panel group relative min-h-[310px] overflow-hidden p-5 shadow-soft transition hover:-translate-y-0.5 sm:p-6">
+        {featured.imageUrl && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={featured.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
+            {/* light scrim so the dark text stays readable over the photo */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/45 to-white/25" />
+          </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/20 to-hotpink/35" />
         <div className="relative z-10 flex h-full max-w-2xl flex-col justify-between gap-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip bg-white/30">{postKicker(featured)}</span>
