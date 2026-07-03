@@ -1,13 +1,11 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-export function PageReveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  return (
-    <div className="page-reveal" style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}>
-      {children}
-    </div>
-  );
+// Wrap a page's content stack: the sections inside rise in one after
+// another from top to bottom (see .page-reveal rules in globals.css).
+export function PageReveal({ children }: { children: ReactNode }) {
+  return <div className="page-reveal">{children}</div>;
 }
 
 export function PageLoading({ label = "Lädt" }: { label?: string }) {

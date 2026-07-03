@@ -69,12 +69,12 @@ function drawPigment(ctx: CanvasRenderingContext2D, p: Pigment, w: number, h: nu
   const size = Math.max(w, h);
   // three motion scales, all with incommensurate periods so the image
   // keeps flowing and effectively never repeats:
-  // 1) a very slow wander (minutes-long loops, different per pigment)
-  const wanderX = Math.cos(t * (0.021 + p.drift * 0.05) + p.phase * 2.3) * 0.07;
-  const wanderY = Math.sin(t * (0.017 + p.drift * 0.04) + p.phase * 1.3) * 0.06;
+  // 1) a slow wander (minutes-long loops, different per pigment)
+  const wanderX = Math.cos(t * (0.021 + p.drift * 0.05) + p.phase * 2.3) * 0.1;
+  const wanderY = Math.sin(t * (0.017 + p.drift * 0.04) + p.phase * 1.3) * 0.085;
   // 2) a gentle drift  3) fine ripple
-  const x = (p.x + wanderX + Math.sin(t * p.drift + p.phase) * 0.035 + Math.sin(t * 0.11 + p.phase * 2.1) * 0.016) * w;
-  const y = (p.y + wanderY + Math.cos(t * p.drift * 0.8 + p.phase) * 0.032 + Math.sin(t * 0.14 + p.phase * 1.7) * 0.015) * h;
+  const x = (p.x + wanderX + Math.sin(t * p.drift + p.phase) * 0.05 + Math.sin(t * 0.11 + p.phase * 2.1) * 0.016) * w;
+  const y = (p.y + wanderY + Math.cos(t * p.drift * 0.8 + p.phase) * 0.045 + Math.sin(t * 0.14 + p.phase * 1.7) * 0.015) * h;
   const r = p.r * size * (1 + Math.sin(t * 0.16 + p.phase) * 0.04 + Math.sin(t * 0.031 + p.phase * 1.9) * 0.05);
   const soft = p.soft ?? 0.32;
   // slow breathing of the pigment strength
@@ -211,18 +211,24 @@ export function LiquidBackground() {
   }, []);
 
   return (
-    <canvas
-      ref={ref}
+    // The blur lives on the WRAPPER, not on the canvas: Safari stops
+    // repainting a CSS-filtered canvas, which froze the animation.
+    <div
       aria-hidden
-      // oversized by 28px each side so the blur never reveals a hard edge
-      className="pointer-events-none fixed -z-[2]"
-      style={{
-        top: -28,
-        left: -28,
-        width: "calc(100vw + 56px)",
-        height: "calc(100vh + 56px)",
-        filter: "blur(16px)",
-      }}
-    />
+      className="pointer-events-none fixed inset-0 -z-[2] overflow-hidden"
+      style={{ filter: "blur(14px)", transform: "translateZ(0)" }}
+    >
+      <canvas
+        ref={ref}
+        // oversized so the blur never reveals a hard edge
+        style={{
+          position: "absolute",
+          top: -28,
+          left: -28,
+          width: "calc(100vw + 56px)",
+          height: "calc(100vh + 56px)",
+        }}
+      />
+    </div>
   );
 }

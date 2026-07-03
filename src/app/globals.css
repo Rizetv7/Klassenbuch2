@@ -84,13 +84,14 @@ body::before {
   .surface {
     @apply border;
     border-color: var(--glass-line);
+    /* keep the wash visible through the glass — low white overlay */
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05)),
-      var(--glass);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0.055);
     box-shadow:
       0 24px 64px -48px rgba(9, 7, 12, 0.48),
       0 10px 34px -28px var(--pink-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.58);
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -221,8 +222,8 @@ body::before {
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(55% 42% at 0% 0%, rgba(255,255,255,0.55), transparent 65%),
-      radial-gradient(50% 42% at 100% 100%, rgba(255,47,191,0.13), transparent 70%);
+      radial-gradient(55% 42% at 0% 0%, rgba(255,255,255,0.32), transparent 65%),
+      radial-gradient(50% 42% at 100% 100%, rgba(238,79,179,0.1), transparent 70%);
   }
 
   .hero-frame {
@@ -256,6 +257,26 @@ body::before {
 
   .soft-divider {
     @apply border-t border-white/40;
+  }
+
+  /* unified, soft motion for every interactive surface — cleaner feel */
+  .glass-card,
+  .card,
+  .post-card,
+  .glass-panel,
+  .polaroid,
+  .postit,
+  .chip,
+  .tab,
+  .btn {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .glass-card,
+  .card,
+  .post-card,
+  .glass-panel {
+    transition-duration: 320ms;
   }
 }
 
@@ -299,22 +320,64 @@ body::before {
   animation: vote-pop 0.42s ease both;
 }
 
-.page-reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: page-rise-in 680ms cubic-bezier(0.45, 0, 0.18, 1) var(--reveal-delay, 0ms) both;
-  will-change: opacity, transform;
+/* ------------------------------------------------------------------
+   Page reveal: the page appears as a whole, its sections rising one
+   after another from top to bottom (further down = later).
+   ------------------------------------------------------------------ */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.page-reveal :where(h1, h2, p, .section-label) {
+.page-reveal {
+  animation: page-fade 260ms ease-out both;
+}
+
+/* the direct sections of the page stack rise with a clean stagger */
+.page-reveal > * > * {
   opacity: 0;
-  transform: translateY(12px);
-  animation: page-copy-rise 640ms cubic-bezier(0.45, 0, 0.18, 1) calc(var(--reveal-delay, 0ms) + 80ms) both;
+  animation: rise-up 640ms var(--ease-out) both;
+}
+
+.page-reveal > * > *:nth-child(1) { animation-delay: 0ms; }
+.page-reveal > * > *:nth-child(2) { animation-delay: 75ms; }
+.page-reveal > * > *:nth-child(3) { animation-delay: 150ms; }
+.page-reveal > * > *:nth-child(4) { animation-delay: 225ms; }
+.page-reveal > * > *:nth-child(5) { animation-delay: 300ms; }
+.page-reveal > * > *:nth-child(6) { animation-delay: 375ms; }
+.page-reveal > * > *:nth-child(7) { animation-delay: 450ms; }
+.page-reveal > * > *:nth-child(8) { animation-delay: 525ms; }
+.page-reveal > * > *:nth-child(n + 9) { animation-delay: 600ms; }
+
+@keyframes page-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rise-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .page-loading {
-  animation: page-rise-in 420ms cubic-bezier(0.45, 0, 0.18, 1) both;
+  animation: page-fade 240ms ease-out both;
 }
+
+/* skeleton blocks appear top-to-bottom too */
+.page-loading > * {
+  opacity: 0;
+  animation: rise-up 460ms var(--ease-out) both;
+}
+.page-loading > *:nth-child(1) { animation-delay: 0ms; }
+.page-loading > *:nth-child(2) { animation-delay: 90ms; }
+.page-loading > *:nth-child(3) { animation-delay: 180ms; }
+.page-loading > *:nth-child(n + 4) { animation-delay: 270ms; }
 
 .loading-panel,
 .loading-mark {
@@ -360,34 +423,6 @@ body::before {
   }
 }
 
-@keyframes page-rise-in {
-  0% {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  58% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes page-copy-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  64% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes loading-breathe {
   from {
     opacity: 0.52;
@@ -401,8 +436,9 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
   .page-reveal,
-  .page-reveal :where(h1, h2, p, .section-label),
+  .page-reveal > * > *,
   .page-loading,
+  .page-loading > *,
   .loading-panel,
   .loading-mark,
   .loading-panel::after,

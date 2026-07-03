@@ -8,7 +8,7 @@ import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
-import { prefetchJson, swrJson } from "@/lib/swr";
+import { prefetchAppData, swrJson } from "@/lib/swr";
 
 export default function HomePage() {
   const router = useRouter();
@@ -37,11 +37,8 @@ export default function HomePage() {
       setMemory(home.memory ?? null);
       setHasClass(!!home.hasClass);
       setLoading(false);
-      // warm the caches for the pages most likely opened next
-      if (!meta.fromCache) {
-        prefetchJson("/api/classes");
-        prefetchJson("/api/polls");
-      }
+      // warm ALL pages in the background -> navigation is instant everywhere
+      if (!meta.fromCache) prefetchAppData();
     });
     return cancel;
   }, [router]);
@@ -70,8 +67,8 @@ export default function HomePage() {
   const quoteStrip = variedList(quotes, `${seed}-quote-strip`).slice(0, 5);
 
   return (
+    <PageReveal>
     <div className="space-y-5">
-      <Reveal order={0}>
       <header className="flex items-end justify-between gap-4">
         <div>
           <p className="section-label mb-2">Aus deiner Maturaziitig</p>
@@ -83,25 +80,15 @@ export default function HomePage() {
           </p>
         </div>
       </header>
-      </Reveal>
 
-      {polls.length > 0 && (
-        <Reveal order={1}>
-          <HomePollDeck polls={polls} onChange={setPolls} />
-        </Reveal>
-      )}
+      {polls.length > 0 && <HomePollDeck polls={polls} onChange={setPolls} />}
 
       {posts.length === 0 ? (
-        <Reveal order={2}>
-          <EmptyHome hasClass={hasClass} />
-        </Reveal>
+        <EmptyHome hasClass={hasClass} />
       ) : (
         <>
-          <Reveal order={2}>
           <HomeBoard featured={featured} sideTiles={sideTiles} />
-          </Reveal>
 
-          <Reveal order={3}>
           <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
             <section className="space-y-3">
               <SectionHead title="Interessant gerade" meta={popular.length ? `${popular.length} Fundstücke` : ""} />
@@ -121,28 +108,12 @@ export default function HomePage() {
               </div>
             </section>
           </div>
-          </Reveal>
 
-          {gallery.length > 0 && (
-            <Reveal order={4}>
-              <PhotoStrip posts={gallery} />
-            </Reveal>
-          )}
-          {quoteStrip.length > 0 && (
-            <Reveal order={5}>
-              <QuoteStrip posts={quoteStrip} />
-            </Reveal>
-          )}
+          {gallery.length > 0 && <PhotoStrip posts={gallery} />}
+          {quoteStrip.length > 0 && <QuoteStrip posts={quoteStrip} />}
         </>
       )}
     </div>
-  );
-}
-
-function Reveal({ order, children }: { order: number; children: React.ReactNode }) {
-  return (
-    <PageReveal delay={order * 92}>
-      {children}
     </PageReveal>
   );
 }

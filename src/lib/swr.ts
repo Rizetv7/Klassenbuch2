@@ -67,6 +67,29 @@ export function prefetchJson(url: string) {
   }
 }
 
+// Warm every page the user can reach, in the background: class list, class
+// detail, teachers, projects, polls. After this, navigating anywhere renders
+// instantly from cache (and still refreshes silently).
+export function prefetchAppData() {
+  try {
+    fetch("/api/classes")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        writeCache("/api/classes", data);
+        for (const klass of (data.classes ?? []).slice(0, 3)) {
+          prefetchJson(`/api/classes/${klass.id}`);
+          prefetchJson(`/api/classes/${klass.id}/teachers`);
+          prefetchJson(`/api/classes/${klass.id}/topics`);
+        }
+      })
+      .catch(() => {});
+    prefetchJson("/api/polls");
+  } catch {
+    // best-effort
+  }
+}
+
 // Drop everything — call on login/logout so no data leaks between accounts.
 export function clearApiCache() {
   try {
