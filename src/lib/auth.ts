@@ -8,6 +8,15 @@ const secret = new TextEncoder().encode(
   process.env.AUTH_SECRET || "dev-secret-change-me"
 );
 
+// "Unbegrenzt" in practice: the JWT itself is valid for 100 years, and the
+// cookie is capped at 400 days (the hard ceiling Chrome/Safari enforce on
+// Set-Cookie max-age/expires — no cookie can outlive that no matter what
+// value is sent). Sliding renewal below reissues the cookie on activity, so
+// as long as someone opens the app every so often the 400-day window keeps
+// moving forward and the session effectively never expires.
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+const RENEW_AFTER_SECONDS = 60 * 60 * 24; // reissue at most once a day
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
@@ -23,7 +32,7 @@ export async function createSession(userId: string): Promise<void> {
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime("100y")
     .sign(secret);
 
   cookies().set(COOKIE_NAME, token, {
@@ -31,7 +40,7 @@ export async function createSession(userId: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
 
@@ -45,7 +54,17 @@ export async function getSessionUserId(): Promise<string | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret);
-    return typeof payload.sub === "string" ? payload.sub : null;
+    const userId = typeof payload.sub === "string" ? payload.sub : null;
+    if (!userId) return null;
+
+    // Sliding renewal: push the 400-day cookie ceiling forward on activity
+    // so a session that's used every so often never actually expires.
+    const issuedAt = typeof payload.iat === "number" ? payload.iat : 0;
+    if (Date.now() / 1000 - issuedAt > RENEW_AFTER_SECONDS) {
+      await createSession(userId).catch(() => {});
+    }
+
+    return userId;
   } catch {
     return null;
   }

@@ -19,6 +19,19 @@ function readCache<T>(url: string): T | undefined {
   }
 }
 
+// Read-only cache peek, no network involved. Lets a component paint
+// instantly from a previous visit while deferring the actual re-fetch
+// (e.g. until it's scrolled into view).
+export function peekCachedJson<T>(url: string): T | undefined {
+  return readCache<T>(url);
+}
+
+// Update the cache for a URL after a local mutation (e.g. posting or
+// deleting a comment), so the next cache-first read reflects it immediately.
+export function writeCachedJson(url: string, data: unknown) {
+  writeCache(url, data);
+}
+
 function writeCache(url: string, data: unknown) {
   try {
     sessionStorage.setItem(PREFIX + url, JSON.stringify(data));

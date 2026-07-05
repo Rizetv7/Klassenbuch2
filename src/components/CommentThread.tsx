@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { InlineLoading } from "./LoadingState";
 import { Avatar } from "./Nav";
+import { peekCachedJson, swrJson, writeCachedJson } from "@/lib/swr";
 
 export type CommentNode = {
   id: string;
@@ -25,6 +26,7 @@ function timeAgo(iso: string): string {
 
 const COLLAPSE_AT = 240; // characters before a comment is folded
 const MAX_INDENT = 4; // stop indenting deeper than this
+const PREVIEW_ROOTS = 3; // root comments shown before "show all" kicks in
 
 // Long comments fold to a preview with a "mehr"/"weniger" toggle.
 function CommentBody({ text }: { text: string }) {
@@ -53,30 +55,53 @@ export function CommentThread({
   commentsPath: string;
   onCountChange?: (n: number) => void;
 }) {
-  const [comments, setComments] = useState<CommentNode[] | null>(null);
+  // Comments are always shown (no click-to-open), but a feed can hold dozens
+  // of posts at once — fetching every thread's comments the instant the feed
+  // mounts would be wasteful. So: paint instantly from cache if we have one
+  // (like every other page in the app), and only hit the network once this
+  // thread scrolls near the viewport, same as the rest of the app's
+  // stale-while-revalidate caching.
+  const [comments, setComments] = useState<CommentNode[] | null>(() => peekCachedJson<{ comments?: CommentNode[] }>(commentsPath)?.comments ?? null);
+  const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [nearViewport, setNearViewport] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const res = await fetch(commentsPath);
-      if (cancelled) return;
-      if (res.ok) {
-        const list: CommentNode[] = (await res.json()).comments ?? [];
-        setComments(list);
-        onCountChange?.(list.length);
-      } else {
-        setComments([]);
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "480px 0px" } // start loading well before it's scrolled into view
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!nearViewport) return;
+    return swrJson<{ comments?: CommentNode[] }>(commentsPath, (data, meta) => {
+      if (!data) {
+        if (!meta.fromCache && comments === null) setComments([]);
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+      const list = data.comments ?? [];
+      setComments(list);
+      onCountChange?.(list.length);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commentsPath]);
+  }, [nearViewport, commentsPath]);
 
   // children grouped by parent id (null = top level)
   const childrenOf = useMemo(() => {
@@ -104,6 +129,7 @@ export function CommentThread({
     setComments((current) => {
       const next = [...(current ?? []), d.comment as CommentNode];
       onCountChange?.(next.length);
+      writeCachedJson(commentsPath, { comments: next });
       return next;
     });
     return true;
@@ -129,6 +155,7 @@ export function CommentThread({
       }
       const next = list.filter((x) => !doomed.has(x.id));
       onCountChange?.(next.length);
+      writeCachedJson(commentsPath, { comments: next });
       return next;
     });
   }
@@ -200,15 +227,31 @@ export function CommentThread({
   };
 
   const roots = childrenOf.get(null) ?? [];
+  // Too many top-level comments to show at once -> preview the first few
+  // and let the reader opt into the full thread.
+  const hiddenCount = roots.length - PREVIEW_ROOTS;
+  const showPreviewToggle = !expanded && hiddenCount > 0;
+  const visibleRoots = showPreviewToggle ? roots.slice(0, PREVIEW_ROOTS) : roots;
 
   return (
-    <div className="space-y-3">
+    <div ref={containerRef} className="space-y-3">
       {comments === null ? (
         <InlineLoading />
       ) : roots.length === 0 ? (
         <p className="text-sm font-bold text-ink/45">Noch keine Kommentare. Schreib den ersten!</p>
       ) : (
-        <div className="space-y-3">{roots.map((r) => renderNode(r, 0))}</div>
+        <div className="space-y-3">
+          {visibleRoots.map((r) => renderNode(r, 0))}
+          {showPreviewToggle && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="text-sm font-black text-hotpink hover:underline"
+            >
+              {hiddenCount === 1 ? "1 weiteren Kommentar anzeigen" : `${hiddenCount} weitere Kommentare anzeigen`}
+            </button>
+          )}
+        </div>
       )}
 
       <form

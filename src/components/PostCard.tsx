@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Nav";
 import { CommentThread } from "./CommentThread";
@@ -56,10 +56,10 @@ export function PostCard({
 }) {
   const [liked, setLiked] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
-  const [open, setOpen] = useState(false);
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [imageOpen, setImageOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const commentsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!imageOpen) return;
@@ -85,8 +85,8 @@ export function PostCard({
     }
   }
 
-  function toggleComments() {
-    setOpen((v) => !v);
+  function jumpToComments() {
+    commentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function deletePost() {
@@ -236,18 +236,16 @@ export function PostCard({
           <IconHeart size={19} filled={liked} className={`${liked ? "text-coral animate-pop" : "text-ink/60"} group-hover/like:animate-wiggle`} />
           <span className="text-ink/70">{likeCount}</span>
         </button>
-        <button onClick={toggleComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90">
+        <button onClick={jumpToComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90">
           <IconComment size={19} />
           <span className="text-ink/70">{commentCount}</span>
         </button>
       </div>
 
-      {/* comments */}
-      {open && (
-        <div className="soft-divider relative z-10 mt-3 animate-fade-up pt-3">
-          <CommentThread commentsPath={`/api/posts/${post.id}/comments`} onCountChange={setCommentCount} />
-        </div>
-      )}
+      {/* comments: always visible, lazily loaded once scrolled near */}
+      <div ref={commentsRef} className="soft-divider relative z-10 mt-3 pt-3">
+        <CommentThread commentsPath={`/api/posts/${post.id}/comments`} onCountChange={setCommentCount} />
+      </div>
 
       {imageOpen && post.imageUrl && (
         <div

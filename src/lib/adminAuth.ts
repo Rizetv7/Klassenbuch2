@@ -5,10 +5,12 @@ import bcrypt from "bcryptjs";
 const ADMIN_COOKIE_NAME = "mz_admin_session";
 const ADMIN_AUDIENCE = "maturaziitig-admin";
 const ADMIN_ISSUER = "maturaziitig";
-// Long-lived like the regular user session (was 90 min, forcing constant
-// re-logins). Sliding renewal below keeps active use logged in indefinitely;
-// this is just the ceiling for a completely idle session.
-const ADMIN_SESSION_SECONDS = 60 * 60 * 24 * 30;
+// "Unbegrenzt" in practice: 400 days is the hard ceiling browsers enforce on
+// Set-Cookie max-age/expires (Chrome/Safari both cap it there regardless of
+// what's sent), and sliding renewal below reissues the cookie on activity so
+// the window keeps moving forward — an admin who opens the panel every so
+// often never actually gets logged out.
+const ADMIN_SESSION_SECONDS = 60 * 60 * 24 * 400;
 // Only reissue the cookie when it's this old, so a busy admin panel isn't
 // rewriting the session cookie on every single request.
 const ADMIN_RENEW_AFTER_SECONDS = 60 * 60 * 24;
