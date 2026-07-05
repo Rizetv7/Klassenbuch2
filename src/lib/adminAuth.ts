@@ -5,7 +5,13 @@ import bcrypt from "bcryptjs";
 const ADMIN_COOKIE_NAME = "mz_admin_session";
 const ADMIN_AUDIENCE = "maturaziitig-admin";
 const ADMIN_ISSUER = "maturaziitig";
-const ADMIN_SESSION_SECONDS = 60 * 90;
+// Long-lived like the regular user session (was 90 min, forcing constant
+// re-logins). Sliding renewal below keeps active use logged in indefinitely;
+// this is just the ceiling for a completely idle session.
+const ADMIN_SESSION_SECONDS = 60 * 60 * 24 * 30;
+// Only reissue the cookie when it's this old, so a busy admin panel isn't
+// rewriting the session cookie on every single request.
+const ADMIN_RENEW_AFTER_SECONDS = 60 * 60 * 24;
 
 // This fallback is a bcrypt hash of a generated high-entropy password. The
 // plaintext credential is never stored in the repository or the database.
@@ -83,7 +89,19 @@ export async function hasAdminSession(): Promise<boolean> {
       issuer: ADMIN_ISSUER,
       audience: ADMIN_AUDIENCE,
     });
-    return payload.scope === "admin" && payload.sub === adminUsername();
+    const valid = payload.scope === "admin" && payload.sub === adminUsername();
+    if (!valid) return false;
+
+    // Sliding renewal: as long as the admin keeps using the panel within the
+    // session window, re-issue the cookie so it never hits the idle ceiling.
+    // Skipped for brand-new sessions to avoid a write on every request.
+    const issuedAt = typeof payload.iat === "number" ? payload.iat : 0;
+    const ageSeconds = Date.now() / 1000 - issuedAt;
+    if (ageSeconds > ADMIN_RENEW_AFTER_SECONDS) {
+      await createAdminSession().catch(() => {});
+    }
+
+    return true;
   } catch {
     return false;
   }
