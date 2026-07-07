@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
+import { AminaBabyGame } from "@/components/AminaBabyGame";
 import type { Post } from "@/components/PostCard";
 import { playBabySound } from "@/lib/babySound";
 import { clearApiCache } from "@/lib/swr";
@@ -45,6 +46,7 @@ export default function AminaModePage() {
   const [mascotLine, setMascotLine] = useState("SUCH DIR EINEN MENSCHEN AUS!");
   const [exitHolding, setExitHolding] = useState(false);
   const [exitBusy, setExitBusy] = useState(false);
+  const [playingGame, setPlayingGame] = useState(false);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -198,11 +200,14 @@ export default function AminaModePage() {
   }
 
   function startExitHold() {
-    if (data?.readOnly || exitBusy || exitTimer.current) return;
+    if (data?.readOnly || exitBusy || playingGame || exitTimer.current) return;
     setExitHolding(true);
     exitTimer.current = setTimeout(() => {
       exitTimer.current = null;
-      void leaveAminaMode();
+      setExitHolding(false);
+      // 3 seconds held -> the baby has to finish the Bubu game before we leave
+      setPlayingGame(true);
+      sound("success");
     }, 3000);
   }
 
@@ -332,6 +337,20 @@ export default function AminaModePage() {
           }}
           onSubmit={submit}
           sound={sound}
+        />
+      ) : null}
+
+      {playingGame && data && !data.readOnly ? (
+        <AminaBabyGame
+          sound={sound}
+          onWin={() => {
+            setPlayingGame(false);
+            void leaveAminaMode();
+          }}
+          onCancel={() => {
+            setPlayingGame(false);
+            sound("back");
+          }}
         />
       ) : null}
 

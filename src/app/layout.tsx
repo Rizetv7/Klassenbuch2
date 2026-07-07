@@ -27,7 +27,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de">
+    // the theme script below stamps data-theme/data-mode before hydration,
+    // so the server<->client attribute diff on <html> is expected
+    <html lang="de" suppressHydrationWarning>
       <head>
         {/* Apply the saved theme + light/dark mode before first paint. */}
         <script
