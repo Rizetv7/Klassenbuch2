@@ -3,13 +3,15 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// After the 3-second hold, the baby must finish this ~30s game before the
-// grown-up area opens. Deliberately baby-easy: just keep tapping the big
-// bubbles until Bubu has climbed all the way up.
+// After the 3-second hold, the baby must finish this game before the grown-up
+// area opens. Deliberately baby-easy: just keep tapping the big bubbles until
+// Bubu has climbed all the way up. There is NO timer — the game ends once this
+// many bubbles are popped, so it naturally lasts ~30s at a normal pace (faster
+// if you tap quickly, slower if you take your time).
+const TARGET_POPS = 20;
 const BUBBLE_EMOJIS = ["🫧", "⭐️", "🎈", "🐣", "🍭", "🌈", "🐤", "💛"];
 const BUBBLE_COLORS = ["#ff9ac9", "#77dbff", "#ffe15a", "#9bf0a6", "#c9a7ff", "#ffb08a"];
 const GAME_PRAISE = ["JAAA!", "SUPER!", "NOCH MEHR!", "BUBU LACHT!", "TOLL GEMACHT!", "WOW!", "WEITER SO!", "HIHI!"];
-const GAME_MS = 30000;
 
 type Bubble = { id: number; x: number; y: number; emoji: string; color: string; popping: boolean };
 
@@ -25,40 +27,53 @@ export function AminaBabyGame({
   const idRef = useRef(0);
   const wonRef = useRef(false);
 
-  const makeBubble = (): Bubble => ({
-    id: idRef.current++,
-    x: 12 + Math.random() * 76,
-    y: 16 + Math.random() * 68,
-    emoji: BUBBLE_EMOJIS[Math.floor(Math.random() * BUBBLE_EMOJIS.length)],
-    color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)],
-    popping: false,
-  });
+  // place a fresh bubble, keeping some distance from the others so the three
+  // targets stay clearly separate and easy to tap
+  const makeBubbleAt = (others: Bubble[]): Bubble => {
+    let x = 12 + Math.random() * 76;
+    let y = 16 + Math.random() * 68;
+    for (let i = 0; i < 14; i++) {
+      x = 12 + Math.random() * 76;
+      y = 16 + Math.random() * 68;
+      if (others.every((o) => Math.hypot(o.x - x, o.y - y) > 30)) break;
+    }
+    return {
+      id: idRef.current++,
+      x,
+      y,
+      emoji: BUBBLE_EMOJIS[Math.floor(Math.random() * BUBBLE_EMOJIS.length)],
+      color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)],
+      popping: false,
+    };
+  };
 
   // seeded on mount (client only) — keeps the random layout out of SSR
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [popped, setPopped] = useState(0);
   const [praise, setPraise] = useState("DRÜCK DIE BLASEN!");
-  const [progress, setProgress] = useState(0);
   const [won, setWon] = useState(false);
 
+  // progress is driven purely by how many bubbles the baby has popped
+  const progress = Math.min(1, popped / TARGET_POPS);
+
   useEffect(() => {
-    setBubbles([makeBubble(), makeBubble(), makeBubble()]);
-    const start = Date.now();
-    const iv = setInterval(() => {
-      const p = Math.min(1, (Date.now() - start) / GAME_MS);
-      setProgress(p);
-      if (p >= 1) {
-        clearInterval(iv);
-        if (!wonRef.current) {
-          wonRef.current = true;
-          setWon(true);
-          sound("success");
-        }
-      }
-    }, 120);
-    return () => clearInterval(iv);
+    const seed: Bubble[] = [];
+    seed.push(makeBubbleAt(seed));
+    seed.push(makeBubbleAt(seed));
+    seed.push(makeBubbleAt(seed));
+    setBubbles(seed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // won by popping, never by a clock
+  useEffect(() => {
+    if (popped >= TARGET_POPS && !wonRef.current) {
+      wonRef.current = true;
+      setWon(true);
+      sound("success");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [popped]);
 
   function pop(bubble: Bubble) {
     if (bubble.popping || wonRef.current) return;
@@ -67,7 +82,7 @@ export function AminaBabyGame({
     setPraise(GAME_PRAISE[Math.floor(Math.random() * GAME_PRAISE.length)]);
     setBubbles((bs) => bs.map((b) => (b.id === bubble.id ? { ...b, popping: true } : b)));
     window.setTimeout(() => {
-      setBubbles((bs) => bs.map((b) => (b.id === bubble.id ? makeBubble() : b)));
+      setBubbles((bs) => bs.map((b) => (b.id === bubble.id ? makeBubbleAt(bs.filter((x) => x.id !== bubble.id)) : b)));
     }, 230);
   }
 
