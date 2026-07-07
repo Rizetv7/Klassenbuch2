@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconClose } from "./Icons";
@@ -90,19 +92,80 @@ function PreviewInsta() {
   );
 }
 
+function PreviewAmina() {
+  return (
+    <div className="relative h-full w-full overflow-hidden" style={{ background: "#fff1a8" }}>
+      <span className="absolute -left-3 top-3 h-11 w-11 rotate-12 rounded-lg" style={{ background: "#ff8bc5" }} />
+      <span className="absolute right-3 top-3 h-8 w-8 -rotate-6 rounded-full" style={{ background: "#70d9ee" }} />
+      <span className="absolute bottom-3 right-1 h-10 w-10 rotate-12 rounded-md" style={{ background: "#9bdd70" }} />
+      <div className="absolute left-3 top-3 rounded-full border-2 border-black bg-white px-2.5 py-1 text-[10px] font-black text-black">
+        AMINA
+      </div>
+      <div className="absolute bottom-1 left-1/2 h-[88px] w-[88px] -translate-x-1/2">
+        <Image src="/amina-mascot.png" alt="Bubu" fill sizes="88px" className="object-contain drop-shadow-md" />
+      </div>
+      <div className="absolute bottom-2 left-2 flex gap-1">
+        <span className="h-3 w-3 rounded-full border-2 border-black bg-white" />
+        <span className="h-3 w-3 rounded-full border-2 border-black" style={{ background: "#ff6868" }} />
+      </div>
+    </div>
+  );
+}
+
+type Viewer = {
+  aminaMode?: boolean;
+  aminaAvailable?: boolean;
+  aminaUnavailableReason?: "owner" | "no_class" | null;
+};
+
+const DESIGN_ONBOARDING_KEY = "mz-design-onboarding-v1";
+
 // A personal, per-device appearance picker: everyone chooses their own theme
 // and light/dark mode — nothing is shared with the class.
-export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: { label?: string; className?: string }) {
+export function ThemeMenu({
+  label = "Design",
+  className = "btn-soft text-sm",
+  autoOpen = false,
+  hideTrigger = false,
+}: {
+  label?: string;
+  className?: string;
+  autoOpen?: boolean;
+  hideTrigger?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [mode, setModeState] = useState<Mode>("light");
   const [active, setActive] = useState<ThemeId>("standard");
+  const [viewer, setViewer] = useState<Viewer | null>(null);
+  const [viewerChecked, setViewerChecked] = useState(false);
+  const [aminaBusy, setAminaBusy] = useState(false);
+  const [aminaError, setAminaError] = useState("");
+
+  useEffect(() => {
+    if (!autoOpen || localStorage.getItem(DESIGN_ONBOARDING_KEY)) return;
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then(({ user }) => {
+        if (cancelled) return;
+        setViewer(user ?? null);
+        setViewerChecked(true);
+        if (user && !user.aminaMode) setOpen(true);
+      })
+      .catch(() => {
+        if (!cancelled) setViewerChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [autoOpen]);
 
   useEffect(() => {
     if (!open) return;
     setModeState(storedMode());
     setActive(storedTheme());
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeMenu();
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -111,7 +174,29 @@ export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: 
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open]);
+  }, [open, autoOpen]);
+
+  useEffect(() => {
+    if (!open || viewerChecked) return;
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then(({ user }) => {
+        if (!cancelled) setViewer(user ?? null);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setViewerChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, viewerChecked]);
+
+  function closeMenu() {
+    if (autoOpen) localStorage.setItem(DESIGN_ONBOARDING_KEY, "seen");
+    setOpen(false);
+  }
 
   function pickMode(next: Mode) {
     setModeState(next);
@@ -124,20 +209,49 @@ export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: 
     setLocalTheme(next); // applies instantly across the whole app
   }
 
+  async function activateAmina() {
+    if (!viewer?.aminaAvailable || aminaBusy) return;
+    setAminaBusy(true);
+    setAminaError("");
+    try {
+      const res = await fetch("/api/profile/amina", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAminaError(data.error || "Der Amina-Modus konnte nicht aktiviert werden.");
+        return;
+      }
+      localStorage.setItem(DESIGN_ONBOARDING_KEY, "seen");
+      window.location.assign("/amina");
+    } catch {
+      setAminaError("Keine Verbindung. Versuche es noch einmal.");
+    } finally {
+      setAminaBusy(false);
+    }
+  }
+
   const activeInfo = THEMES.find((t) => t.id === active);
   const modeLocked = !!activeInfo?.alwaysDark;
+  const aminaHint = !viewerChecked
+    ? "Wird geprüft …"
+    : viewer?.aminaAvailable
+      ? "Extra einfach mit Bubu und Sounds"
+      : viewer?.aminaUnavailableReason === "owner"
+        ? "Für Klassenleitungen nur als Vorschau"
+        : "Erst einer Klasse beitreten";
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={className}>
-        <IconPalette size={17} />
-        {label}
-      </button>
+      {!hideTrigger && (
+        <button type="button" onClick={() => setOpen(true)} className={className}>
+          <IconPalette size={17} />
+          {label}
+        </button>
+      )}
 
       {open &&
         createPortal(
           <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setOpen(false)} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={closeMenu} />
             <div
               className="theme-sheet relative w-full border border-white/40 sm:max-w-lg"
               style={{
@@ -153,7 +267,7 @@ export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: 
                 </div>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closeMenu}
                   aria-label="Schliessen"
                   className="grid h-10 w-10 place-items-center rounded-full bg-white/30 text-ink/70 transition hover:bg-white/50 hover:rotate-90"
                 >
@@ -219,7 +333,22 @@ export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: 
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={activateAmina}
+                      disabled={!viewer?.aminaAvailable || aminaBusy}
+                      className="group relative overflow-hidden rounded-[22px] border-2 border-white/40 text-left transition-all duration-200 enabled:hover:-translate-y-0.5 enabled:hover:border-white/70 enabled:active:scale-[0.97] disabled:cursor-not-allowed"
+                    >
+                      <div className="h-28 overflow-hidden">
+                        <PreviewAmina />
+                      </div>
+                      <div className="border-t border-white/30 bg-white/20 px-3 py-2">
+                        <p className="text-sm font-black leading-tight">Amina-Modus</p>
+                        <p className="mt-0.5 text-[10px] font-bold leading-tight text-ink/50">{aminaBusy ? "Wird aktiviert …" : aminaHint}</p>
+                      </div>
+                    </button>
                   </div>
+                  {aminaError && <p className="mt-2 text-xs font-black text-red-700">{aminaError}</p>}
                 </div>
               </div>
             </div>
@@ -228,4 +357,11 @@ export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: 
         )}
     </>
   );
+}
+
+export function ThemeOnboarding() {
+  const path = usePathname();
+  const hidden = path === "/login" || path === "/register" || path.startsWith("/archivzugang") || path.startsWith("/amina");
+  if (hidden) return null;
+  return <ThemeMenu autoOpen hideTrigger />;
 }

@@ -393,13 +393,14 @@ function HomeAttribution({
 }) {
   const target = targetPerson(post);
   const uploader = uploaderPerson(post);
+  const portrait = target ?? uploader;
   const primaryName = target?.name ?? uploader.name;
   const secondaryName = target ? uploader.name : post.class.name;
   const textClass = inverted ? "text-snow" : "text-ink";
   const mutedClass = inverted ? "text-snow/78" : "text-ink/52";
   return (
     <div className={`mt-3 flex min-w-0 items-center gap-2 ${photo ? "mt-0" : ""}`}>
-      <Avatar name={uploader.name} url={uploader.avatarUrl} accent={uploader.accentColor} size={prominent ? 36 : compact ? 25 : 30} ring={!inverted} />
+      <Avatar name={portrait.name} url={portrait.avatarUrl} accent={portrait.accentColor} size={prominent ? 36 : compact ? 25 : 30} ring={!inverted} />
       <div className="min-w-0 leading-tight">
         <p className={`${prominent ? "text-sm" : "text-[11px]"} truncate font-black ${textClass}`}>
           {primaryName}

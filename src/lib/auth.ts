@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
-import { hasAminaMode } from "./aminaMode";
 
 const COOKIE_NAME = "kb_session";
 const secret = new TextEncoder().encode(
@@ -75,13 +74,22 @@ export async function getSessionUserId(): Promise<string | null> {
 export async function getCurrentUser() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  const [user, aminaMode] = await Promise.all([
+  const [user, memberships] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, name: true, avatarUrl: true, accentColor: true, createdAt: true },
     }),
-    hasAminaMode(userId),
+    prisma.membership.findMany({
+      where: { userId, leftAt: null, class: { archivedAt: null } },
+      select: { role: true, aminaMode: true },
+    }),
   ]);
   if (!user) return null;
-  return { ...user, aminaMode };
+  const eligibleMemberships = memberships.filter((membership) => membership.role !== "OWNER");
+  return {
+    ...user,
+    aminaMode: eligibleMemberships.some((membership) => membership.aminaMode),
+    aminaAvailable: eligibleMemberships.length > 0,
+    aminaUnavailableReason: memberships.length === 0 ? "no_class" : eligibleMemberships.length === 0 ? "owner" : null,
+  };
 }
