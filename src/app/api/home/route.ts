@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { ensurePollSchema } from "@/lib/pollSchema";
-import { ensureThemeSchema } from "@/lib/themeSchema";
 import { pollInclude, serializePollRows } from "@/lib/serializePoll";
 import { postInclude, serializePostRows } from "@/lib/serializePost";
 
@@ -34,12 +33,11 @@ export async function GET() {
       },
     }),
     ensurePollSchema(),
-    ensureThemeSchema(),
   ]);
   if (!user) return NextResponse.json({ user: null, hasClass: false, posts: [], memory: null, polls: [] });
 
   const classIds = user.memberships.map((m) => m.classId);
-  const [rows, pollRows, themeRow] = classIds.length
+  const [rows, pollRows] = classIds.length
     ? await Promise.all([
         prisma.post.findMany({
           where: { classId: { in: classIds } },
@@ -53,9 +51,8 @@ export async function GET() {
           take: 24,
           include: pollInclude(userId),
         }),
-        prisma.class.findUnique({ where: { id: classIds[0] }, select: { theme: true } }),
       ])
-    : [[], [], null];
+    : [[], []];
 
   const posts = await serializePostRows(rows);
   const access = Object.fromEntries(user.memberships.map((m) => [m.classId, m.role]));
@@ -72,7 +69,6 @@ export async function GET() {
       aminaMode: user.memberships.some((membership) => membership.aminaMode && membership.role !== "OWNER"),
     },
     hasClass: classIds.length > 0,
-    theme: themeRow?.theme ?? "standard",
     posts,
     memory,
     polls,

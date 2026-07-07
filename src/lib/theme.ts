@@ -45,17 +45,11 @@ export function setMode(mode: Mode) {
   window.dispatchEvent(new CustomEvent("mz-theme-change"));
 }
 
-/** Persist + apply a theme locally (after the server accepted it). */
+/** Persist + apply the theme this person picked, on this device. */
 export function setLocalTheme(theme: ThemeId) {
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch {}
   applyAttributes(theme, storedMode());
   window.dispatchEvent(new CustomEvent("mz-theme-change"));
-}
-
-/** Called when class data arrives: adopt the class's theme if it changed. */
-export function syncClassTheme(theme: unknown) {
-  if (!isThemeId(theme)) return;
-  if (theme !== storedTheme()) setLocalTheme(theme);
 }

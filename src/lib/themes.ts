@@ -1,6 +1,6 @@
-// Shared theme registry (server + client). The theme is stored per class and
-// chosen by moderators; "mode" (light/dark) is a per-device preference that
-// currently only applies to the standard theme.
+// Shared theme registry. Both the theme and the light/dark "mode" are personal
+// per-device preferences (stored in localStorage) — everyone picks their own.
+// The light/dark toggle currently only applies to the standard theme.
 
 export const THEME_IDS = ["standard", "insta"] as const;
 export type ThemeId = (typeof THEME_IDS)[number];

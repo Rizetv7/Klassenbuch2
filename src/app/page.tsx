@@ -9,7 +9,6 @@ import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { prefetchAppData, swrJson } from "@/lib/swr";
-import { syncClassTheme } from "@/lib/theme";
 
 export default function HomePage() {
   const router = useRouter();
@@ -36,7 +35,6 @@ export default function HomePage() {
         router.replace("/amina");
         return;
       }
-      syncClassTheme(home.theme); // pick up the moderator-chosen class theme
       setMe(home.user);
       setPosts(home.posts ?? []);
       setPolls(home.polls ?? []);

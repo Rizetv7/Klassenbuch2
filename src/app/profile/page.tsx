@@ -9,6 +9,7 @@ import { IconPencil } from "@/components/Icons";
 import { uploadImageFile } from "@/lib/uploadImage";
 import { clearApiCache } from "@/lib/swr";
 import { PushSettings } from "@/components/PushSettings";
+import { ThemeMenu } from "@/components/ThemeMenu";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -145,6 +146,12 @@ export default function ProfilePage() {
         <button onClick={() => save()} className="btn-primary w-full" disabled={busy}>
           {busy ? "Speichert…" : "Speichern"}
         </button>
+      </div>
+
+      <div className="glass-card p-5">
+        <p className="section-label mb-1">Erscheinungsbild</p>
+        <p className="mb-3 text-sm font-bold text-ink/55">Wähle dein eigenes Design und Hell- oder Dunkelmodus — nur für dich, auf diesem Gerät.</p>
+        <ThemeMenu label="Design wählen" className="btn-primary text-sm" />
       </div>
 
       <PushSettings />

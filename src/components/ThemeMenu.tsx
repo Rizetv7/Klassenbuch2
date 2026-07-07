@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconClose } from "./Icons";
 import { THEMES, type ThemeId } from "@/lib/themes";
-import { setLocalTheme, setMode, storedMode, type Mode } from "@/lib/theme";
+import { setLocalTheme, setMode, storedMode, storedTheme, type Mode } from "@/lib/theme";
 
 function IconPalette({ size = 18 }: { size?: number }) {
   return (
@@ -90,30 +90,17 @@ function PreviewInsta() {
   );
 }
 
-export function ThemeMenu({
-  classId,
-  theme,
-  canModerate,
-  onThemeChange,
-}: {
-  classId: string;
-  theme: string;
-  canModerate: boolean;
-  onThemeChange?: (theme: ThemeId) => void;
-}) {
+// A personal, per-device appearance picker: everyone chooses their own theme
+// and light/dark mode — nothing is shared with the class.
+export function ThemeMenu({ label = "Design", className = "btn-soft text-sm" }: { label?: string; className?: string }) {
   const [open, setOpen] = useState(false);
   const [mode, setModeState] = useState<Mode>("light");
-  const [active, setActive] = useState<ThemeId>(theme === "insta" ? "insta" : "standard");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setActive(theme === "insta" ? "insta" : "standard");
-  }, [theme]);
+  const [active, setActive] = useState<ThemeId>("standard");
 
   useEffect(() => {
     if (!open) return;
     setModeState(storedMode());
+    setActive(storedTheme());
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
@@ -131,27 +118,10 @@ export function ThemeMenu({
     setMode(next);
   }
 
-  async function pickTheme(next: ThemeId) {
-    if (!canModerate || busy || next === active) return;
-    const before = active;
-    setError("");
-    setBusy(true);
+  function pickTheme(next: ThemeId) {
+    if (next === active) return;
     setActive(next);
-    setLocalTheme(next); // optimistic: the whole app flips instantly
-    const res = await fetch(`/api/classes/${classId}/theme`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ theme: next }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const d = await res.json().catch(() => null);
-      setActive(before);
-      setLocalTheme(before);
-      setError(d?.error || "Design konnte nicht gespeichert werden.");
-      return;
-    }
-    onThemeChange?.(next);
+    setLocalTheme(next); // applies instantly across the whole app
   }
 
   const activeInfo = THEMES.find((t) => t.id === active);
@@ -159,9 +129,9 @@ export function ThemeMenu({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="btn-soft text-sm">
+      <button type="button" onClick={() => setOpen(true)} className={className}>
         <IconPalette size={17} />
-        Design
+        {label}
       </button>
 
       {open &&
@@ -219,9 +189,9 @@ export function ThemeMenu({
                   )}
                 </div>
 
-                {/* class-wide theme */}
+                {/* personal theme */}
                 <div>
-                  <p className="mb-2 text-xs font-black uppercase text-ink/50">Design · für die ganze Klasse</p>
+                  <p className="mb-2 text-xs font-black uppercase text-ink/50">Design · für dich</p>
                   <div className="grid grid-cols-2 gap-3">
                     {THEMES.map((t) => {
                       const selected = active === t.id;
@@ -229,11 +199,10 @@ export function ThemeMenu({
                         <button
                           key={t.id}
                           type="button"
-                          disabled={!canModerate || busy}
                           onClick={() => pickTheme(t.id)}
-                          className={`group relative overflow-hidden rounded-[22px] border-2 text-left transition-all duration-200 ${
+                          className={`group relative overflow-hidden rounded-[22px] border-2 text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${
                             selected ? "border-hotpink shadow-soft" : "border-white/40 hover:border-white/70"
-                          } ${canModerate ? "hover:-translate-y-0.5 active:scale-[0.97]" : "cursor-default"}`}
+                          }`}
                         >
                           <div className="h-28 overflow-hidden">
                             {t.id === "insta" ? <PreviewInsta /> : <PreviewStandard />}
@@ -251,12 +220,6 @@ export function ThemeMenu({
                       );
                     })}
                   </div>
-                  {!canModerate && (
-                    <p className="mt-2 pl-1 text-[11px] font-bold text-ink/45">
-                      Nur Moderator:innen können das Klassen-Design wechseln.
-                    </p>
-                  )}
-                  {error && <p className="mt-2 text-sm font-black text-coral">{error}</p>}
                 </div>
               </div>
             </div>
