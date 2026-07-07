@@ -180,6 +180,8 @@ export function ImportWizard({
   const [raw, setRaw] = useState("");
   const [teachers, setTeachers] = useState<Person[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  // One assignment per pasted NAME (not per entry): "isai" -> "student:…"
+  const [matches, setMatches] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingItem[]>([]);
   const [pendingMatches, setPendingMatches] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -231,6 +233,14 @@ export function ImportWizard({
       return;
     }
     setDrafts(parsed);
+    // seed one match per unique name (first guessed hit wins)
+    const seeded: Record<string, string> = {};
+    for (const d of parsed) {
+      const key = normalizeName(d.rawName);
+      if (!(key in seeded)) seeded[key] = d.matchKey;
+      else if (!seeded[key] && d.matchKey) seeded[key] = d.matchKey;
+    }
+    setMatches(seeded);
     setStep(2);
   }
 
@@ -238,8 +248,21 @@ export function ImportWizard({
     setDrafts((current) => current.map((d) => (d.id === id ? { ...d, ...patch } : d)));
   }
 
+  // entries grouped by pasted name — assignment happens once per group
+  const groups = useMemo(() => {
+    const map = new Map<string, { label: string; entries: Draft[] }>();
+    for (const d of drafts) {
+      const key = normalizeName(d.rawName);
+      const group = map.get(key) ?? { label: d.rawName, entries: [] };
+      group.entries.push(d);
+      map.set(key, group);
+    }
+    return Array.from(map.entries()).map(([key, value]) => ({ key, ...value }));
+  }, [drafts]);
+
+  const matchFor = (rawName: string) => matches[normalizeName(rawName)] || "";
   const broken = drafts.filter((d) => d.error).length;
-  const matchedCount = drafts.filter((d) => !d.error && d.matchKey).length;
+  const matchedCount = drafts.filter((d) => !d.error && matchFor(d.rawName)).length;
   const openCount = drafts.length - broken - matchedCount;
 
   async function submitImport() {
@@ -255,15 +278,18 @@ export function ImportWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          entries: drafts.map((d) => ({
-            rawName: d.rawName,
-            targetType: d.matchKey.startsWith("teacher:") ? "TEACHER" : "STUDENT",
-            kind: d.kind,
-            text: d.text,
-            context: d.context,
-            imageUrl: d.imageUrl,
-            ...splitMatchKey(d.matchKey),
-          })),
+          entries: drafts.map((d) => {
+            const matchKey = matchFor(d.rawName);
+            return {
+              rawName: d.rawName,
+              targetType: matchKey.startsWith("teacher:") ? "TEACHER" : "STUDENT",
+              kind: d.kind,
+              text: d.text,
+              context: d.context,
+              imageUrl: d.imageUrl,
+              ...splitMatchKey(matchKey),
+            };
+          }),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -427,52 +453,67 @@ export function ImportWizard({
                 {openCount > 0 && <> · <span className="font-black text-ink">{openCount}</span> bleiben offen zum späteren Zuordnen</>}
                 {broken > 0 && <> · <span className="font-black text-coral">{broken} fehlerhaft</span></>}
               </p>
-              {drafts.map((draft) => {
-                const person = personFor(draft.matchKey);
+
+              {/* one card per pasted NAME: assign the person once, every
+                  entry below follows automatically */}
+              {groups.map((group) => {
+                const matchKey = matchFor(group.label);
+                const person = personFor(matchKey);
                 return (
-                  <div
-                    key={draft.id}
-                    className={`glass-card space-y-2.5 p-3 ${draft.error ? "!border-coral/60" : ""}`}
-                  >
+                  <div key={group.key} className="glass-card space-y-2.5 p-3">
                     <div className="flex items-center gap-2">
                       {person ? (
-                        <Avatar name={person.name} url={person.avatarUrl} accent={person.accentColor} size={30} ring={false} />
+                        <Avatar name={person.name} url={person.avatarUrl} accent={person.accentColor} size={34} ring={false} />
                       ) : (
-                        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-white/60 text-sm font-black text-ink/40">?</span>
+                        <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-white/60 text-sm font-black text-ink/40">?</span>
                       )}
-                      <PersonSelect value={draft.matchKey} onChange={(v) => updateDraft(draft.id, { matchKey: v })} />
-                      <button
-                        onClick={() => setDrafts((c) => c.filter((d) => d.id !== draft.id))}
-                        aria-label="Eintrag entfernen"
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink/30 transition-all duration-150 hover:text-coral active:scale-90"
-                      >
-                        <IconClose size={16} />
-                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[11px] font-black uppercase text-ink/45">
+                          „{group.label}“ · {group.entries.length} {group.entries.length === 1 ? "Eintrag" : "Einträge"}
+                        </p>
+                        <PersonSelect
+                          value={matchKey}
+                          onChange={(v) => setMatches((c) => ({ ...c, [group.key]: v }))}
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      {(Object.keys(KIND_LABEL) as Draft["kind"][]).map((k) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => updateDraft(draft.id, { kind: k, error: undefined })}
-                          className={`tab !px-3 !py-1.5 !text-xs ${draft.kind === k ? "tab-active" : ""}`}
+                    <div className="space-y-1.5">
+                      {group.entries.map((draft) => (
+                        <div
+                          key={draft.id}
+                          className={`flex items-start gap-2 rounded-[18px] border bg-white/25 px-3 py-2 ${draft.error ? "border-coral/60" : "border-white/40"}`}
                         >
-                          {KIND_LABEL[k]}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const order: Draft["kind"][] = ["QUOTE", "TEXT", "IMAGE"];
+                              const next = order[(order.indexOf(draft.kind) + 1) % order.length];
+                              updateDraft(draft.id, { kind: next, error: undefined });
+                            }}
+                            title="Typ wechseln"
+                            className="chip shrink-0 !px-2.5 !py-1 !text-[10px]"
+                          >
+                            {KIND_LABEL[draft.kind]}
+                          </button>
+                          <p className="min-w-0 flex-1 break-words text-sm font-bold text-ink/80">
+                            {draft.kind === "IMAGE" ? (
+                              <span className="break-all text-xs">{draft.imageUrl || "— kein Link —"}</span>
+                            ) : (
+                              <>„{draft.text}“{draft.context && <span className="text-ink/50"> · {draft.context}</span>}</>
+                            )}
+                            {draft.error && <span className="block text-xs font-black text-coral">{draft.error}</span>}
+                          </p>
+                          <button
+                            onClick={() => setDrafts((c) => c.filter((d) => d.id !== draft.id))}
+                            aria-label="Eintrag entfernen"
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink/30 transition-all duration-150 hover:text-coral active:scale-90"
+                          >
+                            <IconClose size={14} />
+                          </button>
+                        </div>
                       ))}
                     </div>
-
-                    <p className="break-words text-sm font-bold text-ink/80">
-                      {draft.kind === "IMAGE" ? (
-                        <span className="break-all text-xs">{draft.imageUrl || "— kein Link —"}</span>
-                      ) : (
-                        <>„{draft.text}“{draft.context && <span className="text-ink/50"> · {draft.context}</span>}</>
-                      )}
-                    </p>
-                    <p className="text-[11px] font-bold text-ink/45">
-                      eingefügt als „{draft.rawName}“{draft.error && <span className="font-black text-coral"> — {draft.error}</span>}
-                    </p>
                   </div>
                 );
               })}
