@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { InlineLoading } from "./LoadingState";
 import { Avatar } from "./Nav";
 import { Lightbox } from "./Lightbox";
@@ -14,7 +15,7 @@ export type CommentNode = {
   imageUrl?: string | null;
   createdAt: string;
   parentId: string | null;
-  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null };
+  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null; membershipId?: string | null };
 };
 
 function timeAgo(iso: string): string {
@@ -164,10 +165,13 @@ function Composer({
 
 export function CommentThread({
   commentsPath,
+  classId,
   onCountChange,
 }: {
   // collection endpoint, e.g. "/api/posts/{id}/comments" or "/api/polls/{id}/comments"
   commentsPath: string;
+  // class the thread lives in -> lets author avatars link to profiles
+  classId?: string;
   onCountChange?: (n: number) => void;
 }) {
   // Comments are always shown (no click-to-open), but a feed can hold dozens
@@ -280,14 +284,27 @@ export function CommentThread({
     const kids = childrenOf.get(node.id) ?? [];
     const isReplying = replyTo === node.id;
     const indented = depth > 0 && depth <= MAX_INDENT;
+    const authorHref = classId && node.author.membershipId
+      ? `/classes/${classId}/members/${node.author.membershipId}`
+      : null;
     return (
       <div key={node.id} className={indented ? "mt-2 border-l-2 border-white/25 pl-3" : depth > 0 ? "mt-2" : ""}>
         <div className="group/c flex items-start gap-2 text-sm">
-          <Avatar name={node.author.name} url={node.author.avatarUrl} accent={node.author.accentColor} size={28} />
+          {authorHref ? (
+            <Link href={authorHref} className="shrink-0 transition hover:opacity-80">
+              <Avatar name={node.author.name} url={node.author.avatarUrl} accent={node.author.accentColor} size={28} />
+            </Link>
+          ) : (
+            <Avatar name={node.author.name} url={node.author.avatarUrl} accent={node.author.accentColor} size={28} />
+          )}
           <div className="min-w-0 flex-1">
             <div className="rounded-[20px] border border-white/40 bg-white/20 px-3 py-2">
               <div className="mb-0.5 flex items-center gap-2">
-                <span className="font-black">{node.author.name}</span>
+                {authorHref ? (
+                  <Link href={authorHref} className="font-black hover:underline">{node.author.name}</Link>
+                ) : (
+                  <span className="font-black">{node.author.name}</span>
+                )}
                 <span className="text-[11px] font-bold text-ink/40">{timeAgo(node.createdAt)}</span>
               </div>
               {node.text && <CommentBody text={node.text} />}

@@ -4,14 +4,31 @@ import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
 import { ensureCommentSchema } from "@/lib/commentSchema";
 
-const COMMENT_SELECT = {
-  id: true,
-  text: true,
-  imageUrl: true,
-  parentId: true,
-  createdAt: true,
-  author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
-} as const;
+// Select with the author's membership in THIS class attached, so the client
+// can link each avatar to that person's profile page.
+function commentSelect(classId: string) {
+  return {
+    id: true,
+    text: true,
+    imageUrl: true,
+    parentId: true,
+    createdAt: true,
+    author: {
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        accentColor: true,
+        memberships: { where: { classId }, select: { id: true }, take: 1 },
+      },
+    },
+  } as const;
+}
+
+function flattenComment(c: any) {
+  const { memberships, ...author } = c.author;
+  return { ...c, author: { ...author, membershipId: memberships?.[0]?.id ?? null } };
+}
 
 // List comments for a post (flat list incl. parentId; the client builds the tree).
 export async function GET(
@@ -31,11 +48,11 @@ export async function GET(
 
   const comments = await prisma.comment.findMany({
     where: { postId: params.id },
-    select: COMMENT_SELECT,
+    select: commentSelect(post.classId),
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json({ comments });
+  return NextResponse.json({ comments: comments.map(flattenComment) });
 }
 
 // Add a comment.
@@ -73,8 +90,8 @@ export async function POST(
 
   const comment = await prisma.comment.create({
     data: { postId: params.id, authorId: userId, text: cleanText, imageUrl: cleanImage, parentId: parent },
-    select: COMMENT_SELECT,
+    select: commentSelect(post.classId),
   });
 
-  return NextResponse.json({ comment });
+  return NextResponse.json({ comment: flattenComment(comment) });
 }

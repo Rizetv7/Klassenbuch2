@@ -17,7 +17,7 @@ export type Post = {
   anonymous?: boolean;
   imageUrl: string | null;
   createdAt: string;
-  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null } | null;
+  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null; membershipId?: string | null } | null;
   class: { id: string; name: string };
   subject: { id: string; displayName: string; memberType: string; avatarUrl: string | null; accentColor?: string | null } | null;
   teacher: { id: string; name: string; subject: string | null; avatarUrl: string | null; accentColor?: string | null } | null;
@@ -106,6 +106,9 @@ export function PostCard({
   const authorName = post.anonymous || !post.author ? "Anonym" : post.author.name;
   const authorAvatar = post.anonymous || !post.author ? null : post.author.avatarUrl;
   const authorAccent = post.anonymous || !post.author ? null : post.author.accentColor;
+  const authorHref = !post.anonymous && post.author?.membershipId
+    ? `/classes/${post.class.id}/members/${post.author.membershipId}`
+    : null;
   const displayTarget: CardPerson | null = about ?? (post.kind === "QUOTE" && post.saidByName
     ? { name: post.saidByName, avatarUrl: null, accent: null, label: "Zitat", href: null }
     : null);
@@ -139,10 +142,17 @@ export function PostCard({
           ) : (
             <p className="mt-1 truncate text-xl font-black leading-none text-ink">{post.class.name}</p>
           )}
-          <div className="mt-3 flex min-w-0 items-center gap-2">
-            <Avatar name={authorName} url={authorAvatar} accent={authorAccent} size={25} ring={false} />
-            <p className="truncate text-xs font-black text-ink/60">{authorName}</p>
-          </div>
+          {authorHref ? (
+            <Link href={authorHref} className="mt-3 flex min-w-0 items-center gap-2 transition hover:opacity-80">
+              <Avatar name={authorName} url={authorAvatar} accent={authorAccent} size={25} ring={false} />
+              <p className="truncate text-xs font-black text-ink/60 hover:underline">{authorName}</p>
+            </Link>
+          ) : (
+            <div className="mt-3 flex min-w-0 items-center gap-2">
+              <Avatar name={authorName} url={authorAvatar} accent={authorAccent} size={25} ring={false} />
+              <p className="truncate text-xs font-black text-ink/60">{authorName}</p>
+            </div>
+          )}
         </div>
         <button onClick={deletePost} title="Löschen" className="ml-auto rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral hover:rotate-90">
           <IconClose size={16} />
@@ -209,7 +219,7 @@ export function PostCard({
 
       {/* comments: always visible, lazily loaded once scrolled near */}
       <div ref={commentsRef} className="soft-divider relative z-10 mt-3 pt-3">
-        <CommentThread commentsPath={`/api/posts/${post.id}/comments`} onCountChange={setCommentCount} />
+        <CommentThread commentsPath={`/api/posts/${post.id}/comments`} classId={post.class.id} onCountChange={setCommentCount} />
       </div>
 
       {imageOpen && post.imageUrl && (

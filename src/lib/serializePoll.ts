@@ -6,7 +6,7 @@ type PollAccessMap = Record<string, string | undefined>;
 export function pollInclude(viewerId: string) {
   return {
     class: { select: { id: true, name: true } },
-    author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
+    author: { select: { id: true, name: true, avatarUrl: true, accentColor: true, memberships: { select: { id: true, classId: true } } } },
     options: {
       orderBy: { position: "asc" as const },
       include: {
@@ -66,7 +66,15 @@ export function serializePollRows(rows: any[], viewerId?: string, access: PollAc
       multipleChoice: poll.multipleChoice,
       createdAt: poll.createdAt,
       class: poll.class,
-      author: poll.author,
+      author: poll.author
+        ? {
+            id: poll.author.id,
+            name: poll.author.name,
+            avatarUrl: poll.author.avatarUrl,
+            accentColor: poll.author.accentColor,
+            membershipId: poll.author.memberships?.find((m: any) => m.classId === poll.classId)?.id ?? null,
+          }
+        : null,
       viewerCanDelete: poll.authorId === viewerId || canModerate(access[poll.classId] || ""),
       options,
       selectedOptionIds,

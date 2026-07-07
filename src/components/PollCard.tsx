@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Avatar } from "./Nav";
 import { CommentThread } from "./CommentThread";
 import { IconComment } from "./Icons";
@@ -14,7 +15,7 @@ export type Poll = {
   multipleChoice: boolean;
   createdAt: string;
   class: { id: string; name: string };
-  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null } | null;
+  author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null; membershipId?: string | null } | null;
   options: {
     id: string;
     text: string;
@@ -232,8 +233,20 @@ export function PollCard({
         </h2>
         {poll.description && <p className="mt-3 text-sm font-black text-ink/60">{poll.description}</p>}
         <p className="mt-3 flex items-center gap-2 text-xs font-black text-ink/55">
-          {poll.author && <Avatar name={poll.author.name} url={poll.author.avatarUrl} accent={poll.author.accentColor} size={24} ring={false} />}
-          Erstellt von {poll.author?.name ?? "Unbekannt"}
+          {poll.author && (
+            poll.author.membershipId ? (
+              <Link href={`/classes/${poll.class.id}/members/${poll.author.membershipId}`} className="flex items-center gap-2 transition hover:opacity-80">
+                <Avatar name={poll.author.name} url={poll.author.avatarUrl} accent={poll.author.accentColor} size={24} ring={false} />
+                <span className="hover:underline">Erstellt von {poll.author.name}</span>
+              </Link>
+            ) : (
+              <>
+                <Avatar name={poll.author.name} url={poll.author.avatarUrl} accent={poll.author.accentColor} size={24} ring={false} />
+                Erstellt von {poll.author.name}
+              </>
+            )
+          )}
+          {!poll.author && "Erstellt von Unbekannt"}
         </p>
 
         <div className="mt-5 space-y-2.5">
@@ -351,7 +364,7 @@ export function PollCard({
             Kommentare{commentCount !== null ? ` · ${commentCount}` : ""}
           </button>
           <div className="mt-3">
-            <CommentThread commentsPath={`/api/polls/${poll.id}/comments`} onCountChange={setCommentCount} />
+            <CommentThread commentsPath={`/api/polls/${poll.id}/comments`} classId={poll.class.id} onCountChange={setCommentCount} />
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { firstImageBySubject, firstImageByTeacher } from "./effectiveAvatar";
 // Shape used everywhere the frontend renders a post.
 export function postInclude(viewerId: string) {
   return {
-    author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
+    author: { select: { id: true, name: true, avatarUrl: true, accentColor: true, memberships: { select: { id: true, classId: true } } } },
     class: { select: { id: true, name: true } },
     subject: { select: { id: true, displayName: true, memberType: true, user: { select: { name: true, avatarUrl: true, accentColor: true } } } },
     teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
@@ -39,7 +39,16 @@ export async function serializePostRows(posts: any[]) {
       imageUrl: p.imageUrl,
       createdAt: p.createdAt,
       // hide the author entirely for anonymous posts
-      author: p.anonymous ? null : { id: p.author.id, name: p.author.name, avatarUrl: p.author.avatarUrl, accentColor: p.author.accentColor },
+      author: p.anonymous
+        ? null
+        : {
+            id: p.author.id,
+            name: p.author.name,
+            avatarUrl: p.author.avatarUrl,
+            accentColor: p.author.accentColor,
+            // the author's membership in this class -> lets the card link to their profile
+            membershipId: p.author.memberships?.find((m: any) => m.classId === p.classId)?.id ?? null,
+          },
       class: p.class,
       subject: p.subject
         ? {
