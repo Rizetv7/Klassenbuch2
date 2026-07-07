@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { playBabySound } from "@/lib/babySound";
@@ -23,12 +23,15 @@ type AminaData = {
   class: { id: string; name: string } | null;
   targets: Target[];
   posts: Post[];
+  readOnly: boolean;
 };
 
 type Kind = "QUOTE" | "IMAGE" | "TEXT";
 
 export default function AminaModePage() {
   const router = useRouter();
+  const search = useSearchParams();
+  const previewClassId = search.get("previewClassId");
   const [data, setData] = useState<AminaData | null>(null);
   const [selected, setSelected] = useState<Target | null>(null);
   const [creating, setCreating] = useState(false);
@@ -37,16 +40,21 @@ export default function AminaModePage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [busy, setBusy] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
   const [error, setError] = useState("");
   const [mascotLine, setMascotLine] = useState("SUCH DIR EINEN MENSCHEN AUS!");
+  const [adultUnlocked, setAdultUnlocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetch("/api/amina", { cache: "no-store" })
+    const endpoint = previewClassId
+      ? `/api/amina?previewClassId=${encodeURIComponent(previewClassId)}`
+      : "/api/amina";
+    fetch(endpoint, { cache: "no-store" })
       .then(async (res) => {
         if (res.status === 401) {
-          router.replace("/login");
+          router.replace(previewClassId ? "/archivzugang" : "/login");
           return null;
         }
         if (res.status === 403) {
@@ -65,8 +73,9 @@ export default function AminaModePage() {
       });
     return () => {
       active = false;
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
     };
-  }, [router]);
+  }, [previewClassId, router]);
 
   useEffect(() => {
     return () => {
@@ -82,7 +91,23 @@ export default function AminaModePage() {
   }, [data, selected]);
 
   function sound(tone: "tap" | "back" | "success" | "sparkle" = "tap") {
-    if (soundOn) playBabySound(tone);
+    playBabySound(tone);
+  }
+
+  function startAdultUnlock() {
+    if (data?.readOnly || adultUnlocked) return;
+    setUnlocking(true);
+    unlockTimer.current = setTimeout(() => {
+      setAdultUnlocked(true);
+      setUnlocking(false);
+      sound("success");
+    }, 3000);
+  }
+
+  function cancelAdultUnlock() {
+    if (unlockTimer.current) clearTimeout(unlockTimer.current);
+    unlockTimer.current = null;
+    setUnlocking(false);
   }
 
   function chooseTarget(target: Target) {
@@ -194,17 +219,23 @@ export default function AminaModePage() {
           <span>AMINA-MODUS</span>
         </button>
         <div className="amina-top-actions">
-          <button
-            type="button"
-            className={`amina-mini-button ${soundOn ? "is-on" : ""}`}
-            onClick={() => {
-              if (!soundOn) playBabySound("success");
-              setSoundOn((current) => !current);
-            }}
-          >
-            {soundOn ? "TON AN" : "TON AUS"}
-          </button>
-          <button type="button" className="amina-mini-button" onClick={logout}>RAUS</button>
+          {data?.readOnly ? (
+            <button type="button" className="amina-mini-button" onClick={() => window.close()}>
+              VORSCHAU SCHLIESSEN
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`amina-parent-lock ${unlocking ? "is-unlocking" : ""}`}
+              onPointerDown={startAdultUnlock}
+              onPointerUp={cancelAdultUnlock}
+              onPointerLeave={cancelAdultUnlock}
+              onPointerCancel={cancelAdultUnlock}
+              aria-label="Erwachsenenbereich durch langes Drücken öffnen"
+            >
+              3 SEK. HALTEN
+            </button>
+          )}
         </div>
       </header>
 
@@ -238,13 +269,14 @@ export default function AminaModePage() {
             onBack={goBack}
             onCreate={openCreate}
             sound={sound}
+            canCreate={!data.readOnly}
           />
         ) : (
           <PeopleScreen targets={data.targets} className={data.class.name} onChoose={chooseTarget} />
         )}
       </main>
 
-      {creating && selected && data?.class ? (
+      {creating && selected && data?.class && !data.readOnly ? (
         <CreateScreen
           target={selected}
           kind={kind}
@@ -263,6 +295,19 @@ export default function AminaModePage() {
           onSubmit={submit}
           sound={sound}
         />
+      ) : null}
+
+      {adultUnlocked && !data?.readOnly ? (
+        <div className="amina-adult-layer" role="dialog" aria-modal="true" aria-label="Erwachsenenbereich">
+          <div className="amina-adult-box">
+            <p className="amina-kicker">FÜR ERWACHSENE</p>
+            <h2>WIRKLICH ABMELDEN?</h2>
+            <div className="amina-adult-actions">
+              <button type="button" className="amina-mini-button" onClick={() => setAdultUnlocked(false)}>ZURÜCK</button>
+              <button type="button" className="amina-mini-button" onClick={logout}>ABMELDEN</button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
@@ -308,12 +353,14 @@ function PersonScreen({
   onBack,
   onCreate,
   sound,
+  canCreate,
 }: {
   target: Target;
   posts: Post[];
   onBack: () => void;
   onCreate: () => void;
   sound: (tone?: "tap" | "back" | "success" | "sparkle") => void;
+  canCreate: boolean;
 }) {
   return (
     <section className="amina-screen">
@@ -325,7 +372,7 @@ function PersonScreen({
           <h1>{target.name}</h1>
           <p className="amina-count">{posts.length} SACHEN</p>
         </div>
-        <button type="button" className="amina-add-button" onClick={onCreate}>NEUES DINGS!</button>
+        {canCreate ? <button type="button" className="amina-add-button" onClick={onCreate}>NEUES DINGS!</button> : null}
       </div>
 
       {posts.length ? (
@@ -349,7 +396,7 @@ function PersonScreen({
       ) : (
         <div className="amina-empty">
           <h2>HIER IST NOCH NICHTS!</h2>
-          <button type="button" className="amina-add-button" onClick={onCreate}>MACH DAS ERSTE DINGS!</button>
+          {canCreate ? <button type="button" className="amina-add-button" onClick={onCreate}>MACH DAS ERSTE DINGS!</button> : null}
         </div>
       )}
     </section>

@@ -2,8 +2,20 @@ import { prisma } from "./db";
 
 /** Returns the membership of a user in a class, or null if not a member. */
 export async function getMembership(userId: string, classId: string) {
-  return prisma.membership.findUnique({
-    where: { userId_classId: { userId, classId } },
+  return prisma.membership.findFirst({
+    where: {
+      userId,
+      classId,
+      leftAt: null,
+      class: { archivedAt: null },
+    },
+  });
+}
+
+export async function getActiveMembership(userId: string) {
+  return prisma.membership.findFirst({
+    where: { userId, leftAt: null, class: { archivedAt: null } },
+    orderBy: { createdAt: "asc" },
   });
 }
 
@@ -19,7 +31,7 @@ export async function generateJoinCode(): Promise<string> {
     for (let i = 0; i < 6; i++) {
       code += alphabet[Math.floor(Math.random() * alphabet.length)];
     }
-    const existing = await prisma.class.findUnique({ where: { joinCode: code } });
+    const existing = await prisma.class.findFirst({ where: { joinCode: code, archivedAt: null } });
     if (!existing) return code;
   }
   throw new Error("Could not generate a unique join code");

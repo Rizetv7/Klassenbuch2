@@ -6,13 +6,15 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { InlineLoading, PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
 import { ImportWizard } from "@/components/ImportWizard";
-import { swrJson } from "@/lib/swr";
+import { clearApiCache, swrJson } from "@/lib/swr";
 
 type Member = {
   id: string;
   displayName: string;
   memberType: string;
   role: string;
+  aminaMode: boolean;
+  leftAt: string | null;
   avatarUrl: string | null;
   accentColor: string | null;
   postCount: number;
@@ -21,12 +23,14 @@ type Member = {
 type ClassDetail = {
   id: string;
   name: string;
+  description: string | null;
   school: string | null;
   gradYear: string | null;
   joinCode: string;
   myRole: string;
   counts: { students: number; teachers: number; memories: number };
   members: Member[];
+  inactiveMembers: Member[];
 };
 
 const TABS = ["Schüler", "Lehrpersonen", "Projekte"] as const;
@@ -79,7 +83,9 @@ export default function ClassPage() {
         </div>
         {canMod && (
           <div className="relative z-10 mt-5">
-            <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">Verwalten</button>
+            <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">
+              {data.myRole === "OWNER" ? "Klasseneinstellungen" : "Moderation"}
+            </button>
           </div>
         )}
       </div>
@@ -289,49 +295,186 @@ function TeachersTab({ classId }: { classId: string }) {
 
 function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => void }) {
   const router = useRouter();
-  async function moderate(mid: string, body: Record<string, string>) {
-    await fetch(`/api/classes/${data.id}/members/${mid}`, {
+  const isOwner = data.myRole === "OWNER";
+  const [name, setName] = useState(data.name);
+  const [description, setDescription] = useState(data.description || "");
+  const [school, setSchool] = useState(data.school || "");
+  const [gradYear, setGradYear] = useState(data.gradYear || "");
+  const [accountName, setAccountName] = useState("");
+  const [archiveConfirmation, setArchiveConfirmation] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [panelError, setPanelError] = useState("");
+
+  async function request(url: string, init: RequestInit) {
+    setBusy(true);
+    setPanelError("");
+    setMessage("");
+    try {
+      const res = await fetch(url, init);
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error || "Änderung fehlgeschlagen.");
+      return body;
+    } catch (reason) {
+      setPanelError(reason instanceof Error ? reason.message : "Änderung fehlgeschlagen.");
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function moderate(mid: string, body: Record<string, unknown>) {
+    const result = await request(`/api/classes/${data.id}/members/${mid}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    onChange();
+    if (result) onChange();
   }
+
+  async function saveClass(e: React.FormEvent) {
+    e.preventDefault();
+    const result = await request(`/api/classes/${data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, description, school, gradYear }),
+    });
+    if (result) {
+      setMessage("Klasseneinstellungen gespeichert.");
+      onChange();
+    }
+  }
+
+  async function addMember(e: React.FormEvent) {
+    e.preventDefault();
+    const result = await request(`/api/classes/${data.id}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: accountName }),
+    });
+    if (result) {
+      setAccountName("");
+      setMessage(result.restored ? "Person und frühere Einträge wiederhergestellt." : "Person hinzugefügt.");
+      onChange();
+    }
+  }
+
   async function removeMember(mid: string) {
-    if (!confirm("Mitglied entfernen?")) return;
-    await fetch(`/api/classes/${data.id}/members/${mid}`, { method: "DELETE" });
-    onChange();
+    if (!confirm("Person aus der Klasse entfernen? Ihre bisherigen Beiträge bleiben erhalten.")) return;
+    const result = await request(`/api/classes/${data.id}/members/${mid}`, { method: "DELETE" });
+    if (result) {
+      setMessage("Person deaktiviert. Sie kann jederzeit wiederhergestellt werden.");
+      onChange();
+    }
   }
+
   async function deleteClass() {
-    if (!confirm("Die ganze Klasse mit allen Beiträgen löschen?")) return;
-    const res = await fetch(`/api/classes/${data.id}`, { method: "DELETE" });
-    if (res.ok) router.push("/classes");
+    const result = await request(`/api/classes/${data.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmation: archiveConfirmation }),
+    });
+    if (result) {
+      clearApiCache();
+      router.push("/classes");
+    }
   }
+
+  async function rotateCode() {
+    if (!confirm("Neuen Einladungscode erzeugen? Der bisherige Code funktioniert danach nicht mehr.")) return;
+    const result = await request(`/api/classes/${data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ regenerateJoinCode: true }),
+    });
+    if (result) {
+      setMessage("Neuer Einladungscode erstellt.");
+      onChange();
+    }
+  }
+
   return (
-    <div className="glass-card space-y-3 p-4">
-      <div className="flex items-center justify-between">
-        <span className="font-extrabold text-sm">Einladungs-Code</span>
-        <span className="font-mono font-bold text-lg">{data.joinCode}</span>
-      </div>
-      <div className="space-y-1.5">
-        {data.members.filter((m) => m.role !== "OWNER").map((m) => (
-          <div key={m.id} className="flex items-center gap-2 rounded-[22px] border border-white/40 bg-white/20 px-3 py-2 text-sm">
-            <span className="flex-1 truncate">{m.displayName}</span>
-            {data.myRole === "OWNER" && (
-              <button onClick={() => moderate(m.id, { role: m.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="text-xs underline text-ink/70">
-                {m.role === "MODERATOR" ? "Mod entz." : "→ Mod"}
-              </button>
-            )}
-            <button onClick={() => moderate(m.id, { memberType: m.memberType === "TEACHER" ? "STUDENT" : "TEACHER" })} className="text-xs underline text-ink/70">
-              {m.memberType === "TEACHER" ? "→ Schüler" : "→ Lehrer"}
-            </button>
-            <button onClick={() => removeMember(m.id)} className="text-xs text-coral underline">entfernen</button>
+    <div className="glass-panel space-y-7 p-4 sm:p-6">
+      {panelError ? <p className="rounded-[18px] bg-coral/15 p-3 text-sm font-black text-coral">{panelError}</p> : null}
+      {message ? <p className="rounded-[18px] bg-white/25 p-3 text-sm font-black">{message}</p> : null}
+
+      {isOwner ? (
+        <form onSubmit={saveClass} className="space-y-3 border-b border-white/35 pb-6">
+          <div>
+            <p className="section-label">Klasse</p>
+            <h2 className="display text-3xl">Grunddaten</h2>
           </div>
-        ))}
-      </div>
-      {data.myRole === "OWNER" && (
-        <button onClick={deleteClass} className="text-xs text-coral underline">Klasse löschen</button>
-      )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label><span className="label">Name</span><input className="input" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required /></label>
+            <label><span className="label">Schule</span><input className="input" value={school} onChange={(event) => setSchool(event.target.value)} maxLength={100} /></label>
+            <label><span className="label">Abschlussjahr</span><input className="input" value={gradYear} onChange={(event) => setGradYear(event.target.value)} maxLength={100} /></label>
+            <label className="sm:col-span-2"><span className="label">Beschreibung</span><textarea className="input min-h-24 resize-y" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} /></label>
+          </div>
+          <button className="btn-primary" disabled={busy}>Speichern</button>
+        </form>
+      ) : null}
+
+      <section className="space-y-3 border-b border-white/35 pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><p className="section-label">Zugang</p><h2 className="display text-3xl">Einladung</h2></div>
+          <span className="font-mono text-2xl font-black tracking-widest">{data.joinCode}</span>
+        </div>
+        {isOwner ? (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <form onSubmit={addMember} className="flex flex-1 gap-2">
+              <input className="input" value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="Genauer Kontoname" minLength={2} required />
+              <button className="btn-accent shrink-0" disabled={busy}>Hinzufügen</button>
+            </form>
+            <button type="button" className="btn-soft" onClick={rotateCode} disabled={busy}>Code erneuern</button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="space-y-3">
+        <div><p className="section-label">Personen</p><h2 className="display text-3xl">Aktive Mitglieder</h2></div>
+        <div className="divide-y divide-white/30">
+          {data.members.map((member) => (
+            <div key={member.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-black">{member.displayName}</p>
+                <p className="text-xs font-bold text-ink/45">{member.role === "OWNER" ? "Klassenleitung" : member.role === "MODERATOR" ? "Moderation" : "Mitglied"}</p>
+              </div>
+              {member.role !== "OWNER" ? (
+                <div className="flex flex-wrap gap-2">
+                  {isOwner ? (
+                    <button type="button" onClick={() => moderate(member.id, { aminaMode: !member.aminaMode })} className={`chip ${member.aminaMode ? "!bg-hotpink/25 !border-hotpink/40" : ""}`} disabled={busy}>
+                      Amina {member.aminaMode ? "an" : "aus"}
+                    </button>
+                  ) : null}
+                  {isOwner ? <button type="button" onClick={() => moderate(member.id, { role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="chip" disabled={busy}>{member.role === "MODERATOR" ? "Mod entfernen" : "Zu Mod"}</button> : null}
+                  <button type="button" onClick={() => moderate(member.id, { memberType: member.memberType === "TEACHER" ? "STUDENT" : "TEACHER" })} className="chip" disabled={busy}>{member.memberType === "TEACHER" ? "Als Schüler" : "Als Lehrer"}</button>
+                  <button type="button" onClick={() => removeMember(member.id)} className="chip !text-coral" disabled={busy}>Entfernen</button>
+                </div>
+              ) : <span className="chip">Amina gesperrt</span>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {isOwner && data.inactiveMembers?.length ? (
+        <section className="space-y-2 border-t border-white/35 pt-6">
+          <div><p className="section-label">Gesichert</p><h2 className="display text-3xl">Entfernte Personen</h2></div>
+          {data.inactiveMembers.map((member) => (
+            <div key={member.id} className="flex items-center gap-3 py-2">
+              <span className="min-w-0 flex-1 truncate font-black">{member.displayName}</span>
+              <button type="button" className="btn-soft !px-3 !py-2" onClick={() => moderate(member.id, { restore: true })} disabled={busy}>Wiederherstellen</button>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {isOwner ? (
+        <section className="space-y-3 border-t border-coral/25 pt-6">
+          <div><p className="section-label !text-coral">Archiv</p><h2 className="display text-3xl">Klasse archivieren</h2></div>
+          <input className="input" value={archiveConfirmation} onChange={(event) => setArchiveConfirmation(event.target.value)} placeholder={`Zur Bestätigung „${data.name}“ eingeben`} />
+          <button type="button" onClick={deleteClass} className="btn-soft !text-coral" disabled={busy || archiveConfirmation !== data.name}>Sicher archivieren</button>
+        </section>
+      ) : null}
     </div>
   );
 }

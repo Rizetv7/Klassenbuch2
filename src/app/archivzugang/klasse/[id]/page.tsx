@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AdminHeader,
@@ -14,6 +14,7 @@ import {
 } from "@/components/AdminConsole";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
+import { AdminClassSettings } from "@/components/AdminClassSettings";
 
 type Member = {
   id: string;
@@ -21,6 +22,8 @@ type Member = {
   memberType: string;
   displayName: string;
   createdAt: string;
+  aminaMode: boolean;
+  leftAt: string | null;
   user: AdminPerson & {
     email?: string | null;
     _count: { posts: number; comments: number; polls: number };
@@ -46,6 +49,7 @@ type ClassDetail = {
     school?: string | null;
     gradYear?: string | null;
     joinCode: string;
+    archivedAt?: string | null;
     owner: AdminPerson;
     _count: { memberships: number; posts: number; polls: number; teachers: number; topics: number };
   };
@@ -56,7 +60,7 @@ type ClassDetail = {
   polls: AdminPoll[];
 };
 
-type Tab = "activity" | "people" | "polls";
+type Tab = "activity" | "people" | "polls" | "settings";
 
 export default function InternalClassPage() {
   const params = useParams<{ id: string }>();
@@ -66,8 +70,8 @@ export default function InternalClassPage() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/admin/classes/${params.id}`, { cache: "no-store" })
+  const loadClass = useCallback(async () => {
+    await fetch(`/api/admin/classes/${params.id}`, { cache: "no-store" })
       .then(async (res) => {
         if (res.status === 401) {
           router.replace("/archivzugang");
@@ -82,6 +86,10 @@ export default function InternalClassPage() {
       })
       .catch((err) => setError(err.message));
   }, [params.id, router]);
+
+  useEffect(() => {
+    void loadClass();
+  }, [loadClass]);
 
   const visiblePosts = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("de-CH");
@@ -159,6 +167,7 @@ export default function InternalClassPage() {
               </p>
             </div>
             <div className="glass-card flex flex-wrap gap-2 p-3">
+              {data.class.archivedAt ? <span className="chip !border-coral/40 !bg-coral/15 !text-coral">Archiviert</span> : null}
               <span className="chip">{data.class._count.memberships} Personen</span>
               <span className="chip">{data.class._count.posts} Beiträge</span>
               <span className="chip">{data.class._count.polls} Umfragen</span>
@@ -172,6 +181,7 @@ export default function InternalClassPage() {
                 ["activity", "Beiträge"],
                 ["people", "Personen"],
                 ["polls", "Umfragen"],
+                ["settings", "Einstellungen"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -211,6 +221,10 @@ export default function InternalClassPage() {
               {data.polls.length === 0 ? <Empty label="Keine Umfragen in dieser Klasse." /> : null}
             </section>
           ) : null}
+
+          {tab === "settings" ? (
+            <AdminClassSettings klass={data.class} members={data.members} onChanged={loadClass} />
+          ) : null}
         </>
       ) : null}
     </PageReveal>
@@ -218,6 +232,7 @@ export default function InternalClassPage() {
 }
 
 function PeopleView({ data, onUserSaved }: { data: ClassDetail; onUserSaved: (user: AdminPerson) => void }) {
+  const activeMembers = data.members.filter((member) => !member.leftAt);
   return (
     <div className="space-y-7">
       <section>
@@ -226,10 +241,10 @@ function PeopleView({ data, onUserSaved }: { data: ClassDetail; onUserSaved: (us
             <p className="section-label">Konten</p>
             <h2 className="display text-3xl">Schülerinnen und Schüler</h2>
           </div>
-          <span className="chip">{data.members.length}</span>
+          <span className="chip">{activeMembers.length}</span>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {data.members.map((member) => (
+          {activeMembers.map((member) => (
             <article key={member.id} className="glass-card min-h-[118px] p-3">
               <div className="flex items-start gap-3">
                 <Link

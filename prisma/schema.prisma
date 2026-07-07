@@ -24,19 +24,19 @@ model User {
   email        String?  @unique // optional
   passwordHash String
   avatarUrl    String?
-  accentColor  String?  // personal accent color for the avatar ring
+  accentColor  String? // personal accent color for the avatar ring
   createdAt    DateTime @default(now())
 
-  memberships Membership[]
-  posts       Post[]       @relation("PostAuthor")
-  comments    Comment[]
-  likes       Like[]
-  polls       Poll[]       @relation("PollAuthor")
-  pollVotes   PollVote[]
-  importItems ImportItem[]
-  ownedClasses Class[]     @relation("ClassOwner")
-  topics      Topic[]      @relation("TopicCreator")
-  teachers    Teacher[]    @relation("TeacherCreator")
+  memberships       Membership[]
+  posts             Post[]             @relation("PostAuthor")
+  comments          Comment[]
+  likes             Like[]
+  polls             Poll[]             @relation("PollAuthor")
+  pollVotes         PollVote[]
+  importItems       ImportItem[]
+  ownedClasses      Class[]            @relation("ClassOwner")
+  topics            Topic[]            @relation("TopicCreator")
+  teachers          Teacher[]          @relation("TeacherCreator")
   pushSubscriptions PushSubscription[]
 }
 
@@ -61,14 +61,15 @@ model PushSubscription {
 }
 
 model Class {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
   school      String?
   gradYear    String?
-  joinCode    String   @unique
+  joinCode    String    @unique
   ownerId     String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  archivedAt  DateTime?
 
   owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   memberships Membership[]
@@ -77,6 +78,8 @@ model Class {
   teachers    Teacher[]
   polls       Poll[]
   importItems ImportItem[]
+
+  @@index([archivedAt])
 }
 
 // A teacher is NOT an account/member. Students create teacher entries inside
@@ -91,8 +94,8 @@ model Teacher {
   createdById String
   createdAt   DateTime @default(now())
 
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  creator User  @relation("TeacherCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator User   @relation("TeacherCreator", fields: [createdById], references: [id], onDelete: Cascade)
   posts   Post[]
 
   @@index([classId])
@@ -108,45 +111,49 @@ model Topic {
   createdById String
   createdAt   DateTime @default(now())
 
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  creator User  @relation("TopicCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator User   @relation("TopicCreator", fields: [createdById], references: [id], onDelete: Cascade)
   posts   Post[]
 
   @@index([classId])
 }
 
 model Membership {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   classId     String
-  role        String   @default("MEMBER")  // OWNER | MODERATOR | MEMBER
-  memberType  String   @default("STUDENT") // STUDENT | TEACHER
-  displayName String                       // name shown inside this class
-  createdAt   DateTime @default(now())
+  role        String    @default("MEMBER") // OWNER | MODERATOR | MEMBER
+  memberType  String    @default("STUDENT") // STUDENT | TEACHER
+  displayName String // name shown inside this class
+  createdAt   DateTime  @default(now())
+  aminaMode   Boolean   @default(false)
+  leftAt      DateTime?
 
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class        Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
   // Posts where this membership is the "subject" (whose yearbook page it is on)
   subjectPosts Post[] @relation("PostSubject")
 
   @@unique([userId, classId])
+  @@index([classId])
+  @@index([userId])
 }
 
 model Post {
-  id                 String   @id @default(cuid())
-  classId            String
-  authorId           String
-  subjectMembershipId String?  // student the post is about
-  teacherId          String?   // teacher the post is about
-  topicId            String?   // topic/project the post belongs to
-  board              String   @default("YEARBOOK") // YEARBOOK | TOPIC
-  kind               String   @default("QUOTE")    // QUOTE | IMAGE | TEXT (note)
-  text               String?
-  context            String?  // optional context, e.g. "vor der Matheprüfung"
-  saidByName         String?  // who said the quote (used in projects)
-  anonymous          Boolean  @default(false) // hide the author
-  imageUrl           String?
-  createdAt          DateTime @default(now())
+  id                  String   @id @default(cuid())
+  classId             String
+  authorId            String
+  subjectMembershipId String? // student the post is about
+  teacherId           String? // teacher the post is about
+  topicId             String? // topic/project the post belongs to
+  board               String   @default("YEARBOOK") // YEARBOOK | TOPIC
+  kind                String   @default("QUOTE") // QUOTE | IMAGE | TEXT (note)
+  text                String?
+  context             String? // optional context, e.g. "vor der Matheprüfung"
+  saidByName          String? // who said the quote (used in projects)
+  anonymous           Boolean  @default(false) // hide the author
+  imageUrl            String?
+  createdAt           DateTime @default(now())
 
   class    Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
   author   User        @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -200,7 +207,7 @@ model Poll {
   authorId       String
   question       String
   description    String?
-  candidateType  String?  // null | STUDENTS | TEACHERS
+  candidateType  String? // null | STUDENTS | TEACHERS
   anonymous      Boolean  @default(false)
   multipleChoice Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -254,7 +261,7 @@ model ImportItem {
   createdById String
   rawName     String
   targetType  String   @default("STUDENT") // STUDENT | TEACHER
-  kind        String   @default("QUOTE")   // QUOTE | TEXT | IMAGE
+  kind        String   @default("QUOTE") // QUOTE | TEXT | IMAGE
   text        String?
   context     String?
   imageUrl    String?

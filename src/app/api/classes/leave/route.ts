@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
+import { getActiveMembership } from "@/lib/classAccess";
+import { isSameOrigin } from "@/lib/adminAuth";
 
 // Leave the current class. Owners must delete the class instead.
-export async function POST() {
+export async function POST(req: Request) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 403 });
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
-  const membership = await prisma.membership.findFirst({ where: { userId } });
+  const membership = await getActiveMembership(userId);
   if (!membership) return NextResponse.json({ ok: true });
 
   if (membership.role === "OWNER") {
@@ -17,6 +20,9 @@ export async function POST() {
     );
   }
 
-  await prisma.membership.delete({ where: { id: membership.id } });
-  return NextResponse.json({ ok: true });
+  await prisma.membership.update({
+    where: { id: membership.id },
+    data: { leftAt: new Date(), aminaMode: false, role: "MEMBER" },
+  });
+  return NextResponse.json({ ok: true, deactivated: true });
 }

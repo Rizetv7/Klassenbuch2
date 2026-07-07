@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   } else {
     // feed: only classes the viewer belongs to
     const memberships = await prisma.membership.findMany({
-      where: { userId },
+      where: { userId, leftAt: null, class: { archivedAt: null } },
       select: { classId: true },
     });
     where.classId = { in: memberships.map((m) => m.classId) };
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   let topId: string | null = null;
   if (subjectMembershipId) {
     const subject = await prisma.membership.findUnique({ where: { id: subjectMembershipId } });
-    if (!subject || subject.classId !== classId) {
+    if (!subject || subject.classId !== classId || subject.leftAt) {
       return NextResponse.json({ error: "Person gehört nicht zur Klasse." }, { status: 400 });
     }
     subjectId = subject.id;

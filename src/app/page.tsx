@@ -9,7 +9,6 @@ import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { prefetchAppData, swrJson } from "@/lib/swr";
-import { isAminaName } from "@/lib/aminaMode";
 
 export default function HomePage() {
   const router = useRouter();
@@ -32,7 +31,7 @@ export default function HomePage() {
         if (!meta.fromCache) router.replace("/login");
         return;
       }
-      if (isAminaName(home.user.name)) {
+      if (home.user.aminaMode) {
         router.replace("/amina");
         return;
       }

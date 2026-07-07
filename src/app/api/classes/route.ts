@@ -9,10 +9,14 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
   const memberships = await prisma.membership.findMany({
-    where: { userId },
+    where: { userId, leftAt: null, class: { archivedAt: null } },
     include: {
       class: {
-        include: { _count: { select: { memberships: true, posts: true } } },
+        include: {
+          _count: {
+            select: { memberships: { where: { leftAt: null } }, posts: true },
+          },
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -50,7 +54,9 @@ export async function POST(req: Request) {
 
   // A user can be in at most one class. If they already are, return it instead
   // of creating a second (also makes accidental double-submits harmless).
-  const existing = await prisma.membership.findFirst({ where: { userId } });
+  const existing = await prisma.membership.findFirst({
+    where: { userId, leftAt: null, class: { archivedAt: null } },
+  });
   if (existing) {
     const klass = await prisma.class.findUnique({ where: { id: existing.classId } });
     return NextResponse.json({ id: existing.classId, joinCode: klass?.joinCode, already: true });

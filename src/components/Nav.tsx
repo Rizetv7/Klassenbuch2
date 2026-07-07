@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
 import { swrJson } from "@/lib/swr";
-import { isAminaName } from "@/lib/aminaMode";
 
 const ACCENTS = ["#ee4fb3", "#f584c3", "#7ec4ec", "#8fdcc9", "#b9a7ff", "#f4b8d2"];
 export function deriveAccent(seed: string): string {
@@ -62,6 +61,7 @@ type NavUser = {
   name: string;
   avatarUrl?: string | null;
   accentColor?: string | null;
+  aminaMode?: boolean;
 };
 
 function useActive() {
@@ -84,7 +84,7 @@ export function SiteNav() {
     return swrJson<{ user?: NavUser }>("/api/auth/me", (d) => {
       const user = d?.user ?? null;
       setMe(user);
-      if (isAminaName(user?.name)) router.replace("/amina");
+      if (user?.aminaMode) router.replace("/amina");
     });
   }, [isAminaMode, isInternal, path, router]);
 

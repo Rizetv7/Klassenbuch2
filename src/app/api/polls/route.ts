@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     access = { [classId]: membership.role };
   } else {
     const memberships = await prisma.membership.findMany({
-      where: { userId },
+      where: { userId, leftAt: null, class: { archivedAt: null } },
       select: { classId: true, role: true },
     });
     const classIds = memberships.map((m) => m.classId);
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
   // Push: tell all other class members about the new poll.
   const members = await prisma.membership.findMany({
-    where: { classId, userId: { not: userId } },
+    where: { classId, userId: { not: userId }, leftAt: null },
     select: { userId: true },
   });
   await sendPushToUsers(

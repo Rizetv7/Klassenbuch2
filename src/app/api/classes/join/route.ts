@@ -13,13 +13,15 @@ export async function POST(req: Request) {
   }
 
   const code = String(joinCode).trim().toUpperCase();
-  const klass = await prisma.class.findUnique({ where: { joinCode: code } });
+  const klass = await prisma.class.findFirst({ where: { joinCode: code, archivedAt: null } });
   if (!klass) {
     return NextResponse.json({ error: "Keine Klasse mit diesem Code gefunden." }, { status: 404 });
   }
 
   // A user can be in at most one class.
-  const anyMembership = await prisma.membership.findFirst({ where: { userId } });
+  const anyMembership = await prisma.membership.findFirst({
+    where: { userId, leftAt: null, class: { archivedAt: null } },
+  });
   if (anyMembership) {
     if (anyMembership.classId === klass.id) {
       return NextResponse.json({ id: klass.id, alreadyMember: true });
@@ -33,15 +35,21 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
 
-  await prisma.membership.create({
-    data: {
-      userId,
-      classId: klass.id,
-      role: "MEMBER",
-      memberType: memberType === "TEACHER" ? "TEACHER" : "STUDENT",
-      displayName: (displayName && String(displayName).trim()) || user.name,
-    },
+  const previous = await prisma.membership.findUnique({
+    where: { userId_classId: { userId, classId: klass.id } },
   });
+  const membershipData = {
+    role: "MEMBER",
+    memberType: memberType === "TEACHER" ? "TEACHER" : "STUDENT",
+    displayName: (displayName && String(displayName).trim()) || user.name,
+    leftAt: null,
+    aminaMode: false,
+  };
+  if (previous) {
+    await prisma.membership.update({ where: { id: previous.id }, data: membershipData });
+  } else {
+    await prisma.membership.create({ data: { userId, classId: klass.id, ...membershipData } });
+  }
 
   return NextResponse.json({ id: klass.id });
 }

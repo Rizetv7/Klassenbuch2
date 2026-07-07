@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS "Class" (
     "joinCode" TEXT NOT NULL,
     "ownerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "archivedAt" TIMESTAMP(3),
 
     CONSTRAINT "Class_pkey" PRIMARY KEY ("id")
 );
@@ -38,6 +39,8 @@ CREATE TABLE IF NOT EXISTS "Membership" (
     "memberType" TEXT NOT NULL DEFAULT 'STUDENT',
     "displayName" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "aminaMode" BOOLEAN NOT NULL DEFAULT false,
+    "leftAt" TIMESTAMP(3),
 
     CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
 );
@@ -144,6 +147,24 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Class_joinCode_key" ON "Class"("joinCode");
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Membership_userId_classId_key" ON "Membership"("userId", "classId");
+
+ALTER TABLE "Class" ADD COLUMN IF NOT EXISTS "archivedAt" TIMESTAMP(3);
+
+ALTER TABLE "Membership" ADD COLUMN IF NOT EXISTS "aminaMode" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "Membership" ADD COLUMN IF NOT EXISTS "leftAt" TIMESTAMP(3);
+
+CREATE INDEX IF NOT EXISTS "Class_archivedAt_idx" ON "Class"("archivedAt");
+
+CREATE INDEX IF NOT EXISTS "Membership_classId_active_idx" ON "Membership"("classId") WHERE "leftAt" IS NULL;
+
+CREATE INDEX IF NOT EXISTS "Membership_userId_active_idx" ON "Membership"("userId") WHERE "leftAt" IS NULL;
+
+CREATE INDEX IF NOT EXISTS "Membership_aminaMode_active_idx" ON "Membership"("userId", "classId") WHERE "aminaMode" = true AND "leftAt" IS NULL;
+
+DO $$ BEGIN
+  ALTER TABLE "Membership" ADD CONSTRAINT "Membership_owner_no_amina" CHECK ("role" <> 'OWNER' OR "aminaMode" = false);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "Post_classId_idx" ON "Post"("classId");

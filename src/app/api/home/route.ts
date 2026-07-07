@@ -26,7 +26,10 @@ export async function GET() {
         name: true,
         avatarUrl: true,
         accentColor: true,
-        memberships: { select: { classId: true, role: true } },
+        memberships: {
+          where: { leftAt: null, class: { archivedAt: null } },
+          select: { classId: true, role: true, aminaMode: true },
+        },
       },
     }),
     ensurePollSchema(),
@@ -58,7 +61,13 @@ export async function GET() {
   const memory = memoryPool.length ? memoryPool[dailyIndex(userId, memoryPool.length)] : posts[0] ?? null;
 
   return NextResponse.json({
-    user: { id: user.id, name: user.name, avatarUrl: user.avatarUrl, accentColor: user.accentColor },
+    user: {
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      accentColor: user.accentColor,
+      aminaMode: user.memberships.some((membership) => membership.aminaMode && membership.role !== "OWNER"),
+    },
     hasClass: classIds.length > 0,
     posts,
     memory,

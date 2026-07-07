@@ -617,6 +617,7 @@ body::before {
 }
 
 .amina-mini-button,
+.amina-parent-lock,
 .amina-back-button,
 .amina-add-button,
 .amina-finish-button,
@@ -630,6 +631,7 @@ body::before {
 }
 
 .amina-mini-button:active,
+.amina-parent-lock:active,
 .amina-back-button:active,
 .amina-add-button:active,
 .amina-finish-button:active,
@@ -650,6 +652,33 @@ body::before {
 
 .amina-mini-button.is-on {
   background: #8ff097;
+}
+
+.amina-parent-lock {
+  position: relative;
+  min-height: 48px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff3a3;
+  padding: 7px 12px;
+  color: #251b00;
+  font-size: 12px;
+  user-select: none;
+  touch-action: none;
+}
+
+.amina-parent-lock::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 8px;
+  background: #ff5fac;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.amina-parent-lock.is-unlocking::after {
+  animation: amina-unlock 3s linear forwards;
 }
 
 .amina-stage {
@@ -902,6 +931,41 @@ body::before {
   padding: 24px;
 }
 
+.amina-adult-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(37, 27, 0, 0.74);
+  padding: 20px;
+}
+
+.amina-adult-box {
+  width: min(520px, 100%);
+  border: 6px solid #251b00;
+  border-radius: 8px;
+  background: #fff;
+  padding: 28px;
+  color: #251b00;
+  text-align: center;
+  box-shadow: 12px 12px 0 #67d9ff;
+}
+
+.amina-adult-box h2 {
+  margin-top: 8px;
+  font-size: 34px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.amina-adult-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
 .amina-create-box {
   position: relative;
   width: min(760px, 100%);
@@ -1048,6 +1112,10 @@ body::before {
   100% { opacity: 1; transform: scale(1); }
 }
 
+@keyframes amina-unlock {
+  to { transform: scaleX(1); }
+}
+
 @media (max-width: 900px) {
   .amina-people-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .amina-person-hero { grid-template-columns: auto auto minmax(0, 1fr); }
@@ -1060,6 +1128,7 @@ body::before {
   .amina-logo img { width: 54px; height: 54px; }
   .amina-top-actions { gap: 6px; }
   .amina-mini-button { min-height: 46px; border-width: 3px; padding: 6px 9px; font-size: 13px; box-shadow: 0 5px 0 #251b00; }
+  .amina-parent-lock { min-height: 42px; border-width: 3px; padding: 5px 7px; font-size: 9px; box-shadow: 0 5px 0 #251b00; }
   .amina-stage { padding: 18px 12px 60px; }
   .amina-mascot-row { grid-template-columns: 105px minmax(0, 1fr); gap: 10px; }
   .amina-mascot-button { width: 105px; height: 105px; }

@@ -15,6 +15,7 @@ type ClassOverview = {
   gradYear?: string | null;
   joinCode: string;
   createdAt: string;
+  archivedAt?: string | null;
   owner: AdminPerson;
   _count: {
     memberships: number;
@@ -32,6 +33,8 @@ type UserOverview = AdminPerson & {
     id: string;
     role: string;
     memberType: string;
+    aminaMode: boolean;
+    leftAt: string | null;
     class: { id: string; name: string };
   }>;
   _count: { posts: number; comments: number; polls: number };
@@ -175,6 +178,7 @@ export default function InternalOverviewPage() {
                     <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-xl text-white transition group-hover:translate-x-0.5">→</span>
                   </div>
                   <div className="mt-5 flex flex-wrap gap-2">
+                    {klass.archivedAt ? <span className="chip !border-coral/40 !bg-coral/15 !text-coral">Archiviert</span> : null}
                     <span className="chip">{klass._count.memberships} Personen</span>
                     <span className="chip">{klass._count.posts} Beiträge</span>
                     <span className="chip">{klass._count.polls} Umfragen</span>

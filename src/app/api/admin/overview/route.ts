@@ -18,12 +18,13 @@ export async function GET() {
         gradYear: true,
         joinCode: true,
         createdAt: true,
+        archivedAt: true,
         owner: {
           select: { id: true, name: true, avatarUrl: true, accentColor: true },
         },
         _count: {
           select: {
-            memberships: true,
+            memberships: { where: { leftAt: null } },
             posts: true,
             polls: true,
             teachers: true,
@@ -47,6 +48,8 @@ export async function GET() {
             id: true,
             role: true,
             memberType: true,
+            aminaMode: true,
+            leftAt: true,
             class: { select: { id: true, name: true } },
           },
         },

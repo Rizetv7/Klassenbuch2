@@ -1,42 +1,57 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
-import { isAminaName } from "@/lib/aminaMode";
+import { getAminaMembership } from "@/lib/aminaMode";
+import { hasAdminSession } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import { postInclude, serializePostRows } from "@/lib/serializePost";
 
-export async function GET() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+export async function GET(req: Request) {
+  const previewClassId = new URL(req.url).searchParams.get("previewClassId");
+  const readOnly = Boolean(previewClassId);
+  let user: { id: string; name: string; avatarUrl?: string | null; accentColor?: string | null };
+  let classId: string;
+  let viewerId = "__admin_preview__";
+
+  if (previewClassId) {
+    if (!(await hasAdminSession())) {
+      return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+    }
+    user = { id: "admin-preview", name: "Admin-Vorschau" };
+    classId = previewClassId;
+  } else {
+    const userId = await getSessionUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+    }
+    const [account, membership] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, avatarUrl: true, accentColor: true },
+      }),
+      getAminaMembership(userId),
+    ]);
+    if (!account) {
+      return NextResponse.json({ error: "Profil nicht gefunden." }, { status: 404 });
+    }
+    if (!membership) {
+      return NextResponse.json({ error: "Der Amina-Modus ist für dieses Profil nicht aktiv." }, { status: 403 });
+    }
+    user = account;
+    classId = membership.classId;
+    viewerId = userId;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, avatarUrl: true, accentColor: true },
+  const klass = await prisma.class.findUnique({
+    where: { id: classId },
+    select: { id: true, name: true, archivedAt: true },
   });
-  if (!user) {
-    return NextResponse.json({ error: "Profil nicht gefunden." }, { status: 404 });
-  }
-  if (!isAminaName(user.name)) {
-    return NextResponse.json({ error: "Dieser Modus ist nur für Amina." }, { status: 403 });
-  }
-
-  const membership = await prisma.membership.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-    select: { classId: true, class: { select: { id: true, name: true } } },
-  });
-
-  if (!membership) {
-    return NextResponse.json(
-      { user, class: null, targets: [], posts: [] },
-      { headers: { "Cache-Control": "private, no-store" } },
-    );
+  if (!klass || (!readOnly && klass.archivedAt)) {
+    return NextResponse.json({ error: "Klasse nicht gefunden." }, { status: 404 });
   }
 
   const [members, teachers, rows] = await Promise.all([
     prisma.membership.findMany({
-      where: { classId: membership.classId },
+      where: { classId, leftAt: null },
       orderBy: { displayName: "asc" },
       select: {
         id: true,
@@ -46,15 +61,15 @@ export async function GET() {
       },
     }),
     prisma.teacher.findMany({
-      where: { classId: membership.classId },
+      where: { classId },
       orderBy: { name: "asc" },
       select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true },
     }),
     prisma.post.findMany({
-      where: { classId: membership.classId },
+      where: { classId },
       orderBy: { createdAt: "desc" },
       take: 160,
-      include: postInclude(userId),
+      include: postInclude(viewerId),
     }),
   ]);
 
@@ -86,7 +101,7 @@ export async function GET() {
   ].sort((a, b) => a.name.localeCompare(b.name, "de-CH"));
 
   return NextResponse.json(
-    { user, class: membership.class, targets, posts },
+    { user, class: { id: klass.id, name: klass.name }, targets, posts, readOnly },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

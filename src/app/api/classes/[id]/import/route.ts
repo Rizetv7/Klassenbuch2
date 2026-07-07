@@ -40,7 +40,7 @@ function normalizeEntry(entry: ImportEntry) {
 async function assertTarget(classId: string, subjectMembershipId: string | null, teacherId: string | null) {
   if (subjectMembershipId) {
     const subject = await prisma.membership.findUnique({ where: { id: subjectMembershipId } });
-    if (!subject || subject.classId !== classId) return null;
+    if (!subject || subject.classId !== classId || subject.leftAt) return null;
     return { subjectMembershipId: subject.id, teacherId: null };
   }
   if (teacherId) {

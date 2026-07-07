@@ -85,7 +85,12 @@ export async function serializePolls(pollIds: string[], viewerId: string) {
   });
   const classIds = Array.from(new Set(rows.map((row) => row.classId)));
   const memberships = await prisma.membership.findMany({
-    where: { userId: viewerId, classId: { in: classIds } },
+    where: {
+      userId: viewerId,
+      classId: { in: classIds },
+      leftAt: null,
+      class: { archivedAt: null },
+    },
     select: { classId: true, role: true },
   });
   const access = Object.fromEntries(memberships.map((m) => [m.classId, m.role]));

@@ -55,5 +55,5 @@ async function handleRegister(req: Request) {
   });
 
   await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name });
+  return NextResponse.json({ id: user.id, name: user.name, aminaMode: false });
 }

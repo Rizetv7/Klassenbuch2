@@ -75,10 +75,10 @@ export async function POST(
           const subject = target.subjectMembershipId
             ? await tx.membership.findUnique({
                 where: { id: target.subjectMembershipId },
-                select: { id: true, classId: true, memberType: true, displayName: true },
+                select: { id: true, classId: true, memberType: true, displayName: true, leftAt: true },
               })
             : null;
-          if (!subject || subject.classId !== poll.classId || subject.memberType !== "STUDENT") {
+          if (!subject || subject.classId !== poll.classId || subject.memberType !== "STUDENT" || subject.leftAt) {
             throw new Error("Ungültige Schüler:in.");
           }
 

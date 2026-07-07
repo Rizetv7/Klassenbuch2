@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { hasAminaMode } from "./aminaMode";
 
 const COOKIE_NAME = "kb_session";
 const secret = new TextEncoder().encode(
@@ -74,9 +75,13 @@ export async function getSessionUserId(): Promise<string | null> {
 export async function getCurrentUser() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true, name: true, avatarUrl: true, accentColor: true, createdAt: true },
-  });
-  return user;
+  const [user, aminaMode] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, avatarUrl: true, accentColor: true, createdAt: true },
+    }),
+    hasAminaMode(userId),
+  ]);
+  if (!user) return null;
+  return { ...user, aminaMode };
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
+import { hasAminaMode } from "@/lib/aminaMode";
 
 export async function POST(req: Request) {
   try {
@@ -31,5 +32,5 @@ async function handleLogin(req: Request) {
   }
 
   await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name });
+  return NextResponse.json({ id: user.id, name: user.name, aminaMode: await hasAminaMode(user.id) });
 }

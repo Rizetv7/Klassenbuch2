@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { hasAdminSession } from "@/lib/adminAuth";
+import { hasAdminSession, isSameOrigin } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
+import { generateJoinCode } from "@/lib/classAccess";
+import { archiveClass, restoreArchivedClass } from "@/lib/classManagement";
+import { MemberManagementError } from "@/lib/memberManagement";
 
 export async function GET(
   _req: Request,
@@ -21,12 +24,13 @@ export async function GET(
         gradYear: true,
         joinCode: true,
         createdAt: true,
+        archivedAt: true,
         owner: {
           select: { id: true, name: true, avatarUrl: true, accentColor: true },
         },
         _count: {
           select: {
-            memberships: true,
+            memberships: { where: { leftAt: null } },
             posts: true,
             polls: true,
             teachers: true,
@@ -44,6 +48,8 @@ export async function GET(
         memberType: true,
         displayName: true,
         createdAt: true,
+        aminaMode: true,
+        leftAt: true,
         user: {
           select: {
             id: true,
@@ -195,4 +201,64 @@ export async function GET(
     { class: klass, members, teachers, topics, posts, polls: serializedPolls },
     { headers: { "Cache-Control": "private, no-store" } },
   );
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  if (!(await hasAdminSession())) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+  }
+  if (!isSameOrigin(req)) {
+    return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const klass = await prisma.class.findUnique({
+    where: { id: params.id },
+    select: { id: true, name: true, archivedAt: true },
+  });
+  if (!klass) return NextResponse.json({ error: "Klasse nicht gefunden." }, { status: 404 });
+
+  if (body.action === "archive") {
+    if (body.confirmation !== klass.name) {
+      return NextResponse.json({ error: "Bitte den Klassennamen exakt bestätigen." }, { status: 400 });
+    }
+    if (!klass.archivedAt) await archiveClass(params.id);
+    return NextResponse.json({ ok: true, archived: true });
+  }
+  if (body.action === "restore") {
+    try {
+      const result = await restoreArchivedClass(params.id);
+      return NextResponse.json({ ok: true, restored: true, ...result });
+    } catch (error) {
+      if (error instanceof MemberManagementError) {
+        return NextResponse.json({ error: error.message }, { status: error.status });
+      }
+      throw error;
+    }
+  }
+
+  const data: { name?: string; description?: string | null; school?: string | null; gradYear?: string | null; joinCode?: string } = {};
+  if (typeof body.name === "string") {
+    const name = body.name.trim();
+    if (name.length < 2 || name.length > 80) {
+      return NextResponse.json({ error: "Der Klassenname muss 2 bis 80 Zeichen lang sein." }, { status: 400 });
+    }
+    data.name = name;
+  }
+  for (const field of ["description", "school", "gradYear"] as const) {
+    if (typeof body[field] === "string" || body[field] === null) {
+      const value = typeof body[field] === "string" ? body[field].trim() : "";
+      data[field] = value ? value.slice(0, field === "description" ? 500 : 100) : null;
+    }
+  }
+  if (body.regenerateJoinCode === true) data.joinCode = await generateJoinCode();
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Keine Änderung angegeben." }, { status: 400 });
+  }
+
+  const updated = await prisma.class.update({ where: { id: params.id }, data });
+  return NextResponse.json({ class: updated });
 }
