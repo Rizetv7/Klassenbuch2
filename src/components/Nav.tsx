@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
 import { swrJson } from "@/lib/swr";
+import { isAminaName } from "@/lib/aminaMode";
 
 const ACCENTS = ["#ee4fb3", "#f584c3", "#7ec4ec", "#8fdcc9", "#b9a7ff", "#f4b8d2"];
 export function deriveAccent(seed: string): string {
@@ -72,16 +73,22 @@ function useActive() {
 // bottom bar on phones.
 export function SiteNav() {
   const path = usePathname();
+  const router = useRouter();
   const [me, setMe] = useState<NavUser | null>(null);
   const isInternal = path.startsWith("/archivzugang");
+  const isAminaMode = path.startsWith("/amina");
 
   useEffect(() => {
-    if (path === "/login" || path === "/register" || isInternal) return;
+    if (path === "/login" || path === "/register" || isInternal || isAminaMode) return;
     // cache-first: the avatar shows instantly, the check refreshes in background
-    return swrJson<{ user?: NavUser }>("/api/auth/me", (d) => setMe(d?.user ?? null));
-  }, [isInternal, path]);
+    return swrJson<{ user?: NavUser }>("/api/auth/me", (d) => {
+      const user = d?.user ?? null;
+      setMe(user);
+      if (isAminaName(user?.name)) router.replace("/amina");
+    });
+  }, [isAminaMode, isInternal, path, router]);
 
-  if (path === "/login" || path === "/register" || isInternal) return null;
+  if (path === "/login" || path === "/register" || isInternal || isAminaMode) return null;
   return (
     <>
       <TopNav me={me} />

@@ -9,6 +9,7 @@ import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { prefetchAppData, swrJson } from "@/lib/swr";
+import { isAminaName } from "@/lib/aminaMode";
 
 export default function HomePage() {
   const router = useRouter();
@@ -29,6 +30,10 @@ export default function HomePage() {
       if (!home.user) {
         // only trust a fresh response for the redirect, never a stale cache
         if (!meta.fromCache) router.replace("/login");
+        return;
+      }
+      if (isAminaName(home.user.name)) {
+        router.replace("/amina");
         return;
       }
       setMe(home.user);
