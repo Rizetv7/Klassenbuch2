@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { HomeAttribution, uploaderPerson } from "@/components/HomeAttribution";
 import { prefetchAppData, swrJson } from "@/lib/swr";
 
 export default function HomePage() {
@@ -305,16 +306,20 @@ function QuoteStrip({ posts }: { posts: Post[] }) {
     <section className="space-y-3">
       <SectionHead title="Zitate, die kleben bleiben" meta={`${posts.length} Stück`} />
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {posts.map((p, index) => (
-          <Link
-            key={p.id}
-            href={postHref(p)}
-            className={`postit block min-h-[104px] p-4 ${index % 2 ? "sm:mt-4" : ""}`}
-          >
-            <p className="line-clamp-4 font-hand text-2xl leading-[0.96] text-ink/90">“{p.text}”</p>
-            <HomeAttribution post={p} compact />
-          </Link>
-        ))}
+        {posts.map((p, index) => {
+          const said = targetPerson(p);
+          return (
+            <Link
+              key={p.id}
+              href={postHref(p)}
+              className={`postit block min-h-[104px] p-4 ${index % 2 ? "sm:mt-4" : ""}`}
+            >
+              <p className="line-clamp-4 font-hand text-2xl leading-[0.96] text-ink/90">“{p.text}”</p>
+              {said && <p className="mt-1.5 truncate text-xs font-black text-ink/65">— {said.name}</p>}
+              <HomeAttribution post={p} compact />
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
@@ -365,52 +370,6 @@ function targetPerson(post: Post) {
     return { name: post.topic.name, avatarUrl: null, accentColor: null };
   }
   return null;
-}
-
-function uploaderPerson(post: Post) {
-  if (post.anonymous || !post.author) {
-    return { name: "Anonym", avatarUrl: null, accentColor: null };
-  }
-  return {
-    name: post.author.name,
-    avatarUrl: post.author.avatarUrl,
-    accentColor: post.author.accentColor ?? null,
-  };
-}
-
-function HomeAttribution({
-  post,
-  compact = false,
-  prominent = false,
-  inverted = false,
-  photo = false,
-}: {
-  post: Post;
-  compact?: boolean;
-  prominent?: boolean;
-  inverted?: boolean;
-  photo?: boolean;
-}) {
-  const target = targetPerson(post);
-  const uploader = uploaderPerson(post);
-  const portrait = target ?? uploader;
-  const primaryName = target?.name ?? uploader.name;
-  const secondaryName = target ? uploader.name : post.class.name;
-  const textClass = inverted ? "text-snow" : "text-ink";
-  const mutedClass = inverted ? "text-snow/78" : "text-ink/52";
-  return (
-    <div className={`mt-3 flex min-w-0 items-center gap-2 ${photo ? "mt-0" : ""}`}>
-      <Avatar name={portrait.name} url={portrait.avatarUrl} accent={portrait.accentColor} size={prominent ? 36 : compact ? 25 : 30} ring={!inverted} />
-      <div className="min-w-0 leading-tight">
-        <p className={`${prominent ? "text-sm" : "text-[11px]"} truncate font-black ${textClass}`}>
-          {primaryName}
-        </p>
-        <p className={`truncate text-[10px] font-black ${mutedClass}`}>
-          {secondaryName}
-        </p>
-      </div>
-    </div>
-  );
 }
 
 function shortDate(iso: string) {
