@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { clearApiCache } from "@/lib/swr";
+import { isAminaName } from "@/lib/aminaMode";
 
 export function LoginCard() {
   const router = useRouter();
@@ -23,8 +24,9 @@ export function LoginCard() {
         body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
+        const account = await res.json();
         clearApiCache(); // never show another account's cached data
-        router.push("/");
+        router.push(isAminaName(account?.name) ? "/amina" : "/");
         router.refresh();
         return;
       }

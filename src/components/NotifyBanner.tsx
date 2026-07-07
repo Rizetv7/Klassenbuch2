@@ -20,7 +20,7 @@ export function NotifyBanner() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const hiddenPath = path === "/login" || path === "/register" || path.startsWith("/archivzugang");
+  const hiddenPath = path === "/login" || path === "/register" || path.startsWith("/archivzugang") || path.startsWith("/amina");
 
   useEffect(() => {
     if (hiddenPath) {

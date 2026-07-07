@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isAminaName } from "@/lib/aminaMode";
+import { clearApiCache } from "@/lib/swr";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,7 +24,9 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
-        router.push("/classes");
+        const account = await res.json();
+        clearApiCache();
+        router.push(isAminaName(account?.name) ? "/amina" : "/classes");
         router.refresh();
         return;
       }
