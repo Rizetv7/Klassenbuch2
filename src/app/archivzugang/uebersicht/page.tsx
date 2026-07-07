@@ -175,7 +175,7 @@ export default function InternalOverviewPage() {
                       <h2 className="display truncate text-4xl leading-tight">{klass.name}</h2>
                       {klass.gradYear ? <p className="font-hand text-xl font-bold">Abschluss {klass.gradYear}</p> : null}
                     </div>
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-xl text-white transition group-hover:translate-x-0.5">→</span>
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-xl text-oncolor transition group-hover:translate-x-0.5">→</span>
                   </div>
                   <div className="mt-5 flex flex-wrap gap-2">
                     {klass.archivedAt ? <span className="chip !border-coral/40 !bg-coral/15 !text-coral">Archiviert</span> : null}

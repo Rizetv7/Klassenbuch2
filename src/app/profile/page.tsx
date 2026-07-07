@@ -128,7 +128,7 @@ export default function ProfilePage() {
       <div className="hero-frame flex flex-col items-center p-6 text-center">
         <label className="cursor-pointer relative">
           <Avatar name={name || "?"} url={avatarUrl} accent={accent} size={100} />
-          <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-ink text-white">
+          <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-ink text-oncolor">
             <IconPencil size={16} />
           </span>
           <input type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />

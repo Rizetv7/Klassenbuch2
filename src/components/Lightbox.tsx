@@ -63,7 +63,7 @@ export function Lightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex flex-col bg-ink/80 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[80] flex flex-col bg-black/80 backdrop-blur-md animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

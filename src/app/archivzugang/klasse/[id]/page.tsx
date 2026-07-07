@@ -264,7 +264,7 @@ function PeopleView({ data, onUserSaved }: { data: ClassDetail; onUserSaved: (us
                 <Link
                   href={`/archivzugang/klasse/${data.class.id}/person/${member.id}`}
                   aria-label={`${member.user.name} öffnen`}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-white transition active:scale-95"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-oncolor transition active:scale-95"
                 >
                   →
                 </Link>

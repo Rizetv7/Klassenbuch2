@@ -10,12 +10,20 @@ const config: Config = {
         hand: ["var(--font-hand)", "cursive"],
       },
       colors: {
+        // Theme-aware channels: every use of these utilities (any opacity)
+        // follows the active theme via CSS variables set in globals.css.
+        white: "rgb(var(--c-surface) / <alpha-value>)",
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        muted: "rgb(var(--c-muted) / <alpha-value>)",
+        hotpink: "rgb(var(--c-accent) / <alpha-value>)",
+        fuchsia: "rgb(var(--c-accent) / <alpha-value>)",
+        coral: "rgb(var(--c-danger) / <alpha-value>)",
+        // text/icon color that sits ON ink- or accent-filled elements
+        oncolor: "rgb(var(--c-on-ink) / <alpha-value>)",
+        // literal white in every theme (text over photos, on accent fills)
+        snow: "rgb(255 255 255 / <alpha-value>)",
         cream: "#fdf6f2",
         paper: "#fff8fb",
-        ink: "#09070c",
-        muted: "#6e6170",
-        hotpink: "#ee4fb3",
-        fuchsia: "#e845ad",
         magenta: "#f584c3",
         cyan: "#7ec4ec",
         aqua: "#8fdcc9",
@@ -24,7 +32,6 @@ const config: Config = {
         violet: "#8f62ff",
         sky: "#7ec4ec",
         sage: "#8fdcc9",
-        coral: "#ee4fb3",
         lilac: "#B68CF0",
         butter: "#f9d3cb",
         brand: {

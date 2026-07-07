@@ -5,6 +5,7 @@ import { generateJoinCode, getMembership } from "@/lib/classAccess";
 import { firstImageBySubject } from "@/lib/effectiveAvatar";
 import { isSameOrigin } from "@/lib/adminAuth";
 import { archiveClass } from "@/lib/classManagement";
+import { ensureThemeSchema } from "@/lib/themeSchema";
 
 // Class details incl. members (the auto-generated student/teacher list).
 export async function GET(
@@ -18,6 +19,8 @@ export async function GET(
   if (!membership) {
     return NextResponse.json({ error: "Du bist kein Mitglied dieser Klasse." }, { status: 403 });
   }
+
+  await ensureThemeSchema();
 
   const klass = await prisma.class.findUnique({
     where: { id: params.id },
@@ -65,6 +68,7 @@ export async function GET(
     school: klass.school,
     gradYear: klass.gradYear,
     joinCode: klass.joinCode,
+    theme: klass.theme ?? "standard",
     myRole: membership.role,
     myMembershipId: membership.id,
     counts: {

@@ -6,7 +6,9 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { InlineLoading, PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
 import { ImportWizard } from "@/components/ImportWizard";
+import { ThemeMenu } from "@/components/ThemeMenu";
 import { clearApiCache, swrJson } from "@/lib/swr";
+import { syncClassTheme } from "@/lib/theme";
 
 type Member = {
   id: string;
@@ -27,6 +29,7 @@ type ClassDetail = {
   school: string | null;
   gradYear: string | null;
   joinCode: string;
+  theme?: string;
   myRole: string;
   counts: { students: number; teachers: number; memories: number };
   members: Member[];
@@ -51,7 +54,10 @@ export default function ClassPage() {
 
   function loadClass() {
     return swrJson<ClassDetail>(`/api/classes/${id}`, (detail, meta) => {
-      if (detail) return setData(detail);
+      if (detail) {
+        syncClassTheme(detail.theme); // adopt the moderator-picked theme
+        return setData(detail);
+      }
       if (meta.status === 401) return router.push("/login");
       if (!meta.fromCache && meta.status !== 0) setError("Klasse konnte nicht geladen werden.");
     });
@@ -81,13 +87,19 @@ export default function ClassPage() {
             <Stat value={data.counts.memories} label="Erinnerungen" />
           </div>
         </div>
-        {canMod && (
-          <div className="relative z-10 mt-5">
+        <div className="relative z-10 mt-5 flex flex-wrap gap-2">
+          <ThemeMenu
+            classId={id}
+            theme={data.theme ?? "standard"}
+            canModerate={canMod}
+            onThemeChange={(next) => setData((d) => (d ? { ...d, theme: next } : d))}
+          />
+          {canMod && (
             <button onClick={() => setShowManage((v) => !v)} className="btn-soft text-sm">
               {data.myRole === "OWNER" ? "Klasseneinstellungen" : "Moderation"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {showManage && canMod && <ManagePanel data={data} onChange={loadClass} />}

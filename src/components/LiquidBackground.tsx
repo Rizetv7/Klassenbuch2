@@ -211,12 +211,12 @@ export function LiquidBackground() {
   }, []);
 
   return (
-    // The blur lives on the WRAPPER, not on the canvas: Safari stops
-    // repainting a CSS-filtered canvas, which froze the animation.
+    // The blur lives on the WRAPPER (via the .liquid-bg class), not on the
+    // canvas: Safari stops repainting a CSS-filtered canvas, which froze the
+    // animation. Themes restyle or hide the layer through that class.
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-[2] overflow-hidden"
-      style={{ filter: "blur(14px)", transform: "translateZ(0)" }}
+      className="liquid-bg pointer-events-none fixed inset-0 -z-[2] overflow-hidden"
     >
       <canvas
         ref={ref}

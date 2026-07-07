@@ -68,6 +68,7 @@ model Class {
   gradYear    String?
   joinCode    String    @unique
   ownerId     String
+  theme       String    @default("standard") // visual theme, chosen by moderators
   createdAt   DateTime  @default(now())
   archivedAt  DateTime?
 

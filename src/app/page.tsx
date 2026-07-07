@@ -9,6 +9,7 @@ import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { prefetchAppData, swrJson } from "@/lib/swr";
+import { syncClassTheme } from "@/lib/theme";
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function HomePage() {
         router.replace("/amina");
         return;
       }
+      syncClassTheme(home.theme); // pick up the moderator-chosen class theme
       setMe(home.user);
       setPosts(home.posts ?? []);
       setPolls(home.polls ?? []);
@@ -395,8 +397,8 @@ function HomeAttribution({
   const uploader = uploaderPerson(post);
   const primaryName = target?.name ?? uploader.name;
   const secondaryName = target ? uploader.name : post.class.name;
-  const textClass = inverted ? "text-white" : "text-ink";
-  const mutedClass = inverted ? "text-white/78" : "text-ink/52";
+  const textClass = inverted ? "text-snow" : "text-ink";
+  const mutedClass = inverted ? "text-snow/78" : "text-ink/52";
   return (
     <div className={`mt-3 flex min-w-0 items-center gap-2 ${photo ? "mt-0" : ""}`}>
       <Avatar name={uploader.name} url={uploader.avatarUrl} accent={uploader.accentColor} size={prominent ? 36 : compact ? 25 : 30} ring={!inverted} />

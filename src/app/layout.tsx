@@ -28,6 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de">
       <head>
+        {/* Apply the saved theme + light/dark mode before first paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var t=localStorage.getItem("mz-theme");if(t!=="standard"&&t!=="insta")t="standard";var m=localStorage.getItem("mz-mode")==="dark"?"dark":"light";var d=document.documentElement;d.dataset.theme=t;d.dataset.mode=(t==="insta")?"dark":m;}catch(e){}})();',
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link

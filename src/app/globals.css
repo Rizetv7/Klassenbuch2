@@ -6,12 +6,24 @@
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --font-display: "Fraunces", Georgia, serif;
   --font-hand: "Caveat", cursive;
+  /* ------------------------------------------------------------------
+     Theme channels (R G B). The themable Tailwind utilities (white, ink,
+     muted, hotpink, coral, oncolor) read these, so flipping data-theme /
+     data-mode on <html> restyles the whole app at once.
+     ------------------------------------------------------------------ */
+  --c-ink: 9 7 12; /* text */
+  --c-surface: 255 255 255; /* glass fills + hairlines (the "white" utility) */
+  --c-muted: 110 97 112;
+  --c-accent: 238 79 179; /* hotpink */
+  --c-danger: 238 79 179; /* coral: likes, deletes */
+  --c-on-ink: 255 255 255; /* text sitting on bg-ink elements */
+  --page-bg: #f2a9d8;
   --ink: #09070c;
   --muted: rgba(9, 7, 12, 0.58);
-  --glass: rgba(255, 255, 255, 0.09);
-  --glass-strong: rgba(255, 255, 255, 0.18);
-  --glass-line: rgba(255, 255, 255, 0.34);
-  --pink-shadow: rgba(238, 79, 179, 0.14);
+  --glass: rgb(var(--c-surface) / 0.09);
+  --glass-strong: rgb(var(--c-surface) / 0.18);
+  --glass-line: rgb(var(--c-surface) / 0.34);
+  --pink-shadow: rgb(var(--c-accent) / 0.14);
   --cyan-shadow: rgba(169, 221, 245, 0.2);
   /* watercolor wash: pale blue/mint top left, milky centre, lavender top
      right, rose + saturated pink bleeding in from below */
@@ -47,7 +59,7 @@
 }
 
 html {
-  background: #f2a9d8;
+  background: var(--page-bg);
 }
 
 body {
@@ -75,7 +87,7 @@ body::before {
 }
 
 ::selection {
-  background: rgba(238, 79, 179, 0.3);
+  background: rgb(var(--c-accent) / 0.3);
 }
 
 @layer components {
@@ -86,12 +98,12 @@ body::before {
     border-color: var(--glass-line);
     /* keep the wash visible through the glass — low white overlay */
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0.055);
+      linear-gradient(180deg, rgb(var(--c-surface) / 0.12), rgb(var(--c-surface) / 0.02)),
+      rgb(var(--c-surface) / 0.055);
     box-shadow:
       0 24px 64px -48px rgba(9, 7, 12, 0.48),
       0 10px 34px -28px var(--pink-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      inset 0 1px 0 rgb(var(--c-surface) / 0.55);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -103,20 +115,20 @@ body::before {
   .surface {
     @apply rounded-full;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.23), rgba(255,255,255,0.08)),
-      rgba(255,255,255,0.075);
+      linear-gradient(180deg, rgb(var(--c-surface) / 0.23), rgb(var(--c-surface) / 0.08)),
+      rgb(var(--c-surface) / 0.075);
   }
 
   /* mobile bottom bar: near-solid so labels stay readable over the wash */
   .dock {
     @apply rounded-full border;
-    border-color: rgba(255, 255, 255, 0.7);
+    border-color: rgb(var(--c-surface) / 0.7);
     /* milky glass: noticeably more opaque than .surface, but still see-through */
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.5));
+    background: linear-gradient(180deg, rgb(var(--c-surface) / 0.66), rgb(var(--c-surface) / 0.5));
     box-shadow:
       0 18px 44px -20px rgba(9, 7, 12, 0.42),
       0 6px 18px -10px var(--pink-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      inset 0 1px 0 rgb(var(--c-surface) / 0.85);
   }
 
   .glass-panel {
@@ -129,15 +141,15 @@ body::before {
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-black transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
-    box-shadow: 0 10px 28px -20px rgba(9, 7, 12, 0.55), inset 0 1px 0 rgba(255,255,255,0.42);
+    box-shadow: 0 10px 28px -20px rgba(9, 7, 12, 0.55), inset 0 1px 0 rgb(var(--c-surface) / 0.42);
   }
 
   .btn-primary {
-    @apply btn bg-ink text-white hover:bg-black;
+    @apply btn bg-ink text-oncolor;
   }
 
   .btn-accent {
-    @apply btn bg-hotpink text-white hover:brightness-105;
+    @apply btn bg-hotpink text-snow hover:brightness-105;
   }
 
   .btn-soft,
@@ -149,7 +161,7 @@ body::before {
 
   .input {
     @apply w-full rounded-[24px] border border-white/50 bg-white/25 px-5 py-3 text-sm font-bold outline-none transition placeholder:text-ink/40 focus:border-white focus:ring-4 focus:ring-white/30;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.44);
+    box-shadow: inset 0 1px 0 rgb(var(--c-surface) / 0.44);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -165,7 +177,7 @@ body::before {
   }
 
   .tab-active {
-    @apply border-ink bg-ink text-white shadow-soft;
+    @apply border-ink bg-ink text-oncolor shadow-soft;
   }
 
   .chip {
@@ -192,7 +204,7 @@ body::before {
 
   .postit {
     @apply rounded-[22px] border border-white/50 bg-[#fff0a8]/80 p-5;
-    box-shadow: 0 22px 50px -34px rgba(9,7,12,0.62), inset 0 1px 0 rgba(255,255,255,0.55);
+    box-shadow: 0 22px 50px -34px rgba(9,7,12,0.62), inset 0 1px 0 rgb(var(--c-surface) / 0.55);
     transform: rotate(-1.1deg);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
@@ -214,14 +226,14 @@ body::before {
 
   .polaroid {
     @apply rounded-[26px] border border-white/70 bg-white/80 p-2.5 pb-7;
-    box-shadow: 0 28px 70px -46px rgba(9,7,12,0.72), inset 0 1px 0 rgba(255,255,255,0.85);
+    box-shadow: 0 28px 70px -46px rgba(9,7,12,0.72), inset 0 1px 0 rgb(var(--c-surface) / 0.85);
     transform: rotate(-1.4deg);
     transition: transform 0.22s ease, box-shadow 0.22s ease;
   }
 
   .polaroid:hover {
     transform: rotate(0deg) translateY(-2px) scale(1.01);
-    box-shadow: 0 34px 76px -46px rgba(9,7,12,0.76), inset 0 1px 0 rgba(255,255,255,0.9);
+    box-shadow: 0 34px 76px -46px rgba(9,7,12,0.76), inset 0 1px 0 rgb(var(--c-surface) / 0.9);
   }
 
   .post-card {
@@ -234,15 +246,15 @@ body::before {
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(55% 42% at 0% 0%, rgba(255,255,255,0.32), transparent 65%),
-      radial-gradient(50% 42% at 100% 100%, rgba(238,79,179,0.1), transparent 70%);
+      radial-gradient(55% 42% at 0% 0%, rgb(var(--c-surface) / 0.32), transparent 65%),
+      radial-gradient(50% 42% at 100% 100%, rgb(var(--c-accent) / 0.1), transparent 70%);
   }
 
   .hero-frame {
     @apply glass-panel relative overflow-hidden;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.035)),
-      rgba(255,255,255,0.045);
+      linear-gradient(180deg, rgb(var(--c-surface) / 0.13), rgb(var(--c-surface) / 0.035)),
+      rgb(var(--c-surface) / 0.045);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -253,8 +265,8 @@ body::before {
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(78% 52% at 10% 0%, rgba(255,255,255,0.18), transparent 66%),
-      linear-gradient(180deg, rgba(255,255,255,0.05), transparent 58%);
+      radial-gradient(78% 52% at 10% 0%, rgb(var(--c-surface) / 0.18), transparent 66%),
+      linear-gradient(180deg, rgb(var(--c-surface) / 0.05), transparent 58%);
   }
 
   .project-cover {
@@ -262,9 +274,9 @@ body::before {
     background:
       radial-gradient(70% 60% at 12% 18%, rgba(169,221,245,0.8), transparent 60%),
       radial-gradient(72% 58% at 86% 10%, rgba(205,188,245,0.85), transparent 63%),
-      radial-gradient(76% 68% at 48% 100%, rgba(238,79,179,0.9), transparent 72%),
-      rgba(255,255,255,0.32);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+      radial-gradient(76% 68% at 48% 100%, rgb(var(--c-accent) / 0.9), transparent 72%),
+      rgb(var(--c-surface) / 0.32);
+    box-shadow: inset 0 1px 0 rgb(var(--c-surface) / 0.72);
   }
 
   .soft-divider {
@@ -311,7 +323,7 @@ body::before {
     box-shadow:
       0 30px 70px -46px rgba(9, 7, 12, 0.55),
       0 14px 38px -26px var(--pink-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      inset 0 1px 0 rgb(var(--c-surface) / 0.6);
   }
 
   .btn {
@@ -355,6 +367,262 @@ body::before {
 
   .input {
     transition-duration: 180ms;
+  }
+}
+
+/* The animated watercolor canvas wrapper. Blur lives here (not on the
+   canvas — Safari) so themes can restyle or hide the whole layer. */
+.liquid-bg {
+  filter: blur(14px);
+  transform: translateZ(0);
+}
+
+/* ====================================================================
+   DARK MODE — standard theme at night. Same watercolor world, heavily
+   dimmed: deep navy/plum washes, light ink, lavender-slate glass.
+   ==================================================================== */
+:root[data-mode="dark"] {
+  --c-ink: 244 241 250;
+  --c-surface: 134 129 172;
+  --c-muted: 187 181 209;
+  --c-accent: 242 96 186;
+  --c-danger: 255 99 141;
+  --c-on-ink: 22 16 32;
+  --page-bg: #140d1c;
+  --ink: #f4f1fa;
+  --muted: rgba(244, 241, 250, 0.6);
+  --wash-cool-a: #1d3a55;
+  --wash-cool-b: #173f43;
+  --wash-cool-c: rgba(23, 63, 67, 0.5);
+  --wash-milk-a: #241c31;
+  --wash-milk-b: rgba(36, 28, 49, 0.85);
+  --wash-warm-a: #2f2350;
+  --wash-warm-b: #2a1f46;
+  --wash-warm-c: rgba(42, 31, 70, 0.6);
+  --wash-pink-a: rgba(115, 35, 88, 0.8);
+  --wash-pink-b: rgba(85, 30, 70, 0.66);
+  --wash-pink-c: rgba(42, 31, 70, 0.4);
+  --wash-bottom-a: #6d1a56;
+  --wash-bottom-b: #7d2064;
+  --wash-bottom-c: rgba(115, 35, 88, 0.72);
+  --wash-base-a: #162436;
+  --wash-base-b: #1e1629;
+  --wash-base-c: #3a1c33;
+  --wash-base-d: #5c184a;
+}
+
+/* the canvas keeps flowing, just dimmed to night levels */
+:root[data-mode="dark"] .liquid-bg {
+  filter: blur(14px) brightness(0.34) saturate(1.15) contrast(1.06);
+}
+
+/* post-its keep their identity but stop glowing */
+:root[data-mode="dark"] .postit {
+  background: rgba(96, 84, 34, 0.62);
+}
+:root[data-mode="dark"] .postit:nth-child(3n) {
+  background: rgba(64, 52, 110, 0.62);
+}
+:root[data-mode="dark"] .postit:nth-child(3n + 1) {
+  background: rgba(105, 45, 80, 0.55);
+}
+
+:root[data-mode="dark"] .project-cover {
+  background:
+    radial-gradient(70% 60% at 12% 18%, rgba(38, 76, 104, 0.85), transparent 60%),
+    radial-gradient(72% 58% at 86% 10%, rgba(64, 52, 116, 0.85), transparent 63%),
+    radial-gradient(76% 68% at 48% 100%, rgba(140, 32, 104, 0.9), transparent 72%),
+    rgba(20, 14, 30, 0.5);
+  box-shadow: inset 0 1px 0 rgb(var(--c-surface) / 0.3);
+}
+
+/* ====================================================================
+   INSTA THEME — "Nachtschwarz". Pure black, hairline #262626 borders,
+   flat cards, system font, Instagram blue/red accents, story-ring pink
+   on avatars. Deliberately close to the Instagram dark app.
+   ==================================================================== */
+:root[data-theme="insta"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --c-ink: 245 245 245;
+  --c-surface: 118 118 118;
+  --c-muted: 168 168 168;
+  --c-accent: 0 149 246; /* Instagram blue */
+  --c-danger: 255 48 64; /* Instagram heart red */
+  --c-on-ink: 0 0 0;
+  --page-bg: #000;
+  --ink: #f5f5f5;
+  --muted: rgba(168, 168, 168, 1);
+  --glass-line: #262626;
+  --pink-shadow: rgba(0, 0, 0, 0);
+  --avatar-ring: #dd2a7b; /* story-ring on every avatar */
+}
+
+:root[data-theme="insta"] body::before {
+  background: #000;
+}
+
+:root[data-theme="insta"] .liquid-bg {
+  display: none;
+}
+
+/* flat, hairline-bordered surfaces — no glass, no glow */
+:root[data-theme="insta"] .glass,
+:root[data-theme="insta"] .card,
+:root[data-theme="insta"] .surface,
+:root[data-theme="insta"] .glass-card,
+:root[data-theme="insta"] .glass-panel,
+:root[data-theme="insta"] .post-card,
+:root[data-theme="insta"] .hero-frame {
+  background: #0b0b0b;
+  border-color: #262626;
+  box-shadow: none;
+}
+:root[data-theme="insta"] .post-card::before,
+:root[data-theme="insta"] .hero-frame::after {
+  background: none;
+}
+:root[data-theme="insta"] a.glass-card:hover,
+:root[data-theme="insta"] button.glass-card:hover {
+  box-shadow: none;
+  border-color: #3a3a3a;
+}
+
+/* tighter radii — Insta is much squarer than the watercolor look */
+:root[data-theme="insta"] .card,
+:root[data-theme="insta"] .glass-panel,
+:root[data-theme="insta"] .hero-frame {
+  border-radius: 22px;
+}
+:root[data-theme="insta"] .glass-card,
+:root[data-theme="insta"] .post-card {
+  border-radius: 18px;
+}
+
+:root[data-theme="insta"] .input {
+  border-radius: 14px;
+  border-color: #262626;
+  background: #121212;
+  box-shadow: none;
+}
+:root[data-theme="insta"] .input:focus {
+  border-color: #4d4d4d;
+}
+
+:root[data-theme="insta"] .chip,
+:root[data-theme="insta"] .tab {
+  border-color: #2e2e2e;
+  background: #1a1a1a;
+  border-radius: 12px;
+}
+:root[data-theme="insta"] .tab-active {
+  border-color: #f5f5f5;
+  background: #f5f5f5;
+  color: #000;
+  box-shadow: none;
+}
+
+:root[data-theme="insta"] .btn {
+  box-shadow: none;
+  border-radius: 12px;
+}
+:root[data-theme="insta"] .btn-primary {
+  background: #0095f6; /* Insta primary action blue */
+  color: #fff;
+}
+:root[data-theme="insta"] .btn-primary:hover {
+  background: #1aa3ff;
+}
+:root[data-theme="insta"] .btn-accent {
+  color: #fff;
+}
+
+/* bottom bar: floating black pill, like the Insta tab bar */
+:root[data-theme="insta"] .dock {
+  border-color: #262626;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.92);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Insta headline typography: bold system sans instead of the serif */
+:root[data-theme="insta"] .display,
+:root[data-theme="insta"] .quote-big {
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+:root[data-theme="insta"] .postit,
+:root[data-theme="insta"] .postit:nth-child(3n),
+:root[data-theme="insta"] .postit:nth-child(3n + 1) {
+  background: #141414;
+  border-color: #262626;
+  border-radius: 16px;
+  box-shadow: none;
+  transform: none;
+}
+:root[data-theme="insta"] .postit:hover {
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+:root[data-theme="insta"] .polaroid {
+  background: #101010;
+  border-color: #262626;
+  border-radius: 16px;
+  box-shadow: none;
+  transform: none;
+}
+:root[data-theme="insta"] .polaroid:hover {
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: none;
+}
+
+/* subtle Insta-gradient wash instead of the pastel project cover */
+:root[data-theme="insta"] .project-cover {
+  border-color: #262626;
+  background:
+    radial-gradient(120% 120% at 0% 100%, rgba(254, 218, 117, 0.22), transparent 50%),
+    radial-gradient(120% 120% at 35% 55%, rgba(214, 41, 118, 0.26), transparent 62%),
+    radial-gradient(120% 120% at 100% 0%, rgba(150, 47, 191, 0.3), transparent 58%),
+    #101010;
+  box-shadow: none;
+}
+
+/* Design menu sheet: slides up from the bottom on phones, pops in centred
+   on desktop. */
+.theme-sheet {
+  border-radius: 30px 30px 0 0;
+  animation: sheet-up 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .theme-sheet {
+    border-radius: 30px;
+    animation: sheet-pop 300ms cubic-bezier(0.24, 1.3, 0.36, 1) both;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(56px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -485,14 +753,14 @@ body::before {
 .loading-mark {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 22px 60px -46px rgba(9, 7, 12, 0.48);
+  border: 1px solid rgb(var(--c-surface) / 0.38);
+  background: rgb(var(--c-surface) / 0.18);
+  box-shadow: inset 0 1px 0 rgb(var(--c-surface) / 0.55), 0 22px 60px -46px rgba(9, 7, 12, 0.48);
   animation: loading-breathe 1.45s ease-in-out infinite alternate;
 }
 
 .loading-panel {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgb(var(--c-surface) / 0.12);
 }
 
 .loading-mark:nth-child(2n) {
@@ -508,7 +776,7 @@ body::before {
   background: linear-gradient(
     105deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.5) 50%,
+    rgb(var(--c-surface) / 0.5) 50%,
     transparent 70%
   );
   transform: translateX(-100%);

@@ -105,7 +105,7 @@ export default function ClassesPage() {
                     {c.memberCount} Mitglieder<br />
                     {c.postCount} Erinnerungen
                   </p>
-                  <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-2xl font-black text-white transition group-hover:translate-x-1">›</span>
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-2xl font-black text-oncolor transition group-hover:translate-x-1">›</span>
                 </div>
               </div>
             </Link>

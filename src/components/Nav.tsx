@@ -33,7 +33,8 @@ export function Avatar({
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const ringStyle = ring ? { boxShadow: `0 0 0 2.5px ${color}` } : undefined;
+  // themes may force a uniform ring (e.g. the Insta story-ring pink)
+  const ringStyle = ring ? { boxShadow: `0 0 0 2.5px var(--avatar-ring, ${color})` } : undefined;
 
   return (
     <span
@@ -112,7 +113,7 @@ function TopNav({ me }: { me: NavUser | null }) {
                 href={it.href}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition-all duration-150 active:scale-95 ${
                   isActive(it.href)
-                    ? "nav-item-active bg-ink text-white shadow-soft"
+                    ? "nav-item-active bg-ink text-oncolor shadow-soft"
                     : "text-ink/70 hover:bg-white/40 hover:text-ink"
                 }`}
                 style={isActive(it.href) ? { animation: "nav-pop 340ms cubic-bezier(0.24, 1.4, 0.36, 1) both" } : undefined}
@@ -151,7 +152,7 @@ function BottomNav({ me }: { me: NavUser | null }) {
                 href={it.href}
                 className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition-all duration-150 active:scale-90 ${
                   active
-                    ? "nav-item-active bg-ink text-white shadow-soft"
+                    ? "nav-item-active bg-ink text-oncolor shadow-soft"
                     : "text-ink/65 hover:text-ink"
                 }`}
                 style={active ? { animation: "nav-pop 340ms cubic-bezier(0.24, 1.4, 0.36, 1) both" } : undefined}

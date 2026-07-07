@@ -130,7 +130,7 @@ function Composer({
                 type="button"
                 onClick={() => setImage(null)}
                 aria-label="Bild entfernen"
-                className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-white shadow-soft transition hover:bg-ink"
+                className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-oncolor shadow-soft transition hover:bg-ink"
               >
                 <IconClose size={13} />
               </button>

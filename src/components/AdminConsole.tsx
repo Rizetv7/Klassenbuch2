@@ -90,7 +90,7 @@ export function AdminHeader({ backHref }: { backHref?: string }) {
           href={backHref}
           aria-label="Zurück zur Übersicht"
           title="Zurück zur Übersicht"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink text-lg font-black text-white transition active:scale-95"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink text-lg font-black text-oncolor transition active:scale-95"
         >
           ←
         </Link>

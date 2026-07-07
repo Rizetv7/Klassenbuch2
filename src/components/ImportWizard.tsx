@@ -360,7 +360,7 @@ export function ImportWizard({
   // breaks position:fixed (sheet would stick to the page, nav would float
   // above the footer buttons).
   return createPortal(
-    <div className="fixed inset-0 z-[70] bg-ink/45 sm:grid sm:place-items-center sm:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/50 sm:grid sm:place-items-center sm:p-6" onClick={onClose}>
       <div
         className="flex h-[100dvh] w-full flex-col overflow-hidden shadow-soft sm:h-auto sm:max-h-[88vh] sm:max-w-xl sm:rounded-[34px] sm:border sm:border-white/60"
         style={{
@@ -401,7 +401,7 @@ export function ImportWizard({
             <div className="space-y-4">
               <div>
                 <p className="section-label mb-2">Format</p>
-                <pre className="overflow-x-auto whitespace-pre rounded-[22px] bg-ink/90 p-4 font-mono text-[11px] font-bold leading-relaxed text-white/90">{FORMAT_EXAMPLE}</pre>
+                <pre className="overflow-x-auto whitespace-pre rounded-[22px] bg-ink/90 p-4 font-mono text-[11px] font-bold leading-relaxed text-oncolor/90">{FORMAT_EXAMPLE}</pre>
               </div>
               <textarea
                 className="input min-h-[200px] font-mono !text-base leading-relaxed"
@@ -522,7 +522,7 @@ export function ImportWizard({
 
           {step === 3 && (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
-              <span className="grid h-20 w-20 animate-pop-in place-items-center rounded-full bg-hotpink text-4xl text-white shadow-soft">✓</span>
+              <span className="grid h-20 w-20 animate-pop-in place-items-center rounded-full bg-hotpink text-4xl text-snow shadow-soft">✓</span>
               <h3 className="display text-4xl">{result.imported} gepostet</h3>
               {result.open > 0 && (
                 <p className="max-w-xs text-sm font-bold text-ink/60">

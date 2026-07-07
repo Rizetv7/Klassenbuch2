@@ -274,7 +274,7 @@ export function PollCard({
                 )}
                 <span className="relative z-10 flex items-center justify-between gap-3">
                   <span className="flex min-w-0 items-center font-black leading-tight">
-                    <span className={`mr-2 inline-grid h-5 w-5 place-items-center rounded-full border text-[11px] ${picked ? "border-ink bg-ink text-white" : "border-ink/30 text-transparent"}`}>
+                    <span className={`mr-2 inline-grid h-5 w-5 place-items-center rounded-full border text-[11px] ${picked ? "border-ink bg-ink text-oncolor" : "border-ink/30 text-transparent"}`}>
                       ✓
                     </span>
                     {candidate && (
