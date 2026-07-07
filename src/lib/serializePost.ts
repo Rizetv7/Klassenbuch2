@@ -6,7 +6,7 @@ export function postInclude(viewerId: string) {
   return {
     author: { select: { id: true, name: true, avatarUrl: true, accentColor: true, memberships: { select: { id: true, classId: true } } } },
     class: { select: { id: true, name: true } },
-    subject: { select: { id: true, displayName: true, memberType: true, user: { select: { name: true, avatarUrl: true, accentColor: true } } } },
+    subject: { select: { id: true, displayName: true, memberType: true, user: { select: { id: true, name: true, avatarUrl: true, accentColor: true } } } },
     teacher: { select: { id: true, name: true, subject: true, avatarUrl: true, accentColor: true } },
     topic: { select: { id: true, name: true } },
     _count: { select: { likes: true, comments: true } },
@@ -14,7 +14,7 @@ export function postInclude(viewerId: string) {
   };
 }
 
-export async function serializePostRows(posts: any[]) {
+export async function serializePostRows(posts: any[], viewerId?: string) {
   // Resolve the "newest posted image" fallback for any subject/teacher that
   // has no manually chosen avatar, so their effective picture shows on cards.
   const subjectNeed = posts
@@ -38,6 +38,7 @@ export async function serializePostRows(posts: any[]) {
       anonymous: p.anonymous,
       imageUrl: p.imageUrl,
       createdAt: p.createdAt,
+      deletableByMe: Boolean(viewerId && (p.authorId === viewerId || p.subject?.user?.id === viewerId)),
       // hide the author entirely for anonymous posts
       author: p.anonymous
         ? null
@@ -86,5 +87,5 @@ export async function serializePosts(postIds: string[], viewerId: string) {
 
   // preserve incoming order
   const byId = new Map(posts.map((p) => [p.id, p]));
-  return await serializePostRows(postIds.map((id) => byId.get(id)).filter(Boolean));
+  return await serializePostRows(postIds.map((id) => byId.get(id)).filter(Boolean), viewerId);
 }

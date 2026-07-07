@@ -1,12 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { playBabySound } from "@/lib/babySound";
-import { clearApiCache } from "@/lib/swr";
 import { uploadImageFile } from "@/lib/uploadImage";
 
 type Target = {
@@ -42,9 +41,6 @@ export default function AminaModePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [mascotLine, setMascotLine] = useState("SUCH DIR EINEN MENSCHEN AUS!");
-  const [adultUnlocked, setAdultUnlocked] = useState(false);
-  const [unlocking, setUnlocking] = useState(false);
-  const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -73,7 +69,6 @@ export default function AminaModePage() {
       });
     return () => {
       active = false;
-      if (unlockTimer.current) clearTimeout(unlockTimer.current);
     };
   }, [previewClassId, router]);
 
@@ -92,22 +87,6 @@ export default function AminaModePage() {
 
   function sound(tone: "tap" | "back" | "success" | "sparkle" = "tap") {
     playBabySound(tone);
-  }
-
-  function startAdultUnlock() {
-    if (data?.readOnly || adultUnlocked) return;
-    setUnlocking(true);
-    unlockTimer.current = setTimeout(() => {
-      setAdultUnlocked(true);
-      setUnlocking(false);
-      sound("success");
-    }, 3000);
-  }
-
-  function cancelAdultUnlock() {
-    if (unlockTimer.current) clearTimeout(unlockTimer.current);
-    unlockTimer.current = null;
-    setUnlocking(false);
   }
 
   function chooseTarget(target: Target) {
@@ -193,12 +172,18 @@ export default function AminaModePage() {
     }
   }
 
-  async function logout() {
+  async function deletePost(postId: string) {
+    if (!window.confirm("DIESES DINGS WIRKLICH WEGWERFEN?")) return;
     sound("back");
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    clearApiCache();
-    router.replace("/login");
-    router.refresh();
+    const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      setError(body?.error || "WEGWERFEN GING NICHT!");
+      return;
+    }
+    setData((current) => current ? { ...current, posts: current.posts.filter((post) => post.id !== postId) } : current);
+    setMascotLine("WEG IST WEG! BUBU HAT AUFGERÄUMT!");
+    sound("success");
   }
 
   if (!data && !error) return <AminaLoading />;
@@ -224,22 +209,18 @@ export default function AminaModePage() {
               VORSCHAU SCHLIESSEN
             </button>
           ) : (
-            <button
-              type="button"
-              className={`amina-parent-lock ${unlocking ? "is-unlocking" : ""}`}
-              onPointerDown={startAdultUnlock}
-              onPointerUp={cancelAdultUnlock}
-              onPointerLeave={cancelAdultUnlock}
-              onPointerCancel={cancelAdultUnlock}
-              aria-label="Erwachsenenbereich durch langes Drücken öffnen"
-            >
-              3 SEK. HALTEN
-            </button>
+            <div className="amina-admin-only" title="Nur die Klassenleitung oder der Admin kann den Amina-Modus abschalten">
+              🔒 NUR ADMIN
+            </div>
           )}
         </div>
       </header>
 
       <main className="amina-stage">
+        <section className="amina-birth-sign" aria-label="Amina-Modus, geboren 2025 am 6. Juli">
+          <Image src="/amina-guides/geboren-schild.webp" width={960} height={720} alt="Geboren 2025, am 6.7." priority />
+        </section>
+
         <section className="amina-mascot-row">
           <button
             type="button"
@@ -255,6 +236,8 @@ export default function AminaModePage() {
           <div className="amina-speech" role="status">{mascotLine}</div>
         </section>
 
+        <AminaGuide sound={sound} onExplain={setMascotLine} />
+
         {error ? <div className="amina-error">{error}</div> : null}
 
         {!data?.class ? (
@@ -268,6 +251,7 @@ export default function AminaModePage() {
             posts={shownPosts}
             onBack={goBack}
             onCreate={openCreate}
+            onDelete={deletePost}
             sound={sound}
             canCreate={!data.readOnly}
           />
@@ -297,19 +281,51 @@ export default function AminaModePage() {
         />
       ) : null}
 
-      {adultUnlocked && !data?.readOnly ? (
-        <div className="amina-adult-layer" role="dialog" aria-modal="true" aria-label="Erwachsenenbereich">
-          <div className="amina-adult-box">
-            <p className="amina-kicker">FÜR ERWACHSENE</p>
-            <h2>WIRKLICH ABMELDEN?</h2>
-            <div className="amina-adult-actions">
-              <button type="button" className="amina-mini-button" onClick={() => setAdultUnlocked(false)}>ZURÜCK</button>
-              <button type="button" className="amina-mini-button" onClick={logout}>ABMELDEN</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
+  );
+}
+
+const AMINA_GUIDES = [
+  { image: "/amina-guides/bubu-button.webp", title: "1. KNOPF DRÜCKEN", text: "EINMAL DRAUF. NICHT ZEHNMAL. BUBU PASST AUF!", line: "DRÜCK EINEN KNOPF GENAU EINMAL! GANZ MUTIG!" },
+  { image: "/amina-guides/bubu-add.webp", title: "2. PLUS MACHT NEU", text: "DER GELBE KNOPF MACHT EIN NEUES DINGS.", line: "DER GROSSE GELBE KNOPF MACHT ETWAS NEUES!" },
+  { image: "/amina-guides/bubu-quote.webp", title: "3. ZITAT IST GESAGT", text: "SCHREIB REIN, WAS JEMAND GESAGT HAT.", line: "EIN ZITAT IST ETWAS, DAS JEMAND GESAGT HAT!" },
+  { image: "/amina-guides/bubu-photo.webp", title: "4. BILD IST FOTO", text: "DRÜCK AUFS FOTO. DANN WIRD ES GROSS.", line: "AUF EIN BILD KANN MAN DRAUFDRÜCKEN!" },
+  { image: "/amina-guides/bubu-finish.webp", title: "5. FERTIG HEISST FERTIG", text: "AM ENDE DRÜCKST DU DEN RIESEN FERTIG-KNOPF.", line: "FERTIG DRÜCKEN. DANN FEIERT BUBU!" },
+] as const;
+
+function AminaGuide({
+  sound,
+  onExplain,
+}: {
+  sound: (tone?: "tap" | "back" | "success" | "sparkle") => void;
+  onExplain: (line: string) => void;
+}) {
+  return (
+    <section className="amina-guide" aria-label="Bubu erklärt alles">
+      <div className="amina-guide-heading">
+        <p className="amina-kicker">BUBUS SUPEREINFACHE ANLEITUNG</p>
+        <h2>SO GEHT DRÜCKEN!</h2>
+      </div>
+      <div className="amina-guide-track">
+        {AMINA_GUIDES.map((guide) => (
+          <button
+            type="button"
+            className="amina-guide-card"
+            key={guide.image}
+            onClick={() => {
+              sound("sparkle");
+              onExplain(guide.line);
+            }}
+          >
+            <Image src={guide.image} width={640} height={640} alt="" />
+            <span className="amina-guide-copy">
+              <strong>{guide.title}</strong>
+              <small>{guide.text}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -329,6 +345,7 @@ function PeopleScreen({ targets, className, onChoose }: { targets: Target[]; cla
     <section className="amina-screen">
       <p className="amina-kicker">DEINE KLASSE: {className}</p>
       <h1>WEN WILLST DU ANSCHAUEN?</h1>
+      <GuideNudge image="/amina-guides/bubu-button.webp" text="DRÜCK AUF EIN GESICHT. DANN KOMMT DIE PERSON!" />
       <div className="amina-people-grid">
         {targets.map((target, index) => (
           <button
@@ -352,6 +369,7 @@ function PersonScreen({
   posts,
   onBack,
   onCreate,
+  onDelete,
   sound,
   canCreate,
 }: {
@@ -359,6 +377,7 @@ function PersonScreen({
   posts: Post[];
   onBack: () => void;
   onCreate: () => void;
+  onDelete: (postId: string) => void;
   sound: (tone?: "tap" | "back" | "success" | "sparkle") => void;
   canCreate: boolean;
 }) {
@@ -375,6 +394,8 @@ function PersonScreen({
         {canCreate ? <button type="button" className="amina-add-button" onClick={onCreate}>NEUES DINGS!</button> : null}
       </div>
 
+      {canCreate ? <GuideNudge image="/amina-guides/bubu-add.webp" text="DER GELBE KNOPF MACHT HIER EIN NEUES DINGS!" /> : null}
+
       {posts.length ? (
         <div className="amina-post-grid">
           {posts.map((post) => (
@@ -390,6 +411,11 @@ function PersonScreen({
                 </p>
               ) : null}
               <button type="button" className="amina-post-sound" onClick={() => sound("tap")} aria-label="Boing abspielen">BOING!</button>
+              {post.deletableByMe ? (
+                <button type="button" className="amina-post-delete" onClick={() => onDelete(post.id)}>
+                  MEIN DINGS WEGWERFEN
+                </button>
+              ) : null}
             </article>
           ))}
         </div>
@@ -434,7 +460,12 @@ function CreateScreen({
     <div className="amina-create-layer" role="dialog" aria-modal="true" aria-label="Neues Dings machen">
       <form className="amina-create-box" onSubmit={onSubmit}>
         <button type="button" className="amina-back-button" onClick={onClose} aria-label="Schliessen">←</button>
-        <Image src="/amina-mascot.png" width={120} height={120} alt="Bubu hilft" />
+        <Image
+          src={kind === "IMAGE" ? "/amina-guides/bubu-photo.webp" : kind === "QUOTE" ? "/amina-guides/bubu-quote.webp" : "/amina-guides/bubu-add.webp"}
+          width={640}
+          height={640}
+          alt="Bubu erklärt die Auswahl"
+        />
         <p className="amina-kicker">FÜR {target.name.toLocaleUpperCase("de-CH")}</p>
         <h2>WAS MACHEN WIR?</h2>
 
@@ -470,6 +501,15 @@ function CreateScreen({
           {busy ? "BUBU ARBEITET..." : "FERTIG!"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function GuideNudge({ image, text }: { image: string; text: string }) {
+  return (
+    <div className="amina-nudge">
+      <Image src={image} width={640} height={640} alt="" />
+      <p>{text}</p>
     </div>
   );
 }

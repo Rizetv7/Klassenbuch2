@@ -25,6 +25,7 @@ export type Post = {
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
+  deletableByMe?: boolean;
 };
 
 type CardPerson = {

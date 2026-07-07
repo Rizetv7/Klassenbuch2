@@ -73,7 +73,7 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  const posts = await serializePostRows(rows);
+  const posts = await serializePostRows(rows, viewerId);
   const subjectAvatar = new Map<string, string>();
   const teacherAvatar = new Map<string, string>();
   for (const post of posts) {

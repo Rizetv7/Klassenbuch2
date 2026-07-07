@@ -54,7 +54,7 @@ export async function GET() {
       ])
     : [[], []];
 
-  const posts = await serializePostRows(rows);
+  const posts = await serializePostRows(rows, userId);
   const access = Object.fromEntries(user.memberships.map((m) => [m.classId, m.role]));
   const polls = serializePollRows(pollRows, userId, access).filter((poll) => !poll.votedByMe).slice(0, 6);
   const memoryPool = posts.filter((p) => p.imageUrl || p.kind === "QUOTE");

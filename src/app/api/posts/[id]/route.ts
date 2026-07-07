@@ -16,7 +16,8 @@ export async function DELETE(
 
   const membership = await getMembership(userId, post.classId);
   const isAuthor = post.authorId === userId;
-  if (!isAuthor && !(membership && canModerate(membership.role))) {
+  const isSubject = Boolean(membership && post.subjectMembershipId === membership.id);
+  if (!isAuthor && !isSubject && !(membership && canModerate(membership.role))) {
     return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
   }
 
