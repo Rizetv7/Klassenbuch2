@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Avatar } from "./Nav";
 import { IconClose } from "./Icons";
 
@@ -148,9 +149,21 @@ function parseLine(line: string, index: number, students: Person[], teachers: Pe
   };
 }
 
-const SAMPLE = `Isai: "Das wird schon." (vor der Prüfung)
-Frau Meier: Morgen gibt es keinen Test
-Mia: Hat immer die besten Zusammenfassungen`;
+const SAMPLE = `Isai | Zitat | "Das wird schon." | vor Mathe
+Frau Meier | Lehrerzitat | Morgen gibt es keinen Test
+Mia | Notiz | Hat immer die besten Zusammenfassungen
+Lea | Bild | https://example.com/foto.jpg`;
+
+const FORMAT_EXAMPLE = `# Eine Zeile pro Eintrag:
+Name | Typ | Inhalt | Kontext (optional)
+
+Isai | Zitat | "Das wird schon." | vor Mathe
+Frau Meier | Lehrerzitat | Kein Test morgen
+Mia | Notiz | Beste Zusammenfassungen
+Lea | Bild | https://…/foto.jpg
+
+# Kurzform geht auch:
+Isai: "Das wird schon." (vor Mathe)`;
 
 export function ImportWizard({
   classId,
@@ -172,6 +185,9 @@ export function ImportWizard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState({ imported: 0, open: 0 });
+  // Portal target is only available after mount (SSR safety).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // lock page scroll behind the sheet
   useEffect(() => {
@@ -311,10 +327,16 @@ export function ImportWizard({
     </select>
   );
 
-  return (
-    <div className="fixed inset-0 z-50 bg-ink/45 sm:grid sm:place-items-center sm:p-6" onClick={onClose}>
+  if (!mounted) return null;
+
+  // Rendered through a portal on <body>: the page content behind is wrapped
+  // in reveal animations that use transform, and a transformed ancestor
+  // breaks position:fixed (sheet would stick to the page, nav would float
+  // above the footer buttons).
+  return createPortal(
+    <div className="fixed inset-0 z-[70] bg-ink/45 sm:grid sm:place-items-center sm:p-6" onClick={onClose}>
       <div
-        className="flex h-full w-full flex-col overflow-hidden shadow-soft sm:h-auto sm:max-h-[88vh] sm:max-w-xl sm:rounded-[34px] sm:border sm:border-white/60"
+        className="flex h-[100dvh] w-full flex-col overflow-hidden shadow-soft sm:h-auto sm:max-h-[88vh] sm:max-w-xl sm:rounded-[34px] sm:border sm:border-white/60"
         style={{
           background: "linear-gradient(160deg, rgba(253,243,248,0.98), rgba(250,228,242,0.97))",
           animation: "rise-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both",
@@ -351,12 +373,12 @@ export function ImportWizard({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4" style={{ WebkitOverflowScrolling: "touch" }}>
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-sm font-bold text-ink/65">
-                Eine Zeile pro Eintrag — einfach <span className="font-black text-ink">Name: Inhalt</span>.
-                Zitate, Notizen, Bild-Links und Lehrpersonen werden automatisch erkannt.
-              </p>
+              <div>
+                <p className="section-label mb-2">Format</p>
+                <pre className="overflow-x-auto whitespace-pre rounded-[22px] bg-ink/90 p-4 font-mono text-[11px] font-bold leading-relaxed text-white/90">{FORMAT_EXAMPLE}</pre>
+              </div>
               <textarea
-                className="input min-h-[220px] !text-base leading-relaxed"
+                className="input min-h-[200px] font-mono !text-base leading-relaxed"
                 placeholder={SAMPLE}
                 value={raw}
                 onChange={(e) => setRaw(e.target.value)}
@@ -505,6 +527,7 @@ export function ImportWizard({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
