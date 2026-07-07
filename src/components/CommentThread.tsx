@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InlineLoading } from "./LoadingState";
 import { Avatar } from "./Nav";
+import { Lightbox } from "./Lightbox";
+import { IconClose } from "./Icons";
 import { peekCachedJson, swrJson, writeCachedJson } from "@/lib/swr";
+import { uploadImageFile } from "@/lib/uploadImage";
 
 export type CommentNode = {
   id: string;
-  text: string;
+  text: string | null;
+  imageUrl?: string | null;
   createdAt: string;
   parentId: string | null;
   author: { id: string; name: string; avatarUrl: string | null; accentColor?: string | null };
@@ -47,6 +51,117 @@ function CommentBody({ text }: { text: string }) {
   );
 }
 
+// Paperclip / photo icon for the attach button.
+function IconPhoto({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="3" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="M21 16l-5-5-8 8" />
+    </svg>
+  );
+}
+
+// Composer with text + optional photo attachment. Self-contained state so its
+// input keeps focus across the thread's re-renders. Returns true from onSubmit
+// on success, at which point it clears itself.
+function Composer({
+  placeholder,
+  autoFocus,
+  busy,
+  onSubmit,
+  onView,
+}: {
+  placeholder: string;
+  autoFocus?: boolean;
+  busy: boolean;
+  onSubmit: (text: string, imageUrl: string | null) => Promise<boolean>;
+  onView: (src: string) => void;
+}) {
+  const [text, setText] = useState("");
+  const [image, setImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const canSend = !busy && !uploading && !sending && (text.trim().length > 0 || !!image);
+
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadImageFile(file);
+      setImage(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Bild-Upload fehlgeschlagen.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSend) return;
+    setSending(true);
+    const ok = await onSubmit(text.trim(), image);
+    setSending(false);
+    if (ok) {
+      setText("");
+      setImage(null);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-2">
+      {(image || uploading) && (
+        <div className="mb-2 flex items-center gap-2">
+          {uploading ? (
+            <span className="text-xs font-black text-ink/50">Bild wird geladen…</span>
+          ) : image ? (
+            <div className="relative">
+              <button type="button" onClick={() => onView(image)} className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image} alt="" className="h-20 w-20 rounded-2xl border border-white/50 object-cover" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setImage(null)}
+                aria-label="Bild entfernen"
+                className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-white shadow-soft transition hover:bg-ink"
+              >
+                <IconClose size={13} />
+              </button>
+            </div>
+          ) : null}
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pick} />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading || sending}
+          aria-label="Foto anhängen"
+          title="Foto anhängen"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/30 text-ink/60 transition hover:bg-white/55 hover:text-hotpink active:scale-90 disabled:opacity-50"
+        >
+          <IconPhoto size={19} />
+        </button>
+        <input
+          autoFocus={autoFocus}
+          className="input !py-2"
+          placeholder={placeholder}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <button className="btn-primary shrink-0" disabled={!canSend}>Senden</button>
+      </div>
+    </form>
+  );
+}
+
 export function CommentThread({
   commentsPath,
   onCountChange,
@@ -63,10 +178,9 @@ export function CommentThread({
   // stale-while-revalidate caching.
   const [comments, setComments] = useState<CommentNode[] | null>(() => peekCachedJson<{ comments?: CommentNode[] }>(commentsPath)?.comments ?? null);
   const [expanded, setExpanded] = useState(false);
-  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
 
@@ -115,13 +229,13 @@ export function CommentThread({
     return map;
   }, [comments]);
 
-  async function submit(parentId: string | null, value: string): Promise<boolean> {
-    if (!value.trim() || busy) return false;
+  async function submit(parentId: string | null, value: string, imageUrl: string | null): Promise<boolean> {
+    if ((!value.trim() && !imageUrl) || busy) return false;
     setBusy(true);
     const res = await fetch(commentsPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: value, parentId }),
+      body: JSON.stringify({ text: value, parentId, imageUrl }),
     });
     setBusy(false);
     if (!res.ok) return false;
@@ -176,15 +290,30 @@ export function CommentThread({
                 <span className="font-black">{node.author.name}</span>
                 <span className="text-[11px] font-bold text-ink/40">{timeAgo(node.createdAt)}</span>
               </div>
-              <CommentBody text={node.text} />
+              {node.text && <CommentBody text={node.text} />}
+              {node.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setLightboxSrc(node.imageUrl!)}
+                  className={`group/img block overflow-hidden rounded-2xl border border-white/50 ${node.text ? "mt-2" : ""}`}
+                  title="Foto gross anzeigen"
+                >
+                  {/* Compact but clearly visible: capped height, tap to enlarge. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={node.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-48 w-auto max-w-full object-cover transition duration-300 group-hover/img:scale-[1.03]"
+                  />
+                </button>
+              )}
             </div>
             <div className="mt-1 flex items-center gap-3 pl-1">
               <button
                 type="button"
-                onClick={() => {
-                  setReplyTo(isReplying ? null : node.id);
-                  setReplyText("");
-                }}
+                onClick={() => setReplyTo(isReplying ? null : node.id)}
                 className="text-[11px] font-black text-ink/55 transition hover:text-ink"
               >
                 {isReplying ? "Abbrechen" : "Antworten"}
@@ -198,26 +327,17 @@ export function CommentThread({
               </button>
             </div>
             {isReplying && (
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const ok = await submit(node.id, replyText);
-                  if (ok) {
-                    setReplyText("");
-                    setReplyTo(null);
-                  }
+              <Composer
+                autoFocus
+                busy={busy}
+                placeholder={`Antwort an ${node.author.name.split(" ")[0]}…`}
+                onView={setLightboxSrc}
+                onSubmit={async (value, imageUrl) => {
+                  const ok = await submit(node.id, value, imageUrl);
+                  if (ok) setReplyTo(null);
+                  return ok;
                 }}
-                className="mt-2 flex gap-2"
-              >
-                <input
-                  autoFocus
-                  className="input !py-2"
-                  placeholder={`Antwort an ${node.author.name.split(" ")[0]}…`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                />
-                <button className="btn-primary" disabled={busy || !replyText.trim()}>Senden</button>
-              </form>
+              />
             )}
           </div>
         </div>
@@ -254,22 +374,14 @@ export function CommentThread({
         </div>
       )}
 
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const ok = await submit(null, text);
-          if (ok) setText("");
-        }}
-        className="flex gap-2"
-      >
-        <input
-          className="input !py-2"
-          placeholder="Kommentieren…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button className="btn-primary" disabled={busy || !text.trim()}>Senden</button>
-      </form>
+      <Composer
+        busy={busy}
+        placeholder="Kommentieren…"
+        onView={setLightboxSrc}
+        onSubmit={(value, imageUrl) => submit(null, value, imageUrl)}
+      />
+
+      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </div>
   );
 }

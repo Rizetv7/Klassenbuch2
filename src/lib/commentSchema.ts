@@ -4,11 +4,11 @@ import { ensurePollSchema } from "./pollSchema";
 let commentSchemaReady = false;
 let pending: Promise<void> | null = null;
 
-// Fast path: one probe query. If Comment.pollId exists, the whole migration
-// (threaded replies + poll comments) has already run.
+// Fast path: one probe query. If Comment.imageUrl exists, the whole migration
+// (threaded replies + poll comments + photo comments) has already run.
 async function sentinelExists(): Promise<boolean> {
   const rows = await prisma.$queryRawUnsafe<unknown[]>(
-    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Comment' AND column_name = 'pollId' LIMIT 1`
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Comment' AND column_name = 'imageUrl' LIMIT 1`
   );
   return rows.length > 0;
 }
@@ -36,8 +36,11 @@ async function run() {
   const statements = [
     `ALTER TABLE "Comment" ADD COLUMN IF NOT EXISTS "parentId" TEXT`,
     `ALTER TABLE "Comment" ADD COLUMN IF NOT EXISTS "pollId" TEXT`,
+    `ALTER TABLE "Comment" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT`,
     // comments can now hang off a poll instead of a post
     `ALTER TABLE "Comment" ALTER COLUMN "postId" DROP NOT NULL`,
+    // a comment can now be image-only, so text is optional
+    `ALTER TABLE "Comment" ALTER COLUMN "text" DROP NOT NULL`,
     `CREATE INDEX IF NOT EXISTS "Comment_postId_idx" ON "Comment"("postId")`,
     `CREATE INDEX IF NOT EXISTS "Comment_pollId_idx" ON "Comment"("pollId")`,
     `CREATE INDEX IF NOT EXISTS "Comment_parentId_idx" ON "Comment"("parentId")`,

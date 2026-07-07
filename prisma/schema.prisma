@@ -175,7 +175,8 @@ model Comment {
   pollId    String?
   authorId  String
   parentId  String?
-  text      String
+  text      String?
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)

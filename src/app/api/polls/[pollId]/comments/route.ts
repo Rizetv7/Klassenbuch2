@@ -7,6 +7,7 @@ import { ensureCommentSchema } from "@/lib/commentSchema";
 const COMMENT_SELECT = {
   id: true,
   text: true,
+  imageUrl: true,
   parentId: true,
   createdAt: true,
   author: { select: { id: true, name: true, avatarUrl: true, accentColor: true } },
@@ -47,8 +48,10 @@ export async function POST(req: Request, { params }: { params: { pollId: string 
   const membership = await getMembership(userId, poll.classId);
   if (!membership) return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
 
-  const { text, parentId } = await req.json().catch(() => ({}));
-  if (!text || !String(text).trim()) {
+  const { text, parentId, imageUrl } = await req.json().catch(() => ({}));
+  const cleanText = typeof text === "string" && text.trim() ? text.trim().slice(0, 4000) : null;
+  const cleanImage = typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim().slice(0, 1200) : null;
+  if (!cleanText && !cleanImage) {
     return NextResponse.json({ error: "Kommentar ist leer." }, { status: 400 });
   }
 
@@ -63,7 +66,7 @@ export async function POST(req: Request, { params }: { params: { pollId: string 
   }
 
   const comment = await prisma.comment.create({
-    data: { pollId: params.pollId, authorId: userId, text: String(text).trim(), parentId: parent },
+    data: { pollId: params.pollId, authorId: userId, text: cleanText, imageUrl: cleanImage, parentId: parent },
     select: COMMENT_SELECT,
   });
 

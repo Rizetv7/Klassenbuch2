@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./Nav";
 import { CommentThread } from "./CommentThread";
-import { IconHeart, IconComment, IconClose, IconDownload } from "./Icons";
+import { Lightbox } from "./Lightbox";
+import { IconHeart, IconComment, IconClose } from "./Icons";
 
 export type Post = {
   id: string;
@@ -58,21 +59,7 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [imageOpen, setImageOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!imageOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setImageOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [imageOpen]);
 
   async function toggleLike() {
     setLiked((v) => !v);
@@ -93,28 +80,6 @@ export function PostCard({
     if (!confirm("Diesen Beitrag wirklich löschen?")) return;
     const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
     if (res.ok) onDeleted?.(post.id);
-  }
-
-  async function downloadImage() {
-    if (!post.imageUrl) return;
-    setDownloading(true);
-    try {
-      const res = await fetch(post.imageUrl);
-      if (!res.ok) throw new Error("download failed");
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = `maturaziitig-${post.id}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(objectUrl);
-    } catch {
-      window.open(post.imageUrl, "_blank", "noopener,noreferrer");
-    } finally {
-      setDownloading(false);
-    }
   }
 
   // Who/what the post is about (shown prominently in the header).
@@ -248,39 +213,12 @@ export function PostCard({
       </div>
 
       {imageOpen && post.imageUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/72 p-3 backdrop-blur-md sm:p-6"
-          onClick={() => setImageOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex max-h-full w-full max-w-6xl flex-col gap-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={downloadImage}
-                className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-black text-ink shadow-soft transition hover:bg-white"
-                disabled={downloading}
-              >
-                <IconDownload size={18} />
-                {downloading ? "Lädt..." : "Download"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-ink shadow-soft transition hover:bg-white"
-                aria-label="Schliessen"
-              >
-                <IconClose size={18} />
-              </button>
-            </div>
-            <div className="grid min-h-0 place-items-center overflow-hidden rounded-[30px] border border-white/35 bg-white/16 p-2 shadow-soft">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.imageUrl} alt="" className="max-h-[78vh] w-auto max-w-full rounded-[22px] object-contain" />
-            </div>
-            {post.text && <p className="mx-auto max-w-3xl rounded-full bg-white/80 px-4 py-2 text-center font-hand text-2xl leading-tight text-ink/80">{post.text}</p>}
-          </div>
-        </div>
+        <Lightbox
+          src={post.imageUrl}
+          caption={post.text}
+          downloadName={`maturaziitig-${post.id}.jpg`}
+          onClose={() => setImageOpen(false)}
+        />
       )}
     </article>
   );
