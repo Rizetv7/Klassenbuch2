@@ -24,6 +24,7 @@ type AminaData = {
   targets: Target[];
   posts: Post[];
   readOnly: boolean;
+  isOwner: boolean;
 };
 
 type Kind = "QUOTE" | "IMAGE" | "TEXT";
@@ -228,6 +229,14 @@ export default function AminaModePage() {
     router.refresh();
   }
 
+  function adminExit() {
+    if (!data?.isOwner || exitBusy) return;
+    const confirmed = window.confirm(
+      "Amina-Modus verlassen und sicher zur Klassenleitung zurückkehren? Deine Admin-Rolle bleibt unverändert.",
+    );
+    if (confirmed) void leaveAminaMode();
+  }
+
   if (!data && !error) return <AminaLoading />;
 
   return (
@@ -249,6 +258,13 @@ export default function AminaModePage() {
           <div className="amina-top-actions">
             <button type="button" className="amina-mini-button" onClick={() => window.close()}>
               VORSCHAU SCHLIESSEN
+            </button>
+          </div>
+        ) : data?.isOwner ? (
+          <div className="amina-top-actions">
+            <button type="button" className="amina-admin-exit" onClick={adminExit} disabled={exitBusy}>
+              <span>KLASSENLEITUNG</span>
+              <strong>{exitBusy ? "WIRD GEÖFFNET …" : "SICHER ZURÜCK"}</strong>
             </button>
           </div>
         ) : null}

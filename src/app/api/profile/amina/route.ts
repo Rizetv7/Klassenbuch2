@@ -44,9 +44,11 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
   }
 
-  await prisma.membership.updateMany({
+  // Intentionally update only the mode flag. The role is never accepted from
+  // the client or included in this write, so an owner cannot be downgraded.
+  const updated = await prisma.membership.updateMany({
     where: { userId, aminaMode: true, leftAt: null, class: { archivedAt: null } },
     data: { aminaMode: false },
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, disabledMemberships: updated.count });
 }

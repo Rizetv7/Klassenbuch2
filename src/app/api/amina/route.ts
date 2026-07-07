@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   let user: { id: string; name: string; avatarUrl?: string | null; accentColor?: string | null };
   let classId: string;
   let viewerId = "__admin_preview__";
+  let isOwner = false;
 
   if (previewClassId) {
     if (!(await hasAdminSession())) {
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
     user = account;
     classId = membership.classId;
     viewerId = userId;
+    isOwner = membership.role === "OWNER";
   }
 
   const klass = await prisma.class.findUnique({
@@ -101,7 +103,7 @@ export async function GET(req: Request) {
   ].sort((a, b) => a.name.localeCompare(b.name, "de-CH"));
 
   return NextResponse.json(
-    { user, class: { id: klass.id, name: klass.name }, targets, posts, readOnly },
+    { user, class: { id: klass.id, name: klass.name }, targets, posts, readOnly, isOwner },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }
