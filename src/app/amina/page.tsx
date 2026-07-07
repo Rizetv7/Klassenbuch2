@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar } from "@/components/Nav";
 import type { Post } from "@/components/PostCard";
 import { playBabySound } from "@/lib/babySound";
+import { clearApiCache } from "@/lib/swr";
 import { uploadImageFile } from "@/lib/uploadImage";
 
 type Target = {
@@ -41,6 +42,9 @@ export default function AminaModePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [mascotLine, setMascotLine] = useState("SUCH DIR EINEN MENSCHEN AUS!");
+  const [exitHolding, setExitHolding] = useState(false);
+  const [exitBusy, setExitBusy] = useState(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +81,12 @@ export default function AminaModePage() {
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
+
+  useEffect(() => {
+    return () => {
+      if (exitTimer.current) clearTimeout(exitTimer.current);
+    };
+  }, []);
 
   const shownPosts = useMemo(() => {
     if (!selected || !data) return [];
@@ -186,6 +196,38 @@ export default function AminaModePage() {
     sound("success");
   }
 
+  function startExitHold() {
+    if (data?.readOnly || exitBusy || exitTimer.current) return;
+    setExitHolding(true);
+    exitTimer.current = setTimeout(() => {
+      exitTimer.current = null;
+      void leaveAminaMode();
+    }, 3000);
+  }
+
+  function cancelExitHold() {
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+    exitTimer.current = null;
+    setExitHolding(false);
+  }
+
+  async function leaveAminaMode() {
+    setExitHolding(false);
+    setExitBusy(true);
+    const res = await fetch("/api/profile/amina", { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) {
+      const body = await res?.json().catch(() => null);
+      setError(body?.error || "DER AUSGANG KLEMMT. NOCHMAL VERSUCHEN!");
+      setExitBusy(false);
+      sound("back");
+      return;
+    }
+    clearApiCache();
+    sound("success");
+    router.replace("/");
+    router.refresh();
+  }
+
   if (!data && !error) return <AminaLoading />;
 
   return (
@@ -203,17 +245,13 @@ export default function AminaModePage() {
           <Image src="/amina-mascot.png" width={72} height={72} alt="Bubu, das Amina-Maskottchen" priority />
           <span>AMINA-MODUS</span>
         </button>
-        <div className="amina-top-actions">
-          {data?.readOnly ? (
+        {data?.readOnly ? (
+          <div className="amina-top-actions">
             <button type="button" className="amina-mini-button" onClick={() => window.close()}>
               VORSCHAU SCHLIESSEN
             </button>
-          ) : (
-            <div className="amina-admin-only" title="Nur die Klassenleitung oder der Admin kann den Amina-Modus abschalten">
-              🔒 NUR ADMIN
-            </div>
-          )}
-        </div>
+          </div>
+        ) : null}
       </header>
 
       <main className="amina-stage">
@@ -279,6 +317,23 @@ export default function AminaModePage() {
           onSubmit={submit}
           sound={sound}
         />
+      ) : null}
+
+      {data && !data.readOnly ? (
+        <button
+          type="button"
+          className={`amina-secret-exit ${exitHolding ? "is-holding" : ""}`}
+          onPointerDown={startExitHold}
+          onPointerUp={cancelExitHold}
+          onPointerLeave={cancelExitHold}
+          onPointerCancel={cancelExitHold}
+          disabled={exitBusy}
+          aria-label="Amina-Modus verlassen: drei Sekunden gedrückt halten"
+          title="3 Sekunden halten"
+        >
+          <span aria-hidden="true">✦</span>
+          <small>{exitBusy ? "…" : "3s"}</small>
+        </button>
       ) : null}
 
     </div>

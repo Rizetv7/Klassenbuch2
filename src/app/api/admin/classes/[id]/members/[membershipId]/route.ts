@@ -137,8 +137,8 @@ export async function PATCH(
   if (body.role === "MEMBER" || body.role === "MODERATOR") data.role = body.role;
   if (body.memberType === "STUDENT" || body.memberType === "TEACHER") data.memberType = body.memberType;
   if (typeof body.aminaMode === "boolean") data.aminaMode = body.aminaMode;
-  if (target.role === "OWNER" && (data.role || data.aminaMode === true)) {
-    return NextResponse.json({ error: "Die Klassenleitung kann weder herabgestuft noch in den Amina-Modus versetzt werden." }, { status: 400 });
+  if (target.role === "OWNER" && data.role) {
+    return NextResponse.json({ error: "Die Klassenleitung kann nicht herabgestuft werden." }, { status: 400 });
   }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Keine Änderung angegeben." }, { status: 400 });

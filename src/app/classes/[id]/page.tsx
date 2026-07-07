@@ -441,18 +441,20 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
                 <p className="truncate font-black">{member.displayName}</p>
                 <p className="text-xs font-bold text-ink/45">{member.role === "OWNER" ? "Klassenleitung" : member.role === "MODERATOR" ? "Moderation" : "Mitglied"}</p>
               </div>
-              {member.role !== "OWNER" ? (
-                <div className="flex flex-wrap gap-2">
-                  {isOwner ? (
-                    <button type="button" onClick={() => moderate(member.id, { aminaMode: !member.aminaMode })} className={`chip ${member.aminaMode ? "!bg-hotpink/25 !border-hotpink/40" : ""}`} disabled={busy}>
-                      Amina {member.aminaMode ? "an" : "aus"}
-                    </button>
-                  ) : null}
+              <div className="flex flex-wrap gap-2">
+                {isOwner ? (
+                  <button type="button" onClick={() => moderate(member.id, { aminaMode: !member.aminaMode })} className={`chip ${member.aminaMode ? "!bg-hotpink/25 !border-hotpink/40" : ""}`} disabled={busy}>
+                    Amina {member.aminaMode ? "an" : "aus"}
+                  </button>
+                ) : null}
+                {member.role !== "OWNER" ? (
+                  <>
                   {isOwner ? <button type="button" onClick={() => moderate(member.id, { role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} className="chip" disabled={busy}>{member.role === "MODERATOR" ? "Mod entfernen" : "Zu Mod"}</button> : null}
                   <button type="button" onClick={() => moderate(member.id, { memberType: member.memberType === "TEACHER" ? "STUDENT" : "TEACHER" })} className="chip" disabled={busy}>{member.memberType === "TEACHER" ? "Als Schüler" : "Als Lehrer"}</button>
                   <button type="button" onClick={() => removeMember(member.id)} className="chip !text-coral" disabled={busy}>Entfernen</button>
-                </div>
-              ) : <span className="chip">Amina gesperrt</span>}
+                  </>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>

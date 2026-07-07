@@ -6,7 +6,6 @@ export async function getAminaMembership(userId: string) {
       userId,
       aminaMode: true,
       leftAt: null,
-      role: { not: "OWNER" },
       class: { archivedAt: null },
     },
     orderBy: { createdAt: "asc" },

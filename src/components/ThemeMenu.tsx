@@ -115,7 +115,7 @@ function PreviewAmina() {
 type Viewer = {
   aminaMode?: boolean;
   aminaAvailable?: boolean;
-  aminaUnavailableReason?: "owner" | "no_class" | null;
+  aminaUnavailableReason?: "no_class" | null;
 };
 
 const DESIGN_ONBOARDING_KEY = "mz-design-onboarding-v1";
@@ -235,9 +235,7 @@ export function ThemeMenu({
     ? "Wird geprüft …"
     : viewer?.aminaAvailable
       ? "Extra einfach mit Bubu und Sounds"
-      : viewer?.aminaUnavailableReason === "owner"
-        ? "Für Klassenleitungen nur als Vorschau"
-        : "Erst einer Klasse beitreten";
+      : "Erst einer Klasse beitreten";
 
   return (
     <>

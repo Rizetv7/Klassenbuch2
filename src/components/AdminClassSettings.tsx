@@ -178,15 +178,15 @@ export function AdminClassSettings({
           {active.map((member) => (
             <div key={member.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1"><p className="truncate font-black">{member.user.name}</p><p className="text-xs font-bold text-ink/45">{member.role}</p></div>
-              {member.role === "OWNER" ? (
-                <span className="chip">Amina gesperrt</span>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" className={`chip ${member.aminaMode ? "!border-hotpink/40 !bg-hotpink/25" : ""}`} onClick={() => updateMember(member.id, { aminaMode: !member.aminaMode })} disabled={busy}>Amina {member.aminaMode ? "an" : "aus"}</button>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={`chip ${member.aminaMode ? "!border-hotpink/40 !bg-hotpink/25" : ""}`} onClick={() => updateMember(member.id, { aminaMode: !member.aminaMode })} disabled={busy}>Amina {member.aminaMode ? "an" : "aus"}</button>
+                {member.role !== "OWNER" ? (
+                  <>
                   <button type="button" className="chip" onClick={() => updateMember(member.id, { role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR" })} disabled={busy}>{member.role === "MODERATOR" ? "Mod entfernen" : "Zu Mod"}</button>
                   <button type="button" className="chip !text-coral" onClick={() => removeMember(member)} disabled={busy}>Entfernen</button>
-                </div>
-              )}
+                  </>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>

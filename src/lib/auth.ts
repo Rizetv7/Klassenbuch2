@@ -81,15 +81,14 @@ export async function getCurrentUser() {
     }),
     prisma.membership.findMany({
       where: { userId, leftAt: null, class: { archivedAt: null } },
-      select: { role: true, aminaMode: true },
+      select: { aminaMode: true },
     }),
   ]);
   if (!user) return null;
-  const eligibleMemberships = memberships.filter((membership) => membership.role !== "OWNER");
   return {
     ...user,
-    aminaMode: eligibleMemberships.some((membership) => membership.aminaMode),
-    aminaAvailable: eligibleMemberships.length > 0,
-    aminaUnavailableReason: memberships.length === 0 ? "no_class" : eligibleMemberships.length === 0 ? "owner" : null,
+    aminaMode: memberships.some((membership) => membership.aminaMode),
+    aminaAvailable: memberships.length > 0,
+    aminaUnavailableReason: memberships.length === 0 ? "no_class" : null,
   };
 }

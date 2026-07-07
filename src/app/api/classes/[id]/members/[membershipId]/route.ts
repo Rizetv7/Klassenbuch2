@@ -51,15 +51,12 @@ export async function PATCH(
     if (me.role !== "OWNER") {
       return NextResponse.json({ error: "Nur die Ersteller:in kann den Amina-Modus ändern." }, { status: 403 });
     }
-    if (target.role === "OWNER") {
-      return NextResponse.json({ error: "Die Klassenleitung kann den Amina-Modus nicht erhalten." }, { status: 400 });
-    }
     data.aminaMode = aminaMode;
   }
 
   if (Object.keys(data).length > 0) {
     if (!canModerate(me.role)) return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
-    if (target.role === "OWNER") {
+    if (target.role === "OWNER" && (data.role || data.memberType)) {
       return NextResponse.json({ error: "Die Ersteller:in kann nicht verändert werden." }, { status: 400 });
     }
   }

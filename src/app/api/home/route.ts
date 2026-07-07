@@ -66,7 +66,7 @@ export async function GET() {
       name: user.name,
       avatarUrl: user.avatarUrl,
       accentColor: user.accentColor,
-      aminaMode: user.memberships.some((membership) => membership.aminaMode && membership.role !== "OWNER"),
+      aminaMode: user.memberships.some((membership) => membership.aminaMode),
     },
     hasClass: classIds.length > 0,
     posts,
