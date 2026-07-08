@@ -11,6 +11,7 @@ import {
   AdminPost,
   AdminPostEntry,
   RenameUser,
+  ResetPassword,
 } from "@/components/AdminConsole";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { Avatar } from "@/components/Nav";
@@ -269,8 +270,9 @@ function PeopleView({ data, onUserSaved }: { data: ClassDetail; onUserSaved: (us
                   →
                 </Link>
               </div>
-              <div className="ml-[60px]">
+              <div className="ml-[60px] flex flex-wrap items-start gap-x-4 gap-y-1">
                 <RenameUser user={member.user} onSaved={onUserSaved} />
+                <ResetPassword user={member.user} />
               </div>
             </article>
           ))}

@@ -26,7 +26,11 @@ async function handleLogin(req: Request) {
     );
   }
 
-  const user = await prisma.user.findUnique({ where: { name: String(name).trim() } });
+  // Forgiving lookup: upper/lower case doesn't matter — people rarely
+  // remember the exact spelling they registered with.
+  const user = await prisma.user.findFirst({
+    where: { name: { equals: String(name).trim(), mode: "insensitive" } },
+  });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return NextResponse.json({ error: "Name oder Passwort ist falsch." }, { status: 401 });
   }

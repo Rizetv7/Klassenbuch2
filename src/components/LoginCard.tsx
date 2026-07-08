@@ -63,6 +63,9 @@ export function LoginCard() {
       <p className="mt-4 text-center text-xs font-bold text-ink/55">
         Noch kein Konto? <Link href="/register" className="text-ink underline">Registrieren</Link>
       </p>
+      <p className="mt-2 text-center text-xs font-bold text-ink/45">
+        Name oder Passwort vergessen? Melde dich beim Admin — er setzt dir ein neues Passwort.
+      </p>
     </div>
   );
 }

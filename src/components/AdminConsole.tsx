@@ -192,6 +192,127 @@ export function RenameUser({
   );
 }
 
+// Admin sets a new password for a person who is locked out. The old password
+// can't be shown (only a one-way hash is stored) — the new one is displayed
+// exactly once so the admin can pass it on.
+export function ResetPassword({ user }: { user: AdminPerson }) {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+  const [result, setResult] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function reset(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(custom.trim() ? { password: custom.trim() } : {}),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error || "Zurücksetzen fehlgeschlagen.");
+        return;
+      }
+      setResult(data.password);
+      setCustom("");
+      setCopied(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(result);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {}
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="text-xs font-black text-ink/55 underline decoration-ink/25 underline-offset-4 hover:text-ink"
+        onClick={() => setOpen(true)}
+      >
+        Passwort zurücksetzen
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 w-full space-y-2 rounded-[18px] border border-white/40 bg-white/15 p-3">
+      {result ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-ink/60">
+            Neues Passwort für <span className="font-black text-ink">{user.name}</span> — wird nur jetzt angezeigt, gib es der Person weiter:
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 rounded-[14px] bg-ink px-3 py-2 text-center font-mono text-lg font-black tracking-wide text-oncolor">
+              {result}
+            </code>
+            <button type="button" className="btn-soft !px-3 !py-2 text-xs" onClick={copy}>
+              {copied ? "Kopiert ✓" : "Kopieren"}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold text-ink/45">Die Person kann es im Profil jederzeit ändern.</p>
+            <button
+              type="button"
+              className="text-xs font-black text-ink/45 underline"
+              onClick={() => {
+                setResult("");
+                setOpen(false);
+              }}
+            >
+              Fertig
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={reset} className="space-y-2">
+          <p className="text-xs font-bold text-ink/60">
+            Setzt ein neues Passwort für <span className="font-black text-ink">{user.name}</span>. Das alte wird ungültig.
+          </p>
+          <div className="flex gap-2">
+            <input
+              className="input !rounded-[18px] !px-3 !py-2"
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder="Leer lassen = automatisch"
+              minLength={6}
+            />
+            <button className="btn-primary !px-3 !py-2" disabled={busy}>
+              {busy ? "..." : "Setzen"}
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            {error ? <p className="text-xs font-black text-coral">{error}</p> : <span />}
+            <button
+              type="button"
+              className="text-xs font-black text-ink/45 underline"
+              onClick={() => {
+                setOpen(false);
+                setError("");
+                setCustom("");
+              }}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
 function PersonSignature({ person, label }: { person: AdminPerson; label: string }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
