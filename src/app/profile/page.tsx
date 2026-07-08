@@ -10,10 +10,12 @@ import { uploadImageFile } from "@/lib/uploadImage";
 import { clearApiCache } from "@/lib/swr";
 import { PushSettings } from "@/components/PushSettings";
 import { ThemeMenu } from "@/components/ThemeMenu";
+import { EmailSettings } from "@/components/EmailSettings";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
   const [accent, setAccent] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,6 +35,7 @@ export default function ProfilePage() {
         if (!active) return;
         if (!d.user) return router.push("/login");
         setName(d.user.name);
+        setEmail(d.user.email ?? null);
         setAccent(d.user.accentColor);
         setAvatarUrl(d.user.avatarUrl);
         setLoading(false);
@@ -147,6 +150,8 @@ export default function ProfilePage() {
           {busy ? "Speichert…" : "Speichern"}
         </button>
       </div>
+
+      <EmailSettings initialEmail={email} />
 
       <div className="glass-card p-5">
         <p className="section-label mb-1">Erscheinungsbild</p>

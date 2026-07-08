@@ -60,6 +60,21 @@ model PushSubscription {
   @@index([userId])
 }
 
+// Short-lived e-mail confirmation codes: passwordless login ("login") and
+// attaching/changing the account e-mail from the profile ("attach").
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String // lowercased
+  purpose   String   @default("login") // login | attach
+  codeHash  String
+  userId    String?
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
 model Class {
   id          String    @id @default(cuid())
   name        String

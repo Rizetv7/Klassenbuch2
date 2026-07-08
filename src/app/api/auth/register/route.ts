@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/loginCode";
 
 const ACCENTS = ["#7E5BD9", "#8FB6EF", "#C77ACF", "#B68CF0", "#6FA8E8", "#E49ED0"];
 
@@ -36,8 +37,24 @@ async function handleRegister(req: Request) {
     );
   }
 
+  // e-mail is optional at the API level, but must be valid + free if given
+  let cleanEmail: string | null = null;
+  if (email) {
+    cleanEmail = normalizeEmail(email);
+    if (!cleanEmail) {
+      return NextResponse.json({ error: "Bitte eine gültige E-Mail-Adresse eingeben." }, { status: 400 });
+    }
+    const emailTaken = await prisma.user.findFirst({ where: { email: { equals: cleanEmail, mode: "insensitive" } } });
+    if (emailTaken) {
+      return NextResponse.json(
+        { error: "Mit dieser E-Mail gibt es schon ein Konto — melde dich damit an." },
+        { status: 409 }
+      );
+    }
+  }
+
   const cleanName = String(name).trim();
-  const existing = await prisma.user.findUnique({ where: { name: cleanName } });
+  const existing = await prisma.user.findFirst({ where: { name: { equals: cleanName, mode: "insensitive" } } });
   if (existing) {
     return NextResponse.json(
       { error: "Dieser Name ist schon vergeben. Füge z. B. deinen Nachnamen hinzu." },
@@ -48,7 +65,7 @@ async function handleRegister(req: Request) {
   const user = await prisma.user.create({
     data: {
       name: cleanName,
-      email: email ? String(email).toLowerCase().trim() : null,
+      email: cleanEmail,
       passwordHash: await hashPassword(password),
       accentColor: ACCENTS[Math.floor(Math.random() * ACCENTS.length)],
     },
