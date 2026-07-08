@@ -26,14 +26,9 @@ async function handleLogin(req: Request) {
     );
   }
 
-  // Forgiving lookup: the field accepts the name OR the e-mail, and matching
-  // ignores upper/lower case — people rarely remember their exact spelling.
-  const input = String(name).trim();
-  const user = input.includes("@")
-    ? await prisma.user.findFirst({ where: { email: { equals: input.toLowerCase(), mode: "insensitive" } } })
-    : await prisma.user.findFirst({ where: { name: { equals: input, mode: "insensitive" } } });
+  const user = await prisma.user.findUnique({ where: { name: String(name).trim() } });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    return NextResponse.json({ error: "Name/E-Mail oder Passwort ist falsch." }, { status: 401 });
+    return NextResponse.json({ error: "Name oder Passwort ist falsch." }, { status: 401 });
   }
 
   await createSession(user.id);

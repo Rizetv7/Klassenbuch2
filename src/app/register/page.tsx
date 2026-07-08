@@ -8,7 +8,6 @@ import { clearApiCache } from "@/lib/swr";
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +20,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, password }),
       });
       if (res.ok) {
         const account = await res.json();
@@ -51,20 +50,6 @@ export default function RegisterPage() {
         <div>
           <label className="label">Dein Name</label>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Isai Graf" required />
-        </div>
-        <div>
-          <label className="label">E-Mail</label>
-          <input
-            className="input"
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@mail.ch"
-            required
-          />
-          <p className="text-xs text-muted mt-1">Damit kannst du dich später ohne Passwort anmelden.</p>
         </div>
         <div>
           <label className="label">Passwort</label>
