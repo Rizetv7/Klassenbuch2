@@ -168,7 +168,10 @@ export function ImageGallery() {
         }
         return;
       }
-      setPosts((current) => (current === null ? data.posts ?? [] : mergePosts(current, data.posts ?? [], "prepend")));
+      // Keep the album stable after the first render. Revalidation can bring
+      // in new images, but it must not shift a person away from the image
+      // they are currently reading on a phone.
+      setPosts((current) => (current === null ? data.posts ?? [] : mergePosts(current, data.posts ?? [], "append")));
       setNextCursor((current) => (loadedMoreRef.current ? current : data.nextCursor ?? null));
       setError("");
     });
@@ -182,7 +185,7 @@ export function ImageGallery() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data: GalleryResponse | null) => {
           if (!data?.posts) return;
-          setPosts((current) => mergePosts(current ?? [], data.posts ?? [], "prepend"));
+          setPosts((current) => mergePosts(current ?? [], data.posts ?? [], "append"));
           setNextCursor((current) => (loadedMoreRef.current ? current : data.nextCursor ?? null));
         })
         .catch(() => null);

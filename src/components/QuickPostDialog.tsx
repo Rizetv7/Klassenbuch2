@@ -49,6 +49,32 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const previous = {
+      bodyPosition: document.body.style.position,
+      bodyTop: document.body.style.top,
+      bodyWidth: document.body.style.width,
+      bodyOverflow: document.body.style.overflow,
+      htmlOverflow: document.documentElement.style.overflow,
+    };
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.documentElement.style.overflow = previous.htmlOverflow;
+      document.body.style.position = previous.bodyPosition;
+      document.body.style.top = previous.bodyTop;
+      document.body.style.width = previous.bodyWidth;
+      document.body.style.overflow = previous.bodyOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   function requestClose() {
     if (closing) return;
     setClosing(true);

@@ -1689,12 +1689,14 @@ body::before {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   animation: page-fade 160ms ease-out both;
+  overscroll-behavior: contain;
 }
 
 .quick-post-dialog {
   width: min(100%, 640px);
   max-height: min(760px, calc(100dvh - 1.5rem));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid rgb(var(--c-surface) / 0.58);
   border-radius: 34px;
@@ -1705,6 +1707,7 @@ body::before {
   box-shadow: 0 36px 100px -52px rgba(9, 7, 12, 0.72), inset 0 1px 0 rgb(var(--c-surface) / 0.8);
   padding: clamp(1rem, 3vw, 1.35rem);
   animation: quick-post-in 340ms var(--ease-out) both;
+  isolation: isolate;
 }
 
 .quick-post-dialog.is-closing {
@@ -1769,7 +1772,7 @@ body::before {
   animation: quick-mode-select 260ms var(--ease-out) both;
 }
 
-.quick-composer-pane { animation: quick-pane-in 300ms var(--ease-out) both; }
+.quick-composer-pane { min-width: 0; animation: quick-pane-in 300ms var(--ease-out) both; }
 
 .quick-poll-form {
   border: 1px solid rgb(var(--c-surface) / 0.42);
@@ -1803,7 +1806,7 @@ body::before {
   padding: 1rem;
 }
 
-.quick-target-wrap { position: relative; margin-top: 0.8rem; }
+.quick-target-wrap { position: relative; min-width: 0; margin-top: 0.8rem; }
 
 .quick-target-button {
   display: flex;
@@ -1833,18 +1836,24 @@ body::before {
   box-shadow: 0 20px 52px -34px rgba(9, 7, 12, 0.64), inset 0 1px 0 rgb(var(--c-surface) / 0.7);
   padding: 0.55rem;
   animation: quick-picker-in 220ms var(--ease-out) both;
+  min-width: 0;
 }
 
 .quick-target-list {
   display: grid;
   max-height: min(260px, 36dvh);
   margin-top: 0.45rem;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
 }
 
 .quick-target-option {
   display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 0.65rem;
   border-radius: 18px;
