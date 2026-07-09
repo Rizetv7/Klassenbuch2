@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-overview-update";
+const NEWS_VERSION = "2026-07-09-gallery-viewer-refinement";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
@@ -15,7 +15,7 @@ const ITEMS = [
   },
   {
     title: "Bilder",
-    text: "Das Album ist schneller, auf dem iPhone optimiert und Bilder lassen sich gross anschauen, liken und kommentieren.",
+    text: "Das Album ist schneller, auf dem iPhone optimiert und Bilder lassen sich gross anschauen, liken, herunterladen und kommentieren.",
   },
   {
     title: "Weitere Verbesserungen",

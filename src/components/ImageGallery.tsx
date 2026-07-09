@@ -154,6 +154,7 @@ export function ImageGallery() {
   }, [router]);
 
   useEffect(() => {
+    if (selectedId) return;
     const interval = window.setInterval(() => {
       fetch(FIRST_PAGE)
         .then((res) => (res.ok ? res.json() : null))
@@ -165,7 +166,7 @@ export function ImageGallery() {
         .catch(() => null);
     }, 25_000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [selectedId]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
@@ -341,20 +342,27 @@ function MobileGalleryViewer({
   const [mounted, setMounted] = useState(false);
   const [activeIndex, setActiveIndex] = useState(index);
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
+  const [commentsClosing, setCommentsClosing] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [sharedPostId, setSharedPostId] = useState<string | null>(null);
   const [likeBurst, setLikeBurst] = useState<{ postId: string; x: number; y: number; key: number } | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
-  const activeIndexRef = useRef(0);
+  const activeIndexRef = useRef(index);
+  const initialPositionedRef = useRef(false);
   const tapStartRef = useRef<{ postId: string; x: number; y: number } | null>(null);
   const lastTapRef = useRef<{ postId: string; x: number; y: number; time: number } | null>(null);
   const lastImageLikeRef = useRef<{ postId: string; time: number } | null>(null);
   const burstTimerRef = useRef<number | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const commentsTimerRef = useRef<number | null>(null);
 
   const commentsPost = commentsPostId ? posts.find((post) => post.id === commentsPostId) ?? null : null;
 
   useEffect(() => () => {
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    if (commentsTimerRef.current) window.clearTimeout(commentsTimerRef.current);
   }, []);
 
   useEffect(() => setMounted(true), []);
@@ -366,6 +374,7 @@ function MobileGalleryViewer({
       activeIndexRef.current = index;
       setActiveIndex(index);
       feed.scrollTop = feed.clientHeight * index;
+      window.requestAnimationFrame(() => { initialPositionedRef.current = true; });
     });
     return () => window.cancelAnimationFrame(frame);
     // The selected image only determines the first frame of this viewer.
@@ -375,7 +384,7 @@ function MobileGalleryViewer({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") requestClose();
     };
     document.addEventListener("keydown", onKey);
     const previousOverflow = document.body.style.overflow;
@@ -384,7 +393,35 @@ function MobileGalleryViewer({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
     };
+  // requestClose intentionally owns the short exit transition before this
+  // component asks its parent to remove the portal.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose]);
+
+  function requestClose() {
+    if (closing) return;
+    setClosing(true);
+    closeTimerRef.current = window.setTimeout(onClose, 240);
+  }
+
+  function closeComments() {
+    if (!commentsPostId || commentsClosing) return;
+    setCommentsClosing(true);
+    commentsTimerRef.current = window.setTimeout(() => {
+      setCommentsPostId(null);
+      setCommentsClosing(false);
+    }, 230);
+  }
+
+  function toggleComments(postId: string) {
+    if (commentsPostId === postId) {
+      closeComments();
+      return;
+    }
+    if (commentsTimerRef.current) window.clearTimeout(commentsTimerRef.current);
+    setCommentsClosing(false);
+    setCommentsPostId(postId);
+  }
 
   async function setLiked(post: Post, likedByMe: boolean) {
     if (busyPostId) return;
@@ -466,11 +503,12 @@ function MobileGalleryViewer({
   if (!mounted) return null;
 
   return createPortal(
-    <div className={`mobile-gallery mobile-gallery-viewer ${commentsPost ? "has-comments" : ""}`} role="dialog" aria-modal="true" aria-label="Bild ansehen">
+    <div className={`mobile-gallery mobile-gallery-viewer ${commentsPost ? "has-comments" : ""} ${closing ? "is-closing" : ""}`} role="dialog" aria-modal="true" aria-label="Bild ansehen">
       <div
         ref={feedRef}
         className="mobile-gallery-feed"
         onScroll={(event) => {
+          if (!initialPositionedRef.current) return;
           const element = event.currentTarget;
           const next = Math.max(0, Math.min(posts.length - 1, Math.round(element.scrollTop / Math.max(element.clientHeight, 1))));
           if (next !== activeIndexRef.current) {
@@ -505,7 +543,7 @@ function MobileGalleryViewer({
                 <img
                   src={post.imageUrl!}
                   alt={post.text || source.title}
-                  loading={index < 2 ? "eager" : "lazy"}
+                  loading={Math.abs(index - activeIndex) <= 2 ? "eager" : "lazy"}
                   decoding="async"
                   className="mobile-gallery-image"
                 />
@@ -542,7 +580,7 @@ function MobileGalleryViewer({
                     <IconHeart size={25} filled={post.likedByMe} />
                     <span>{post.likeCount}</span>
                   </button>
-                  <button type="button" onClick={() => setCommentsPostId(post.id)} className="mobile-gallery-action" aria-label="Kommentare öffnen">
+                  <button type="button" onClick={() => toggleComments(post.id)} className="mobile-gallery-action" aria-label={commentsPostId === post.id ? "Kommentare schliessen" : "Kommentare öffnen"}>
                     <IconComment size={24} />
                     <span>{post.commentCount}</span>
                   </button>
@@ -561,12 +599,12 @@ function MobileGalleryViewer({
         </div>
       </div>
 
-      <button type="button" onClick={onClose} className="mobile-gallery-close" aria-label="Zurück zum Album"><IconClose size={20} /></button>
+      <button type="button" onClick={requestClose} className="mobile-gallery-close" aria-label="Zurück zum Album"><IconClose size={20} /></button>
       <span className="sr-only">Aktives Bild {activeIndex + 1}</span>
 
       {commentsPost ? (
-        <div className="mobile-comments-layer" role="dialog" aria-modal="true" aria-label="Kommentare">
-          <button type="button" onClick={() => setCommentsPostId(null)} className="mobile-comments-backdrop" aria-label="Kommentare schliessen" />
+        <div className={`mobile-comments-layer ${commentsClosing ? "is-closing" : ""}`} role="dialog" aria-modal="true" aria-label="Kommentare">
+          <button type="button" onClick={closeComments} className="mobile-comments-backdrop" aria-label="Kommentare schliessen" />
           <div className="mobile-comments-preview" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={commentsPost.imageUrl!} alt="" />
@@ -574,7 +612,7 @@ function MobileGalleryViewer({
           <section className="mobile-comments-sheet">
             <div className="mobile-comments-head">
               <div><p className="section-label">Öffentlich</p><h2 className="display text-3xl leading-none">Kommentare</h2></div>
-              <button type="button" onClick={() => setCommentsPostId(null)} className="quick-post-close" aria-label="Schliessen"><IconClose size={19} /></button>
+              <button type="button" onClick={closeComments} className="quick-post-close" aria-label="Schliessen"><IconClose size={19} /></button>
             </div>
             <CommentThread
               commentsPath={`/api/posts/${commentsPost.id}/comments`}
@@ -606,7 +644,11 @@ function GalleryViewer({
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [shared, setShared] = useState(false);
-  const commentsRef = useRef<HTMLDivElement | null>(null);
+  const [commentsMounted, setCommentsMounted] = useState(false);
+  const [commentsClosing, setCommentsClosing] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+  const commentsTimerRef = useRef<number | null>(null);
   const post = posts[index];
   const source = sourceInfo(post);
   const author = post.anonymous || !post.author ? null : post.author;
@@ -615,9 +657,39 @@ function GalleryViewer({
 
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => () => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    if (commentsTimerRef.current) window.clearTimeout(commentsTimerRef.current);
+  }, []);
+
+  const requestClose = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    closeTimerRef.current = window.setTimeout(onClose, 220);
+  }, [closing, onClose]);
+
+  const closeComments = useCallback(() => {
+    if (!commentsMounted || commentsClosing) return;
+    setCommentsClosing(true);
+    commentsTimerRef.current = window.setTimeout(() => {
+      setCommentsMounted(false);
+      setCommentsClosing(false);
+    }, 230);
+  }, [commentsClosing, commentsMounted]);
+
+  const toggleComments = useCallback(() => {
+    if (commentsMounted) {
+      closeComments();
+      return;
+    }
+    if (commentsTimerRef.current) window.clearTimeout(commentsTimerRef.current);
+    setCommentsClosing(false);
+    setCommentsMounted(true);
+  }, [closeComments, commentsMounted]);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") requestClose();
       if (event.key === "ArrowLeft") onSelect(previous);
       if (event.key === "ArrowRight") onSelect(next);
     };
@@ -628,7 +700,7 @@ function GalleryViewer({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [next, onClose, onSelect, previous]);
+  }, [next, onSelect, previous, requestClose]);
 
   async function toggleLike() {
     if (busy) return;
@@ -690,7 +762,7 @@ function GalleryViewer({
   if (!mounted || !post.imageUrl) return null;
 
   return createPortal(
-    <div className="gallery-viewer" role="dialog" aria-modal="true" onClick={onClose}>
+    <div className={`gallery-viewer ${closing ? "is-closing" : ""}`} role="dialog" aria-modal="true" onClick={requestClose}>
       <div className="gallery-viewer-top" onClick={(event) => event.stopPropagation()}>
         <button type="button" className="gallery-round-button" onClick={() => onSelect(previous)} aria-label="Vorheriges Bild">
           ‹
@@ -699,75 +771,66 @@ function GalleryViewer({
         <button type="button" className="gallery-round-button" onClick={() => onSelect(next)} aria-label="Nächstes Bild">
           ›
         </button>
-        <button type="button" className="gallery-round-button ml-auto" onClick={onClose} aria-label="Schliessen">
+        <button type="button" className="gallery-round-button ml-auto" onClick={requestClose} aria-label="Schliessen">
           <IconClose size={20} />
         </button>
       </div>
 
-      <div className="gallery-viewer-shell" onClick={(event) => event.stopPropagation()}>
+      <div className={`gallery-viewer-shell ${commentsMounted ? "has-comments" : ""}`} onClick={(event) => event.stopPropagation()}>
         <div className="gallery-viewer-stage">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={post.imageUrl} alt={post.text || source.title} className="gallery-viewer-image" />
-        </div>
-
-        <aside className="gallery-viewer-panel">
-          <div className="flex items-start gap-3">
+          <div className="gallery-viewer-story">
             <Link href={source.href} className="shrink-0 transition hover:opacity-80">
-              <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={54} />
+              <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={44} />
             </Link>
             <div className="min-w-0">
-              <p className="section-label">{source.label}</p>
-              <Link href={source.href} className="mt-1 block truncate text-2xl font-black leading-none text-ink hover:underline">
+              <Link href={source.href} className="block truncate text-base font-black leading-none hover:underline">
                 {source.title}
               </Link>
-              <p className="mt-1 text-xs font-black text-ink/50">{post.class.name} · {shortDate(post.createdAt)}</p>
+              {post.text && <p>{post.text}</p>}
+              <span>{author ? `Eingereicht von ${author.name}` : "Anonym eingereicht"}</span>
             </div>
           </div>
+        </div>
 
-          {post.text && <p className="gallery-caption">{post.text}</p>}
+        <aside className="gallery-action-rail" aria-label="Bildaktionen">
+          <Link href={source.href} className="gallery-rail-subject" aria-label={`${source.title} ansehen`}>
+            <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={44} />
+          </Link>
+          <button type="button" onClick={toggleLike} disabled={busy} className={`gallery-rail-action ${post.likedByMe ? "is-liked" : ""}`} aria-label="Gefällt mir">
+            <IconHeart size={23} filled={post.likedByMe} />
+            <span>{post.likeCount}</span>
+          </button>
+          <button type="button" onClick={toggleComments} className={`gallery-rail-action ${commentsMounted && !commentsClosing ? "is-active" : ""}`} aria-label={commentsMounted ? "Kommentare schliessen" : "Kommentare öffnen"} aria-expanded={commentsMounted && !commentsClosing}>
+            <IconComment size={22} />
+            <span>{post.commentCount}</span>
+          </button>
+          <button type="button" onClick={() => void download()} disabled={downloading} className="gallery-rail-action" aria-label="Bild herunterladen">
+            <IconDownload size={21} />
+            <span>{downloading ? "..." : "Download"}</span>
+          </button>
+          <button type="button" onClick={() => void share()} className="gallery-rail-action" aria-label="Bild teilen">
+            <IconShare size={21} />
+            <span>{shared ? "Kopiert" : "Teilen"}</span>
+          </button>
+        </aside>
 
-          <div className="gallery-actions">
-            <button type="button" onClick={toggleLike} disabled={busy} className={`gallery-action ${post.likedByMe ? "is-liked" : ""}`}>
-              <IconHeart size={19} filled={post.likedByMe} />
-              <span>{post.likeCount}</span>
-            </button>
-            <button type="button" onClick={() => commentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="gallery-action">
-              <IconComment size={19} />
-              <span>{post.commentCount}</span>
-            </button>
-            <button type="button" onClick={() => void download()} disabled={downloading} className="gallery-action">
-              <IconDownload size={18} />
-              <span>{downloading ? "..." : "Save"}</span>
-            </button>
-            <button type="button" onClick={() => void share()} className="gallery-action">
-              <IconShare size={18} />
-              <span>{shared ? "Kopiert" : "Link"}</span>
-            </button>
-          </div>
-
-          <div className="gallery-origin">
-            <span>Von</span>
-            {author ? (
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <Avatar name={author.name} url={author.avatarUrl} accent={author.accentColor} size={24} ring={false} />
-                <span className="truncate">{author.name}</span>
-              </span>
-            ) : (
-              <span>Anonym</span>
-            )}
-            <Link href={postPath(post)} className="ml-auto underline decoration-ink/25 underline-offset-4">
-              Zum Ort
-            </Link>
-          </div>
-
-          <div ref={commentsRef} className="gallery-comments">
+        {commentsMounted ? (
+          <aside className={`gallery-viewer-panel ${commentsClosing ? "is-closing" : ""}`}>
+            <div className="gallery-comments-head">
+              <div><p className="section-label">Öffentlich</p><h2 className="display text-3xl leading-none">Kommentare</h2></div>
+              <button type="button" onClick={closeComments} className="quick-post-close" aria-label="Kommentare schliessen"><IconClose size={19} /></button>
+            </div>
+            <div className="gallery-comments">
             <CommentThread
               commentsPath={`/api/posts/${post.id}/comments`}
               classId={post.class.id}
               onCountChange={(count) => onUpdatePost(post.id, { commentCount: count })}
             />
-          </div>
-        </aside>
+            </div>
+          </aside>
+        ) : null}
       </div>
     </div>,
     document.body
