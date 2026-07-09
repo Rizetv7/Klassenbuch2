@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { InlineLoading } from "./LoadingState";
 import { Avatar } from "./Nav";
 import { Lightbox } from "./Lightbox";
 import { IconClose } from "./Icons";
@@ -373,9 +372,9 @@ export function CommentThread({
   return (
     <div ref={containerRef} className="space-y-3">
       {comments === null ? (
-        <InlineLoading />
+        <p className="comment-empty">Noch keine Kommentare.</p>
       ) : roots.length === 0 ? (
-        <p className="text-sm font-bold text-ink/45">Noch keine Kommentare. Schreib den ersten!</p>
+        <p className="comment-empty">Noch keine Kommentare.</p>
       ) : (
         <div className="space-y-3">
           {visibleRoots.map((r) => renderNode(r, 0))}

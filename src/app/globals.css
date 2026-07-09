@@ -832,6 +832,125 @@ body::before {
   filter: grayscale(0) contrast(1);
 }
 
+/* Couture also gets the Bilder view: magazine contact sheet, not glass. */
+:root[data-design="fashion"] .gallery-hero {
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  background: #f7f2e8;
+  box-shadow: none;
+}
+:root[data-design="fashion"] .gallery-hero::after {
+  display: none;
+}
+:root[data-design="fashion"] .gallery-count {
+  border-radius: 0;
+  border-color: rgba(22, 19, 16, 0.85);
+  background: transparent;
+  color: rgba(22, 19, 16, 0.64);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+:root[data-design="fashion"] .gallery-photo {
+  transform: translateY(var(--lift));
+}
+:root[data-design="fashion"] .gallery-photo-inner {
+  border-radius: 0;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  background: #fbf8f1;
+  box-shadow: none;
+  padding: 0.42rem;
+}
+:root[data-design="fashion"] .gallery-photo:hover .gallery-photo-inner {
+  transform: translateY(-2px);
+  border-color: rgb(var(--c-accent));
+  box-shadow: none;
+}
+:root[data-design="fashion"] .gallery-photo img {
+  filter: grayscale(1) contrast(1.08);
+}
+:root[data-design="fashion"] .gallery-photo:hover img {
+  filter: grayscale(0) contrast(1);
+  transform: none;
+}
+:root[data-design="fashion"] .gallery-photo-gloss {
+  display: none;
+}
+:root[data-design="fashion"] .gallery-photo-meta {
+  position: static;
+  margin-top: 0.45rem;
+  border: 0;
+  border-top: 1px solid rgba(22, 19, 16, 0.45);
+  border-radius: 0;
+  background: transparent;
+  color: #16130f;
+  padding: 0.45rem 0 0;
+  text-shadow: none;
+}
+:root[data-design="fashion"] .gallery-photo-meta .text-white\/74 {
+  color: rgba(22, 19, 16, 0.48);
+}
+:root[data-design="fashion"] .gallery-photo-stats {
+  border-radius: 0;
+  border: 1px solid rgba(22, 19, 16, 0.55);
+  background: transparent;
+  color: rgb(var(--c-accent));
+}
+:root[data-design="fashion"] .gallery-viewer {
+  background: rgba(22, 19, 16, 0.88);
+}
+:root[data-design="fashion"] .gallery-viewer-stage,
+:root[data-design="fashion"] .gallery-viewer-panel {
+  border-radius: 0;
+  border: 1px solid #f3efe6;
+  background: #f3efe6;
+  box-shadow: none;
+}
+:root[data-design="fashion"] .gallery-viewer-image {
+  border-radius: 0;
+  box-shadow: none;
+  filter: grayscale(0) contrast(1);
+}
+:root[data-design="fashion"] .gallery-round-button,
+:root[data-design="fashion"] .gallery-viewer-counter,
+:root[data-design="fashion"] .gallery-action {
+  border-radius: 0;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  background: #f3efe6;
+  color: #16130f;
+  box-shadow: none;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+:root[data-design="fashion"] .gallery-round-button {
+  border-color: #f3efe6;
+}
+:root[data-design="fashion"] .gallery-caption {
+  border-radius: 0;
+  border-color: rgba(22, 19, 16, 0.85);
+  background: transparent;
+  font-style: italic;
+}
+:root[data-design="fashion"] .gallery-action.is-liked {
+  background: rgb(var(--c-accent));
+  border-color: rgb(var(--c-accent));
+  color: #f3efe6;
+}
+:root[data-design="fashion"] .gallery-origin,
+:root[data-design="fashion"] .gallery-comments {
+  border-color: rgba(22, 19, 16, 0.3);
+}
+
+.comment-empty {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: rgb(var(--c-ink) / 0.34);
+}
+:root[data-design="fashion"] .comment-empty {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(22, 19, 16, 0.45);
+}
+
 /* ---- couture building blocks used by the fashion components ---- */
 
 /* which nav renders: CSS-driven so there is no flash and no hydration risk */

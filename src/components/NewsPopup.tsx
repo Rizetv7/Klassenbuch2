@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-bilderalbum-2";
+const NEWS_VERSION = "2026-07-09-gallery-themes-comments";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
@@ -14,12 +14,16 @@ const ITEMS = [
     text: "Oben gibt es jetzt eine eigene Bilder-Ansicht mit allen Fotos als lockeres Fotoalbum.",
   },
   {
+    title: "Neu: Themes",
+    text: "Im Aquarell-Design kannst du jetzt Themes wählen und die Seite persönlicher einstellen.",
+  },
+  {
     title: "Bilder öffnen sauberer",
     text: "Geöffnete Fotos bleiben auf Desktop und iPhone besser im sichtbaren Fenster, auch bei ungewohnten Formaten.",
   },
   {
-    title: "Kleine Politur",
-    text: "Die Herzen sind ruhiger, klarer gezeichnet und die Like-Bewegung ist jetzt deutlich einfacher.",
+    title: "Ruhigere Kommentare",
+    text: "Kommentarbereiche laden leiser und zeigen ohne Theater einfach an, wenn noch nichts da ist.",
   },
 ];
 
@@ -57,7 +61,7 @@ export function NewsPopup() {
         <div className="news-pop-head">
           <div>
             <span className="news-pop-badge">Was ist neu</span>
-            <h2 className="display mt-2 text-4xl leading-[0.9] sm:text-5xl">Kleines Update</h2>
+            <h2 className="display mt-2 text-4xl leading-[0.9] sm:text-5xl">Update</h2>
           </div>
           <button type="button" className="news-pop-close" onClick={close} aria-label="Schliessen">
             <IconClose size={18} />
