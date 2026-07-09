@@ -173,7 +173,7 @@ export default function InternalOverviewPage() {
                     <div className="min-w-0">
                       <p className="section-label">{klass.school || "Klasse"}</p>
                       <h2 className="display truncate text-4xl leading-tight">{klass.name}</h2>
-                      {klass.gradYear ? <p className="font-hand text-xl font-bold">Abschluss {klass.gradYear}</p> : null}
+                      {klass.gradYear ? <p className="text-sm font-black text-ink/65">Abschluss {klass.gradYear}</p> : null}
                     </div>
                     <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-xl text-oncolor transition group-hover:translate-x-0.5">→</span>
                   </div>

@@ -332,7 +332,7 @@ function QuoteStrip({ posts }: { posts: Post[] }) {
               href={postHref(p)}
               className={`postit block min-h-[104px] p-4 ${index % 2 ? "sm:mt-4" : ""}`}
             >
-              <p className="line-clamp-4 font-hand text-2xl leading-[0.96] text-ink/90">“{p.text}”</p>
+              <p className="quote-big line-clamp-4 !text-xl leading-[1.02]">“{p.text}”</p>
               {said && <p className="mt-1.5 truncate text-xs font-black text-ink/65">— {said.name}</p>}
               <HomeAttribution post={p} compact />
             </Link>

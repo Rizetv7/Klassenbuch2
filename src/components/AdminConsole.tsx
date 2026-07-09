@@ -391,7 +391,7 @@ export function AdminPostEntry({ post }: { post: AdminPost }) {
             </p>
           ) : null}
           {post.context ? <p className="mt-2 text-sm font-bold text-ink/55">{post.context}</p> : null}
-          {post.saidByName ? <p className="mt-2 font-hand text-xl font-bold">{post.saidByName}</p> : null}
+          {post.saidByName ? <p className="mt-2 text-sm font-black text-ink/70">— {post.saidByName}</p> : null}
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <PersonSignature
               person={post.author}

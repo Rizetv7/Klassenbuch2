@@ -111,7 +111,7 @@ export function Lightbox({
       </div>
 
       {caption && (
-        <p className="mx-auto max-w-3xl shrink-0 rounded-full bg-white/85 px-4 py-2 text-center font-hand text-2xl leading-tight text-ink/80">
+        <p className="mx-auto max-w-3xl shrink-0 rounded-full bg-white/85 px-4 py-2 text-center text-sm font-bold leading-snug text-ink/80">
           {caption}
         </p>
       )}

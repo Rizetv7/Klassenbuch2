@@ -198,7 +198,7 @@ function ProjectsTab({ classId }: { classId: string }) {
                   <h3 className="display break-words text-3xl leading-[0.9]">{t.name}</h3>
                   <span className="chip shrink-0">{t.postCount}</span>
                 </div>
-                {t.latestText && <p className="mt-3 line-clamp-2 font-hand text-2xl leading-[0.98] text-hotpink">{t.latestText}</p>}
+                {t.latestText && <p className="mt-3 line-clamp-2 text-sm font-black text-hotpink">“{t.latestText}”</p>}
                 <p className="mt-4 text-[11px] font-black uppercase text-ink/50">Projekt öffnen</p>
               </div>
             </Link>

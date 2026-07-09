@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { uploadImageFile } from "@/lib/uploadImage";
 import { Avatar } from "./Nav";
+import { IconPencil } from "./Icons";
 
 export function ProfileImagePicker({
   name,
@@ -56,10 +57,16 @@ export function ProfileImagePicker({
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="polaroid mx-auto block w-44 transition hover:-rotate-1 sm:w-52">
-        <Avatar name={name} url={shownUrl} accent={accent} size={176} ring={false} />
-        <p className="mt-2 text-center font-hand text-3xl leading-none text-ink/75">{name.split(" ")[0]}</p>
-        <p className="mt-1 text-center text-[11px] font-black text-ink/45">{manualUrl ? "Profilbild ändern" : fallbackUrl ? "erstes Bild verwendet" : "Profilbild wählen"}</p>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        title={manualUrl ? "Profilbild ändern" : "Profilbild wählen"}
+        className="relative block shrink-0 transition-transform duration-150 hover:scale-[1.02] active:scale-95"
+      >
+        <Avatar name={name} url={shownUrl} accent={accent} size={104} />
+        <span className="absolute -bottom-0.5 -right-0.5 grid h-8 w-8 place-items-center rounded-full bg-ink text-oncolor shadow-soft">
+          <IconPencil size={14} />
+        </span>
       </button>
 
       {open && (

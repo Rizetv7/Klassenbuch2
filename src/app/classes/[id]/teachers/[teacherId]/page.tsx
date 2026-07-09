@@ -18,7 +18,7 @@ type Teacher = {
   className: string;
 };
 
-const TABS = ["Alle", "Zitate", "Bilder", "Post-its"] as const;
+const TABS = ["Alle", "Zitate", "Bilder", "Notizen"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function TeacherPage() {
@@ -81,6 +81,13 @@ export default function TeacherPage() {
 
   const cover = posts.find((p) => p.imageUrl);
   const imageUrls = Array.from(new Set(posts.map((p) => p.imageUrl).filter(Boolean) as string[]));
+  const heroQuote = posts.find((p) => p.kind === "QUOTE" && p.text);
+  const counts = {
+    Alle: posts.length,
+    Zitate: posts.filter((p) => p.kind === "QUOTE").length,
+    Bilder: posts.filter((p) => p.kind === "IMAGE").length,
+    Notizen: posts.filter((p) => p.kind === "TEXT").length,
+  } as Record<Tab, number>;
   const shown = posts.filter((p) => (
     tab === "Alle" ? true : tab === "Zitate" ? p.kind === "QUOTE" : tab === "Bilder" ? p.kind === "IMAGE" : p.kind === "TEXT"
   ));
@@ -88,44 +95,76 @@ export default function TeacherPage() {
   return (
     <PageReveal>
     <div className="space-y-4">
-      <Link href={`/classes/${id}?tab=Lehrpersonen`} className="text-sm text-muted">← {teacher.className}</Link>
+      <Link
+        href={`/classes/${id}?tab=Lehrpersonen`}
+        className="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1.5 text-xs font-black text-ink/65 transition hover:bg-white/40 hover:text-ink active:scale-95"
+      >
+        ← {teacher.className}
+      </Link>
 
-      {/* Hero */}
-      <div className="card p-6 flex flex-col items-center text-center">
-        <ProfileImagePicker
-          name={teacher.name}
-          accent={teacher.accentColor}
-          manualUrl={teacher.avatarUrl}
-          fallbackUrl={cover?.imageUrl ?? null}
-          images={imageUrls}
-          onChange={updateAvatar}
-        />
-        <h1 className="display text-4xl mt-3">{teacher.name}</h1>
-        <p className="text-muted text-sm">{teacher.subject ? `${teacher.subject} · ` : ""}Lehrperson · {posts.length} Beiträge</p>
-        <button onClick={deleteTeacher} className="text-xs text-coral underline mt-2">Lehrperson löschen</button>
-      </div>
+      {/* Hero: compact identity card, tidy on phones */}
+      <section className="hero-frame overflow-hidden">
+        {cover?.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover.imageUrl} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-[0.16]" />
+        )}
+        <div className="relative z-10 p-4 sm:p-6">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <ProfileImagePicker
+              name={teacher.name}
+              accent={teacher.accentColor}
+              manualUrl={teacher.avatarUrl}
+              fallbackUrl={cover?.imageUrl ?? null}
+              images={imageUrls}
+              onChange={updateAvatar}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="section-label">{teacher.subject || "Lehrperson"}</p>
+              <h1 className="display mt-1 break-words text-4xl leading-[0.9] sm:text-6xl">{teacher.name}</h1>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <span className="chip">{counts.Zitate} Zitate</span>
+                <span className="chip">{counts.Bilder} Bilder</span>
+                <span className="chip">{counts.Notizen} Notizen</span>
+              </div>
+            </div>
+          </div>
+          {heroQuote?.text && (
+            <blockquote className="soft-divider mt-4 pt-4">
+              <p className="quote-big !text-xl leading-[1.05] sm:!text-2xl">“{heroQuote.text}”</p>
+            </blockquote>
+          )}
+          <button onClick={deleteTeacher} className="relative z-10 mt-3 text-xs font-black text-coral/80 underline transition hover:text-coral">
+            Lehrperson löschen
+          </button>
+        </div>
+      </section>
 
       {/* Add */}
       {!showAdd ? (
-        <button onClick={() => setShowAdd(true)} className="btn-accent w-full">Zitat / Bild / Post-it hinzufügen</button>
+        <button onClick={() => setShowAdd(true)} className="btn-accent w-full">+ Neuer Eintrag über {teacher.name.split(" ")[0]}</button>
       ) : (
         <div className="space-y-2">
           <CreatePost classId={id} teacherId={teacherId} onCreated={(p) => { setPosts((ps) => [p, ...ps]); setShowAdd(false); }} />
-          <button onClick={() => setShowAdd(false)} className="text-sm text-muted underline w-full text-center">Abbrechen</button>
+          <button onClick={() => setShowAdd(false)} className="w-full text-center text-sm font-bold text-muted underline">Abbrechen</button>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1.5">
+      {/* Filter tabs with counts — horizontally scrollable on phones */}
+      <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
         {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`tab ${tab === t ? "tab-active" : ""}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`tab shrink-0 ${tab === t ? "tab-active" : ""}`}>
+            {t}
+            <span className={`ml-1.5 rounded-full px-1.5 text-[10px] ${tab === t ? "bg-oncolor/20" : "bg-white/40 text-ink/55"}`}>{counts[t]}</span>
+          </button>
         ))}
       </div>
 
-      {/* Posts */}
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {/* Posts — re-animates cleanly on every filter switch */}
+      <div key={tab} className="grid animate-fade-up gap-3 md:grid-cols-2 xl:grid-cols-3">
         {shown.length === 0 ? (
-          <p className="text-muted py-6 text-center md:col-span-2 xl:col-span-3">Noch nichts über {teacher.name}. Mach den Anfang!</p>
+          <div className="glass-panel p-8 text-center font-bold text-ink/60 md:col-span-2 xl:col-span-3">
+            {tab === "Alle" ? `Noch nichts über ${teacher.name}. Mach den Anfang!` : `Noch keine ${tab} über ${teacher.name}.`}
+          </div>
         ) : (
           shown.map((p) => (
             <PostCard key={p.id} post={p} showContext={false} onDeleted={(pid) => setPosts((ps) => ps.filter((x) => x.id !== pid))} />

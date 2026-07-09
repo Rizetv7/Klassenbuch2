@@ -98,7 +98,7 @@ export function CreatePost({
       <div className="relative z-10 mb-4 flex flex-wrap gap-2">
         <Btn k="QUOTE" label="Zitat" />
         <Btn k="IMAGE" label="Bild" />
-        <Btn k="TEXT" label="Post-it" />
+        <Btn k="TEXT" label="Notiz" />
       </div>
 
       {kind === "IMAGE" ? (
@@ -115,9 +115,9 @@ export function CreatePost({
           {previews.length > 0 && (
             <div className="flex flex-wrap justify-center gap-2">
               {previews.map((src, i) => (
-                <div key={i} className={`polaroid w-28 ${i % 2 ? "rotate-2" : "-rotate-1"}`}>
+                <div key={i} className="polaroid w-28">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" decoding="async" className="h-24 w-full rounded-[18px] object-cover" />
+                  <img src={src} alt="" decoding="async" className="h-24 w-full rounded-[20px] object-cover" />
                 </div>
               ))}
             </div>
@@ -128,7 +128,7 @@ export function CreatePost({
         <div className="relative z-10">
           <textarea
             className="input min-h-[118px]"
-            placeholder={kind === "TEXT" ? "Notiz / Post-it…" : "Zitat eingeben…"}
+            placeholder={kind === "TEXT" ? "Notiz schreiben…" : "Zitat eingeben…"}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />

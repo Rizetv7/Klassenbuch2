@@ -151,7 +151,7 @@ export default function InternalPersonPage() {
                 {member.user.name}
               </h1>
               {heroQuote?.text ? (
-                <p className="mt-5 font-hand text-3xl leading-[0.95] text-hotpink sm:text-4xl">
+                <p className="quote-big mt-5 !text-2xl leading-[1.02] sm:!text-3xl">
                   {heroQuote.text}
                 </p>
               ) : null}

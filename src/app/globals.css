@@ -71,6 +71,17 @@ body {
   background: transparent;
 }
 
+/* iPhone polish: no gray tap flashes, no double-tap zoom delay */
+button,
+a,
+input,
+label,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* Static fallback behind the canvas. No objects or UI elements here. */
 body::before {
   content: "";
@@ -202,38 +213,46 @@ body::before {
     @apply font-display text-2xl font-black leading-[0.98] text-ink sm:text-3xl;
   }
 
+  /* Notes: clean digital glass cards with a soft accent bloom in one
+     corner — no more sticky-note paper, no rotation, no handwriting. */
   .postit {
-    @apply rounded-[22px] border border-white/50 bg-[#fff0a8]/80 p-5;
-    box-shadow: 0 22px 50px -34px rgba(9,7,12,0.62), inset 0 1px 0 rgb(var(--c-surface) / 0.55);
-    transform: rotate(-1.1deg);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    @apply rounded-[26px] border border-white/50 p-5;
+    background:
+      radial-gradient(120% 110% at 100% 0%, rgb(var(--c-accent) / 0.16), transparent 55%),
+      linear-gradient(160deg, rgb(var(--c-surface) / 0.34), rgb(var(--c-surface) / 0.14));
+    box-shadow: 0 18px 44px -36px rgba(9, 7, 12, 0.55), inset 0 1px 0 rgb(var(--c-surface) / 0.5);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   }
 
   .postit:nth-child(3n) {
-    background: rgba(185, 167, 255, 0.72);
-    transform: rotate(1.2deg);
+    background:
+      radial-gradient(120% 110% at 0% 0%, rgba(126, 196, 236, 0.22), transparent 55%),
+      linear-gradient(160deg, rgb(var(--c-surface) / 0.34), rgb(var(--c-surface) / 0.14));
   }
 
   .postit:nth-child(3n + 1) {
-    background: rgba(249, 192, 221, 0.72);
-    transform: rotate(-0.6deg);
+    background:
+      radial-gradient(120% 110% at 100% 100%, rgba(143, 98, 255, 0.16), transparent 55%),
+      linear-gradient(160deg, rgb(var(--c-surface) / 0.34), rgb(var(--c-surface) / 0.14));
   }
 
   .postit:hover {
-    transform: rotate(0deg) translateY(-2px);
-    box-shadow: 0 28px 62px -40px rgba(9,7,12,0.68);
+    transform: translateY(-2px);
+    border-color: rgb(var(--c-surface) / 0.75);
+    box-shadow: 0 24px 54px -38px rgba(9, 7, 12, 0.6), inset 0 1px 0 rgb(var(--c-surface) / 0.55);
   }
 
+  /* Media card: a clean digital frame instead of the analog polaroid —
+     straight, thin padding, no rotation. */
   .polaroid {
-    @apply rounded-[26px] border border-white/70 bg-white/80 p-2.5 pb-7;
-    box-shadow: 0 28px 70px -46px rgba(9,7,12,0.72), inset 0 1px 0 rgb(var(--c-surface) / 0.85);
-    transform: rotate(-1.4deg);
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    @apply rounded-[28px] border border-white/55 bg-white/30 p-2;
+    box-shadow: 0 22px 56px -42px rgba(9, 7, 12, 0.6), inset 0 1px 0 rgb(var(--c-surface) / 0.6);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
   }
 
   .polaroid:hover {
-    transform: rotate(0deg) translateY(-2px) scale(1.01);
-    box-shadow: 0 34px 76px -46px rgba(9,7,12,0.76), inset 0 1px 0 rgb(var(--c-surface) / 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 28px 62px -44px rgba(9, 7, 12, 0.66), inset 0 1px 0 rgb(var(--c-surface) / 0.65);
   }
 
   .post-card {
@@ -414,17 +433,6 @@ body::before {
 /* the canvas keeps flowing, just dimmed to night levels */
 :root[data-mode="dark"] .liquid-bg {
   filter: blur(14px) brightness(0.34) saturate(1.15) contrast(1.06);
-}
-
-/* post-its keep their identity but stop glowing */
-:root[data-mode="dark"] .postit {
-  background: rgba(96, 84, 34, 0.62);
-}
-:root[data-mode="dark"] .postit:nth-child(3n) {
-  background: rgba(64, 52, 110, 0.62);
-}
-:root[data-mode="dark"] .postit:nth-child(3n + 1) {
-  background: rgba(105, 45, 80, 0.55);
 }
 
 :root[data-mode="dark"] .project-cover {
@@ -744,6 +752,8 @@ body::before {
   border-radius: 0;
   box-shadow: none;
   transform: none;
+  font-family: var(--font-display);
+  font-style: italic;
 }
 :root[data-design="fashion"] .postit:hover {
   transform: none;
@@ -995,12 +1005,13 @@ body::before {
   }
 }
 
+/* selection pops: barely-there overshoot — snappy, never bouncy */
 @keyframes pop-select {
   0% {
-    transform: scale(0.9);
+    transform: scale(0.96);
   }
   60% {
-    transform: scale(1.045);
+    transform: scale(1.015);
   }
   100% {
     transform: scale(1);
@@ -1009,14 +1020,31 @@ body::before {
 
 @keyframes nav-pop {
   0% {
-    transform: scale(0.82);
+    transform: scale(0.94);
   }
   55% {
-    transform: scale(1.1);
+    transform: scale(1.03);
   }
   100% {
     transform: scale(1);
   }
+}
+
+/* photos fade in softly instead of popping when they finish loading */
+@keyframes img-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.post-card img,
+.glass-card img,
+.polaroid img,
+.project-cover img {
+  animation: img-in 0.4s ease both;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -1029,22 +1057,22 @@ body::before {
 
 @keyframes poll-rise {
   0% {
-    transform: translateY(9px) scale(0.985);
+    transform: translateY(6px);
   }
   70% {
-    transform: translateY(-2px) scale(1.01);
+    transform: translateY(-1px);
   }
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes vote-pop {
   0% {
-    transform: scale(0.985);
+    transform: scale(0.99);
   }
   45% {
-    transform: scale(1.018);
+    transform: scale(1.008);
   }
   100% {
     transform: scale(1);
@@ -1075,18 +1103,18 @@ body::before {
 /* the direct sections of the page stack rise with a clean stagger */
 .page-reveal > * > * {
   opacity: 0;
-  animation: rise-up 640ms var(--ease-out) both;
+  animation: rise-up 480ms var(--ease-out) both;
 }
 
 .page-reveal > * > *:nth-child(1) { animation-delay: 0ms; }
-.page-reveal > * > *:nth-child(2) { animation-delay: 75ms; }
-.page-reveal > * > *:nth-child(3) { animation-delay: 150ms; }
-.page-reveal > * > *:nth-child(4) { animation-delay: 225ms; }
-.page-reveal > * > *:nth-child(5) { animation-delay: 300ms; }
-.page-reveal > * > *:nth-child(6) { animation-delay: 375ms; }
-.page-reveal > * > *:nth-child(7) { animation-delay: 450ms; }
-.page-reveal > * > *:nth-child(8) { animation-delay: 525ms; }
-.page-reveal > * > *:nth-child(n + 9) { animation-delay: 600ms; }
+.page-reveal > * > *:nth-child(2) { animation-delay: 55ms; }
+.page-reveal > * > *:nth-child(3) { animation-delay: 110ms; }
+.page-reveal > * > *:nth-child(4) { animation-delay: 165ms; }
+.page-reveal > * > *:nth-child(5) { animation-delay: 220ms; }
+.page-reveal > * > *:nth-child(6) { animation-delay: 275ms; }
+.page-reveal > * > *:nth-child(7) { animation-delay: 330ms; }
+.page-reveal > * > *:nth-child(8) { animation-delay: 385ms; }
+.page-reveal > * > *:nth-child(n + 9) { animation-delay: 440ms; }
 
 @keyframes page-fade {
   from { opacity: 0; }
@@ -1096,11 +1124,11 @@ body::before {
 @keyframes rise-up {
   from {
     opacity: 0;
-    transform: translateY(22px) scale(0.99);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 

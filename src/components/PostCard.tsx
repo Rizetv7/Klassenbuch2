@@ -128,7 +128,7 @@ export function PostCard({
             <Avatar name={displayTarget.name} url={displayTarget.avatarUrl} accent={displayTarget.accent} size={76} />
           )
         ) : (
-          <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-white/35 font-hand text-4xl text-hotpink">✦</div>
+          <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-white/35 text-3xl text-hotpink">✦</div>
         )}
         <div className="min-w-0">
           <p className="section-label">{kindLabel}</p>
@@ -169,11 +169,16 @@ export function PostCard({
           </div>
         )}
         {post.kind === "TEXT" && post.text && (
-          <div className="postit inline-block max-w-full whitespace-pre-wrap font-hand text-2xl leading-[0.98] text-ink/90">
-            {post.text}
+          <div className="postit block max-w-full">
+            <p className="section-label mb-1.5 !text-ink/40">Notiz</p>
+            <p className="whitespace-pre-wrap break-words text-lg font-bold leading-snug text-ink/90">{post.text}</p>
           </div>
         )}
-        {post.context && <p className="mt-2 font-hand text-2xl leading-none text-hotpink">{post.context}</p>}
+        {post.context && (
+          <p className="mt-2 inline-flex max-w-full items-center rounded-full bg-hotpink/12 px-3 py-1 text-xs font-black text-hotpink">
+            <span className="truncate">{post.context}</span>
+          </p>
+        )}
         {post.imageUrl && (
           <div className="mt-2 flex justify-center">
             <div className="polaroid w-full max-w-xl">
@@ -189,7 +194,7 @@ export function PostCard({
                   Gross anzeigen
                 </span>
               </button>
-              {post.text && <p className="mt-2 text-center font-hand text-2xl leading-tight text-ink/80">{post.text}</p>}
+              {post.text && <p className="px-2 pb-1 pt-2 text-center text-sm font-bold leading-snug text-ink/75">{post.text}</p>}
             </div>
           </div>
         )}
