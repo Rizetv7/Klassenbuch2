@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IconHome, IconUsers, IconUser, IconPoll, IconImage } from "./Icons";
+import { IconHome, IconUsers, IconUser, IconPoll, IconImage, IconPlus } from "./Icons";
 import { swrJson } from "@/lib/swr";
+import { QuickPostDialog } from "./QuickPostDialog";
 
 const ACCENTS = ["#ee4fb3", "#f584c3", "#7ec4ec", "#8fdcc9", "#b9a7ff", "#f4b8d2"];
 export function deriveAccent(seed: string): string {
@@ -59,6 +60,14 @@ const ITEMS = [
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
+const MOBILE_ITEMS = [
+  { kind: "link" as const, href: "/", label: "Home", Icon: IconHome },
+  { kind: "link" as const, href: "/classes", label: "Klasse", Icon: IconUsers },
+  { kind: "post" as const, label: "Posten", Icon: IconPlus },
+  { kind: "link" as const, href: "/polls", label: "Umfragen", Icon: IconPoll },
+  { kind: "link" as const, href: "/profile", label: "Profil", Icon: IconUser },
+];
+
 type NavUser = {
   name: string;
   avatarUrl?: string | null;
@@ -77,6 +86,7 @@ export function SiteNav() {
   const path = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<NavUser | null>(null);
+  const [postOpen, setPostOpen] = useState(false);
   const isInternal = path.startsWith("/archivzugang");
   const isAminaMode = path.startsWith("/amina");
 
@@ -95,12 +105,13 @@ export function SiteNav() {
     <>
       {/* Aquarell chrome and the Couture masthead are both rendered;
           CSS (.aq-only / .fx-only) shows exactly one — instant, flash-free */}
-      <TopNav me={me} />
-      <BottomNav me={me} />
+      <TopNav me={me} onOpenPost={() => setPostOpen(true)} />
+      <BottomNav me={me} onOpenPost={() => setPostOpen(true)} />
       <div className="fx-only">
-        <FashionMasthead />
-        <FashionBottomNav me={me} />
+        <FashionMasthead onOpenPost={() => setPostOpen(true)} />
+        <FashionBottomNav me={me} onOpenPost={() => setPostOpen(true)} />
       </div>
+      {postOpen ? <QuickPostDialog onClose={() => setPostOpen(false)} /> : null}
     </>
   );
 }
@@ -109,7 +120,7 @@ export function SiteNav() {
 // COUTURE navigation: a magazine masthead on top (all viewports) and a
 // hairline text bar at the bottom on phones.
 // ---------------------------------------------------------------------
-function FashionMasthead() {
+function FashionMasthead({ onOpenPost }: { onOpenPost: () => void }) {
   const isActive = useActive();
   const today = new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "long", year: "numeric" });
   return (
@@ -132,6 +143,7 @@ function FashionMasthead() {
               {it.label}
             </Link>
           ))}
+          <button type="button" onClick={onOpenPost} className="fx-link text-ink/60 hover:text-ink">Posten</button>
         </nav>
         <div className="fx-rule-double" style={{ transform: "scaleY(-1)" }} />
       </div>
@@ -139,13 +151,20 @@ function FashionMasthead() {
   );
 }
 
-function FashionBottomNav({ me }: { me: NavUser | null }) {
+function FashionBottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
   const isActive = useActive();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="border-t border-ink/85 bg-[#f3efe6] pb-[max(0.4rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-md items-center justify-around px-2 pt-2.5 pb-1.5">
-          {ITEMS.map((it) => {
+          {MOBILE_ITEMS.map((it) => {
+            if (it.kind === "post") {
+              return (
+                <button key={it.kind} type="button" onClick={onOpenPost} className="fx-nav-create" aria-label="Neuen Eintrag posten" title="Neuen Eintrag posten">
+                  <IconPlus size={23} />
+                </button>
+              );
+            }
             const profile = it.href === "/profile" && me;
             return (
               <Link
@@ -170,13 +189,17 @@ function FashionBottomNav({ me }: { me: NavUser | null }) {
   );
 }
 
-function TopNav({ me }: { me: NavUser | null }) {
+function TopNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
   const isActive = useActive();
   return (
     <header className="aq-only sticky top-0 z-30 hidden lg:block">
       <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
         <Link href="/" className="display mr-2 text-2xl leading-none">Maturaziitig</Link>
         <nav className="ml-auto flex items-center gap-1">
+          <button type="button" onClick={onOpenPost} className="btn-accent !px-3.5 !py-2 text-sm" title="Neuen Eintrag posten">
+            <IconPlus size={17} />
+            Posten
+          </button>
           {ITEMS.map((it) => {
             const profile = it.href === "/profile" && me;
             return (
@@ -209,13 +232,27 @@ function TopNav({ me }: { me: NavUser | null }) {
   );
 }
 
-function BottomNav({ me }: { me: NavUser | null }) {
+function BottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
   const isActive = useActive();
   return (
     <nav className="aq-only fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-sm px-4 pb-4">
         <div className="dock flex items-center justify-around px-2.5 py-2">
-          {ITEMS.map((it) => {
+          {MOBILE_ITEMS.map((it) => {
+            if (it.kind === "post") {
+              return (
+                <button
+                  key={it.kind}
+                  type="button"
+                  onClick={onOpenPost}
+                  className="nav-compose-button"
+                  aria-label="Neuen Eintrag posten"
+                  title="Neuen Eintrag posten"
+                >
+                  <IconPlus size={25} />
+                </button>
+              );
+            }
             const profile = it.href === "/profile" && me;
             const active = isActive(it.href);
             return (

@@ -16,6 +16,7 @@ export function CreatePost({
   topicId,
   people,
   onCreated,
+  onFinished,
 }: {
   classId: string;
   subjectMembershipId?: string;
@@ -23,6 +24,7 @@ export function CreatePost({
   topicId?: string;
   people?: Person[]; // for project quotes: who said it
   onCreated: (post: Post) => void;
+  onFinished?: () => void;
 }) {
   const isTopic = !!topicId;
   const [kind, setKind] = useState<Kind>("QUOTE");
@@ -80,6 +82,7 @@ export function CreatePost({
       setContext("");
       setSaidBy("");
       pickFiles(null);
+      onFinished?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
     } finally {

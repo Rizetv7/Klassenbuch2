@@ -109,6 +109,20 @@ function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-CH", { day: "2-digit", month: "short" });
 }
 
+function useCompactGallery() {
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return compact;
+}
+
 export function ImageGallery() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[] | null>(null);
@@ -118,6 +132,7 @@ export function ImageGallery() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadedMoreRef = useRef(false);
+  const compactGallery = useCompactGallery();
 
   useEffect(() => {
     const cancel = swrJson<GalleryResponse>(FIRST_PAGE, (data, meta) => {
@@ -208,6 +223,22 @@ export function ImageGallery() {
     return <p className="text-coral font-black">{error}</p>;
   }
 
+  if (compactGallery) {
+    return (
+      <PageReveal>
+        <MobilePhotoFeed
+          posts={posts}
+          nextCursor={nextCursor}
+          loadingMore={loadingMore}
+          error={error}
+          sentinelRef={sentinelRef}
+          onLoadMore={() => void loadMore()}
+          onUpdatePost={updatePost}
+        />
+      </PageReveal>
+    );
+  }
+
   return (
     <PageReveal>
       <div className="aq-gallery space-y-5">
@@ -286,6 +317,160 @@ export function ImageGallery() {
         )}
       </div>
     </PageReveal>
+  );
+}
+
+function MobilePhotoFeed({
+  posts,
+  nextCursor,
+  loadingMore,
+  error,
+  sentinelRef,
+  onLoadMore,
+  onUpdatePost,
+}: {
+  posts: Post[];
+  nextCursor: string | null;
+  loadingMore: boolean;
+  error: string;
+  sentinelRef: React.RefObject<HTMLDivElement>;
+  onLoadMore: () => void;
+  onUpdatePost: (id: string, update: Partial<Post>) => void;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
+  const [busyPostId, setBusyPostId] = useState<string | null>(null);
+  const [sharedPostId, setSharedPostId] = useState<string | null>(null);
+  const activeIndexRef = useRef(0);
+
+  const activePost = posts[activeIndex];
+  const commentsPost = commentsPostId ? posts.find((post) => post.id === commentsPostId) ?? null : null;
+
+  async function toggleLike(post: Post) {
+    if (busyPostId) return;
+    const likedByMe = !post.likedByMe;
+    onUpdatePost(post.id, { likedByMe, likeCount: Math.max(0, post.likeCount + (likedByMe ? 1 : -1)) });
+    setBusyPostId(post.id);
+    try {
+      const response = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error();
+      onUpdatePost(post.id, { likedByMe: !!data.liked, likeCount: Number(data.likeCount) || 0 });
+    } catch {
+      onUpdatePost(post.id, { likedByMe: post.likedByMe, likeCount: post.likeCount });
+    } finally {
+      setBusyPostId(null);
+    }
+  }
+
+  async function share(post: Post) {
+    const url = `${window.location.origin}/bilder`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Bild aus der Maturaziitig", text: post.text || undefined, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setSharedPostId(post.id);
+      window.setTimeout(() => setSharedPostId(null), 1400);
+    } catch {}
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="mobile-gallery-empty">
+        <p className="section-label">Fotoalbum</p>
+        <h1 className="display mt-2 text-5xl leading-[0.9]">Noch keine Bilder.</h1>
+        <Link href="/classes" className="btn-primary mt-5">Zur Klasse</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mobile-gallery" aria-label="Bilder Feed">
+      <div
+        className="mobile-gallery-feed"
+        onScroll={(event) => {
+          const element = event.currentTarget;
+          const next = Math.max(0, Math.min(posts.length - 1, Math.round(element.scrollTop / Math.max(element.clientHeight, 1))));
+          if (next !== activeIndexRef.current) {
+            activeIndexRef.current = next;
+            setActiveIndex(next);
+          }
+        }}
+      >
+        {posts.map((post, index) => {
+          const source = sourceInfo(post);
+          const author = post.anonymous || !post.author ? null : post.author;
+          return (
+            <article className="mobile-gallery-slide" key={post.id} aria-current={index === activeIndex ? "true" : undefined}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.imageUrl!}
+                alt={post.text || source.title}
+                loading={index < 2 ? "eager" : "lazy"}
+                decoding="async"
+                className="mobile-gallery-image"
+              />
+              <div className="mobile-gallery-shade" />
+
+              <div className="mobile-gallery-top">
+                <span className="mobile-gallery-index">{index + 1} / {posts.length}</span>
+                <Link href={source.href} className="mobile-gallery-source">
+                  <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={32} />
+                  <span className="min-w-0"><span className="block truncate font-black">{source.title}</span><span className="block text-[10px] font-bold text-white/72">{source.label} · {shortDate(post.createdAt)}</span></span>
+                </Link>
+              </div>
+
+              <div className="mobile-gallery-bottom">
+                <div className="mobile-gallery-copy">
+                  {post.text ? <p>{post.text}</p> : <p className="text-white/82">Ein Bild aus {post.class.name}</p>}
+                  <span>{author ? `Eingereicht von ${author.name}` : "Anonym eingereicht"}</span>
+                </div>
+                <div className="mobile-gallery-actions" aria-label="Bildaktionen">
+                  <button type="button" onClick={() => void toggleLike(post)} disabled={busyPostId === post.id} className={`mobile-gallery-action ${post.likedByMe ? "is-liked" : ""}`} aria-label="Gefällt mir">
+                    <IconHeart size={25} filled={post.likedByMe} />
+                    <span>{post.likeCount}</span>
+                  </button>
+                  <button type="button" onClick={() => setCommentsPostId(post.id)} className="mobile-gallery-action" aria-label="Kommentare öffnen">
+                    <IconComment size={24} />
+                    <span>{post.commentCount}</span>
+                  </button>
+                  <button type="button" onClick={() => void share(post)} className="mobile-gallery-action" aria-label="Bild teilen">
+                    <IconShare size={23} />
+                    <span>{sharedPostId === post.id ? "Kopiert" : "Teilen"}</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+
+        <div ref={sentinelRef} className="mobile-gallery-more">
+          {nextCursor ? <button type="button" onClick={onLoadMore} disabled={loadingMore}>{loadingMore ? "Lädt Bilder…" : "Mehr Bilder laden"}</button> : <span>Album vollständig</span>}
+        </div>
+      </div>
+
+      {error ? <p className="mobile-gallery-error">{error}</p> : null}
+      {activePost ? <span className="sr-only">Aktives Bild {activeIndex + 1}</span> : null}
+
+      {commentsPost ? (
+        <div className="mobile-comments-layer" role="dialog" aria-modal="true" aria-label="Kommentare">
+          <button type="button" onClick={() => setCommentsPostId(null)} className="mobile-comments-backdrop" aria-label="Kommentare schliessen" />
+          <section className="mobile-comments-sheet">
+            <div className="mobile-comments-head">
+              <div><p className="section-label">Öffentlich</p><h2 className="display text-3xl leading-none">Kommentare</h2></div>
+              <button type="button" onClick={() => setCommentsPostId(null)} className="quick-post-close" aria-label="Schliessen"><IconClose size={19} /></button>
+            </div>
+            <CommentThread
+              commentsPath={`/api/posts/${commentsPost.id}/comments`}
+              classId={commentsPost.class.id}
+              onCountChange={(count) => onUpdatePost(commentsPost.id, { commentCount: count })}
+            />
+          </section>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

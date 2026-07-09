@@ -299,7 +299,10 @@ function HomePreviewPortrait({ post, target }: { post: Post; target: ReturnType<
 function PhotoStrip({ posts }: { posts: Post[] }) {
   return (
     <section className="space-y-3">
-      <SectionHead title="Bilder im Umlauf" meta={`${posts.length} gezeigt`} />
+      <div className="flex items-center justify-between gap-3">
+        <SectionHead title="Bilder im Umlauf" meta={`${posts.length} gezeigt`} />
+        <Link href="/bilder" className="chip shrink-0">Album</Link>
+      </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {posts.map((p, index) => (
           <Link

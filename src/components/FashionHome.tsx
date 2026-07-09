@@ -161,9 +161,12 @@ export function FashionHome({
       {/* lookbook */}
       {looks.length > 0 && (
         <section>
-          <h2 className="fx-sect fx-label mb-1 text-ink/85">
-            <span><span className="fx-gold">✦</span>&nbsp;&nbsp;Lookbook&nbsp;&nbsp;<span className="fx-gold">✦</span></span>
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="fx-sect fx-label mb-1 flex-1 text-ink/85">
+              <span><span className="fx-gold">✦</span>&nbsp;&nbsp;Lookbook&nbsp;&nbsp;<span className="fx-gold">✦</span></span>
+            </h2>
+            <Link href="/bilder" className="fx-link text-ink/55">Alle Bilder</Link>
+          </div>
           <p className="fx-label mb-3 text-center text-ink/40">Berühren für Farbe</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {looks.map((p, i) => (

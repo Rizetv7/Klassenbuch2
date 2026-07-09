@@ -48,6 +48,7 @@ export default function ClassPage() {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [showManage, setShowManage] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
   const [error, setError] = useState("");
 
   function loadClass() {
@@ -104,7 +105,21 @@ export default function ClassPage() {
       </div>
 
       {/* Content */}
-      {tab === "Schüler" && <MemberGrid members={students} classId={id} empty="Noch keine Schüler:innen beigetreten." />}
+      {tab === "Schüler" && (
+        <div className="space-y-3">
+          <label className="relative block max-w-md">
+            <span className="sr-only">Schüler:innen suchen</span>
+            <input
+              className="input !px-4 !py-2.5"
+              value={studentSearch}
+              onChange={(event) => setStudentSearch(event.target.value)}
+              placeholder="Schüler:innen suchen"
+              type="search"
+            />
+          </label>
+          <MemberGrid members={students} classId={id} search={studentSearch} empty="Noch keine Schüler:innen beigetreten." />
+        </div>
+      )}
       {tab === "Lehrpersonen" && <TeachersTab classId={id} />}
       {tab === "Projekte" && <ProjectsTab classId={id} />}
 
@@ -242,9 +257,13 @@ function CopyCode({ code }: { code: string }) {
   );
 }
 
-function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
+function MemberGrid({ members, classId, search, empty }: { members: Member[]; classId: string; search?: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
-  const ordered = [...members].sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
+  const needle = search?.trim().toLocaleLowerCase("de-CH") || "";
+  const ordered = [...members]
+    .filter((member) => !needle || member.displayName.toLocaleLowerCase("de-CH").includes(needle))
+    .sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
+  if (ordered.length === 0) return <p className="py-6 text-center text-sm font-bold text-ink/55">Keine Person passt zu deiner Suche.</p>;
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
       {ordered.map((m) => {
@@ -277,6 +296,8 @@ function TeachersTab({ classId }: { classId: string }) {
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [search, setSearch] = useState("");
 
   function load() {
     return swrJson<{ teachers?: TeacherItem[] }>(`/api/classes/${classId}/teachers`, (d) => {
@@ -298,25 +319,45 @@ function TeachersTab({ classId }: { classId: string }) {
     if (res.ok) {
       setName("");
       setSubject("");
+      setShowAdd(false);
       load();
     }
   }
 
+  const filteredTeachers = teachers?.filter((teacher) => {
+    const needle = search.trim().toLocaleLowerCase("de-CH");
+    return !needle || `${teacher.name} ${teacher.subject || ""}`.toLocaleLowerCase("de-CH").includes(needle);
+  }) ?? [];
+
   return (
     <div className="space-y-4">
-      <form onSubmit={create} className="glass-card flex flex-col gap-2 p-3 sm:flex-row">
-        <input className="input" placeholder="Name der Lehrperson" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="input sm:max-w-[40%]" placeholder="Fach (optional)" value={subject} onChange={(e) => setSubject(e.target.value)} />
-        <button className="btn-accent" disabled={creating}>Erstellen</button>
-      </form>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="w-full max-w-md sm:w-auto sm:flex-1">
+          <span className="sr-only">Lehrpersonen suchen</span>
+          <input className="input !px-4 !py-2.5" placeholder="Lehrpersonen suchen" value={search} onChange={(event) => setSearch(event.target.value)} type="search" />
+        </label>
+        <button type="button" onClick={() => setShowAdd((value) => !value)} className="btn-soft !px-4 !py-2.5">
+          {showAdd ? "Schliessen" : "Lehrperson hinzufügen"}
+        </button>
+      </div>
+
+      {showAdd ? (
+        <form onSubmit={create} className="compact-add-row animate-fade-up">
+          <input className="input !px-4 !py-2.5" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <input className="input !px-4 !py-2.5" placeholder="Fach (optional)" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <button className="btn-accent shrink-0 !px-4 !py-2.5" disabled={creating}>{creating ? "…" : "Hinzufügen"}</button>
+        </form>
+      ) : null}
 
       {teachers === null ? (
         <InlineLoading />
       ) : teachers.length === 0 ? (
         <div className="glass-panel p-8 text-center font-bold text-ink/60">Noch keine Lehrpersonen. Erstelle die erste!</div>
+      ) : filteredTeachers.length === 0 ? (
+        <p className="py-6 text-center text-sm font-bold text-ink/55">Keine Lehrperson passt zu deiner Suche.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-          {teachers.map((t) => (
+          {filteredTeachers.map((t) => (
             <Link
               key={t.id}
               href={`/classes/${classId}/teachers/${t.id}`}
@@ -347,6 +388,7 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
   const [school, setSchool] = useState(data.school || "");
   const [gradYear, setGradYear] = useState(data.gradYear || "");
   const [accountName, setAccountName] = useState("");
+  const [showAddMember, setShowAddMember] = useState(false);
   const [archiveConfirmation, setArchiveConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -400,6 +442,7 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
     });
     if (result) {
       setAccountName("");
+      setShowAddMember(false);
       setMessage(result.restored ? "Person und frühere Einträge wiederhergestellt." : "Person hinzugefügt.");
       onChange();
     }
@@ -466,12 +509,19 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
           <CopyCode code={data.joinCode} />
         </div>
         {isOwner ? (
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <form onSubmit={addMember} className="flex flex-1 gap-2">
-              <input className="input" value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="Genauer Kontoname" minLength={2} required />
-              <button className="btn-accent shrink-0" disabled={busy}>Hinzufügen</button>
-            </form>
-            <button type="button" className="btn-soft" onClick={rotateCode} disabled={busy}>Code erneuern</button>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn-soft !px-4 !py-2.5" onClick={() => setShowAddMember((value) => !value)} disabled={busy}>
+                {showAddMember ? "Schliessen" : "Person hinzufügen"}
+              </button>
+              <button type="button" className="btn-soft !px-4 !py-2.5" onClick={rotateCode} disabled={busy}>Code erneuern</button>
+            </div>
+            {showAddMember ? (
+              <form onSubmit={addMember} className="compact-add-row is-member-add animate-fade-up">
+                <input className="input !px-4 !py-2.5" value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="Genauer Kontoname" minLength={2} required autoFocus />
+                <button className="btn-accent shrink-0 !px-4 !py-2.5" disabled={busy}>{busy ? "…" : "Hinzufügen"}</button>
+              </form>
+            ) : null}
           </div>
         ) : null}
       </section>

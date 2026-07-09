@@ -5,25 +5,21 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-gallery-themes-comments";
+const NEWS_VERSION = "2026-07-09-quick-post-mobile-gallery";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
   {
-    title: "Neu: Bilder",
-    text: "Oben gibt es jetzt eine eigene Bilder-Ansicht mit allen Fotos als lockeres Fotoalbum.",
+    title: "Neu: Direkt posten",
+    text: "Mit dem Plus kannst du einen Eintrag sofort erstellen, ohne zuerst zu einer Person zu gehen.",
   },
   {
-    title: "Neu: Themes",
-    text: "Im Aquarell-Design kannst du jetzt Themes wählen und die Seite persönlicher einstellen.",
+    title: "Bilder auf dem iPhone",
+    text: "Das Album läuft dort jetzt als vertikaler Feed mit Likes, Teilen und Kommentaren von unten.",
   },
   {
-    title: "Bilder öffnen sauberer",
-    text: "Geöffnete Fotos bleiben auf Desktop und iPhone besser im sichtbaren Fenster, auch bei ungewohnten Formaten.",
-  },
-  {
-    title: "Ruhigere Kommentare",
-    text: "Kommentarbereiche laden leiser und zeigen ohne Theater einfach an, wenn noch nichts da ist.",
+    title: "Klasse schneller finden",
+    text: "Schüler:innen und Lehrpersonen lassen sich jetzt durchsuchen; neue Lehrpersonen werden kompakter hinzugefügt.",
   },
 ];
 
