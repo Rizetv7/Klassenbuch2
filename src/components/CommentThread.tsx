@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Avatar } from "./Nav";
 import { Lightbox } from "./Lightbox";
@@ -166,12 +166,16 @@ export function CommentThread({
   commentsPath,
   classId,
   onCountChange,
+  header,
+  footer,
 }: {
   // collection endpoint, e.g. "/api/posts/{id}/comments" or "/api/polls/{id}/comments"
   commentsPath: string;
   // class the thread lives in -> lets author avatars link to profiles
   classId?: string;
   onCountChange?: (n: number) => void;
+  header?: ReactNode;
+  footer?: ReactNode;
 }) {
   // Comments are always shown (no click-to-open), but a feed can hold dozens
   // of posts at once — fetching every thread's comments the instant the feed
@@ -371,6 +375,7 @@ export function CommentThread({
 
   return (
     <div ref={containerRef} className="space-y-3">
+      {header}
       {comments === null ? (
         <p className="comment-empty">Noch keine Kommentare.</p>
       ) : roots.length === 0 ? (
@@ -389,6 +394,8 @@ export function CommentThread({
           )}
         </div>
       )}
+
+      {footer}
 
       <Composer
         busy={busy}

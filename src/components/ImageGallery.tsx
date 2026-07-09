@@ -109,6 +109,28 @@ function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-CH", { day: "2-digit", month: "short" });
 }
 
+function GalleryPostContext({ post, source, className = "" }: { post: Post; source: SourceInfo; className?: string }) {
+  const author = post.anonymous || !post.author ? null : post.author;
+
+  return (
+    <div className={`gallery-post-context ${className}`}>
+      <Link href={source.href} className="shrink-0 transition hover:opacity-80">
+        <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={42} />
+      </Link>
+      <div className="min-w-0">
+        <p className="section-label">{source.label}</p>
+        <Link href={source.href} className="mt-1 block truncate text-base font-black leading-none text-ink hover:underline">
+          {source.title}
+        </Link>
+        {post.text ? <p className="gallery-post-context-text">{post.text}</p> : null}
+        <span className="gallery-post-context-meta">
+          {post.class.name} · {shortDate(post.createdAt)} · {author ? `eingereicht von ${author.name}` : "anonym eingereicht"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function useCompactGallery() {
   const [compact, setCompact] = useState(false);
 
@@ -560,13 +582,6 @@ function MobileGalleryViewer({
                 </span>
               ) : null}
 
-              <div className="mobile-gallery-top">
-                <Link href={source.href} className="mobile-gallery-source">
-                  <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={32} />
-                  <span className="min-w-0"><span className="block truncate font-black">{source.title}</span><span className="block text-[10px] font-bold text-white/72">{source.label} · {shortDate(post.createdAt)}</span></span>
-                </Link>
-              </div>
-
               <div className="mobile-gallery-bottom">
                 <div className="mobile-gallery-copy">
                   {post.text ? <p>{post.text}</p> : <p className="text-white/82">Ein Bild aus {post.class.name}</p>}
@@ -605,10 +620,6 @@ function MobileGalleryViewer({
       {commentsPost ? (
         <div className={`mobile-comments-layer ${commentsClosing ? "is-closing" : ""}`} role="dialog" aria-modal="true" aria-label="Kommentare">
           <button type="button" onClick={closeComments} className="mobile-comments-backdrop" aria-label="Kommentare schliessen" />
-          <div className="mobile-comments-preview" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={commentsPost.imageUrl!} alt="" />
-          </div>
           <section className="mobile-comments-sheet">
             <div className="mobile-comments-head">
               <div><p className="section-label">Öffentlich</p><h2 className="display text-3xl leading-none">Kommentare</h2></div>
@@ -618,6 +629,7 @@ function MobileGalleryViewer({
               commentsPath={`/api/posts/${commentsPost.id}/comments`}
               classId={commentsPost.class.id}
               onCountChange={(count) => onUpdatePost(commentsPost.id, { commentCount: count })}
+              footer={<GalleryPostContext post={commentsPost} source={sourceInfo(commentsPost)} className="mobile-comment-context" />}
             />
           </section>
         </div>
@@ -644,14 +656,16 @@ function GalleryViewer({
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [shared, setShared] = useState(false);
+  const [likeBurst, setLikeBurst] = useState(false);
   const [commentsMounted, setCommentsMounted] = useState(false);
   const [commentsClosing, setCommentsClosing] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const commentsTimerRef = useRef<number | null>(null);
+  const likeBurstTimerRef = useRef<number | null>(null);
+  const wheelAtRef = useRef(0);
   const post = posts[index];
   const source = sourceInfo(post);
-  const author = post.anonymous || !post.author ? null : post.author;
   const previous = posts[(index - 1 + posts.length) % posts.length];
   const next = posts[(index + 1) % posts.length];
 
@@ -660,6 +674,7 @@ function GalleryViewer({
   useEffect(() => () => {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     if (commentsTimerRef.current) window.clearTimeout(commentsTimerRef.current);
+    if (likeBurstTimerRef.current) window.clearTimeout(likeBurstTimerRef.current);
   }, []);
 
   const requestClose = useCallback(() => {
@@ -720,6 +735,23 @@ function GalleryViewer({
     }
   }
 
+  function likeFromStage() {
+    setLikeBurst(false);
+    window.requestAnimationFrame(() => setLikeBurst(true));
+    if (likeBurstTimerRef.current) window.clearTimeout(likeBurstTimerRef.current);
+    likeBurstTimerRef.current = window.setTimeout(() => setLikeBurst(false), 620);
+    if (!post.likedByMe) void toggleLike();
+  }
+
+  function scrollToAdjacent(event: React.WheelEvent<HTMLDivElement>) {
+    if (Math.abs(event.deltaY) < 18) return;
+    const now = Date.now();
+    if (now - wheelAtRef.current < 380) return;
+    wheelAtRef.current = now;
+    event.preventDefault();
+    onSelect(event.deltaY > 0 ? next : previous);
+  }
+
   async function share() {
     const url = `${window.location.origin}${postPath(post)}`;
     try {
@@ -777,21 +809,23 @@ function GalleryViewer({
       </div>
 
       <div className={`gallery-viewer-shell ${commentsMounted ? "has-comments" : ""}`} onClick={(event) => event.stopPropagation()}>
-        <div className="gallery-viewer-stage">
+        <div
+          className="gallery-viewer-stage"
+          onWheel={scrollToAdjacent}
+          onDoubleClick={likeFromStage}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              likeFromStage();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Bild doppelt anklicken zum Liken"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.imageUrl} alt={post.text || source.title} className="gallery-viewer-image" />
-          <div className="gallery-viewer-story">
-            <Link href={source.href} className="shrink-0 transition hover:opacity-80">
-              <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={44} />
-            </Link>
-            <div className="min-w-0">
-              <Link href={source.href} className="block truncate text-base font-black leading-none hover:underline">
-                {source.title}
-              </Link>
-              {post.text && <p>{post.text}</p>}
-              <span>{author ? `Eingereicht von ${author.name}` : "Anonym eingereicht"}</span>
-            </div>
-          </div>
+          <img key={post.id} src={post.imageUrl} alt={post.text || source.title} className="gallery-viewer-image" />
+          {likeBurst ? <span className="gallery-like-burst" aria-hidden="true"><IconHeart size={102} filled /></span> : null}
         </div>
 
         <aside className="gallery-action-rail" aria-label="Bildaktionen">
@@ -827,6 +861,7 @@ function GalleryViewer({
               commentsPath={`/api/posts/${post.id}/comments`}
               classId={post.class.id}
               onCountChange={(count) => onUpdatePost(post.id, { commentCount: count })}
+              header={<GalleryPostContext post={post} source={source} className="desktop-comment-context" />}
             />
             </div>
           </aside>
