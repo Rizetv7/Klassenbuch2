@@ -48,6 +48,16 @@ export function IconPoll({ className, size }: P) {
   );
 }
 
+export function IconImage({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <rect x="3.5" y="4" width="17" height="16" rx="3" />
+      <circle cx="8.5" cy="9.2" r="1.7" />
+      <path d="m5 17 4.4-4.4a2 2 0 0 1 2.8 0L14 14.4l1.1-1.1a2 2 0 0 1 2.8 0L20.5 16" />
+    </svg>
+  );
+}
+
 export function IconGrid({ className, size }: P) {
   return (
     <svg {...base(size, className)}>

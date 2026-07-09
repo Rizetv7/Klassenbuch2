@@ -68,12 +68,10 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [imageOpen, setImageOpen] = useState(false);
-  const [burst, setBurst] = useState(0);
   const [shared, setShared] = useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
 
   async function toggleLike() {
-    if (!liked) setBurst((b) => b + 1); // sparkle burst on every fresh like
     setLiked((v) => !v);
     setLikeCount((c) => c + (liked ? -1 : 1));
     const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
@@ -244,10 +242,9 @@ export function PostCard({
 
       {/* actions */}
       <div className="soft-divider relative z-10 mt-3 flex items-center gap-4 pt-3 text-sm font-black">
-        <button onClick={toggleLike} className="group/like relative flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition-all duration-150 hover:bg-white/45 active:scale-90">
-          <IconHeart size={19} filled={liked} className={`${liked ? "text-coral animate-pop" : "text-ink/60"} group-hover/like:animate-wiggle`} />
+        <button onClick={toggleLike} className={`relative flex items-center gap-1.5 rounded-full px-2 py-1.5 transition-all duration-150 hover:bg-white/45 active:scale-90 ${liked ? "bg-coral/15 text-coral" : "bg-white/25 text-ink/60"}`}>
+          <IconHeart size={19} filled={liked} className="transition-transform duration-150" />
           <span className="text-ink/70">{likeCount}</span>
-          {burst > 0 && <span key={burst} className="like-burst" aria-hidden="true" />}
         </button>
         <button onClick={jumpToComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90">
           <IconComment size={19} />

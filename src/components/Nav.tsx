@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IconHome, IconUsers, IconUser, IconPoll } from "./Icons";
+import { IconHome, IconUsers, IconUser, IconPoll, IconImage } from "./Icons";
 import { swrJson } from "@/lib/swr";
 
 const ACCENTS = ["#ee4fb3", "#f584c3", "#7ec4ec", "#8fdcc9", "#b9a7ff", "#f4b8d2"];
@@ -54,6 +54,7 @@ export function Avatar({
 const ITEMS = [
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/classes", label: "Klasse", Icon: IconUsers },
+  { href: "/bilder", label: "Bilder", Icon: IconImage },
   { href: "/polls", label: "Umfragen", Icon: IconPoll },
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
@@ -221,7 +222,7 @@ function BottomNav({ me }: { me: NavUser | null }) {
               <Link
                 key={it.href}
                 href={it.href}
-                className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-[11px] font-black transition-all duration-150 active:scale-90 ${
+                className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-[10px] font-black transition-all duration-150 active:scale-90 sm:px-4 sm:text-[11px] ${
                   active
                     ? "nav-item-active bg-ink text-oncolor shadow-soft"
                     : "text-ink/65 hover:text-ink"

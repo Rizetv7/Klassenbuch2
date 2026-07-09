@@ -81,8 +81,8 @@ export function prefetchJson(url: string) {
 }
 
 // Warm every page the user can reach, in the background: class list, class
-// detail, teachers, projects, polls. After this, navigating anywhere renders
-// instantly from cache (and still refreshes silently).
+// detail, teachers, projects, polls, images. After this, navigating anywhere
+// renders instantly from cache (and still refreshes silently).
 export function prefetchAppData() {
   try {
     fetch("/api/classes")
@@ -98,6 +98,7 @@ export function prefetchAppData() {
       })
       .catch(() => {});
     prefetchJson("/api/polls");
+    prefetchJson("/api/images?limit=32");
   } catch {
     // best-effort
   }
