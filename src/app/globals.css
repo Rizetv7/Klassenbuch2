@@ -130,16 +130,17 @@ body::before {
       rgb(var(--c-surface) / 0.075);
   }
 
-  /* mobile bottom bar: near-solid so labels stay readable over the wash */
+  /* Navigation glass stays readable while keeping the page visible behind it. */
   .dock {
     @apply rounded-full border;
     border-color: rgb(var(--c-surface) / 0.7);
-    /* milky glass: noticeably more opaque than .surface, but still see-through */
-    background: linear-gradient(180deg, rgb(var(--c-surface) / 0.66), rgb(var(--c-surface) / 0.5));
+    background: linear-gradient(180deg, rgb(var(--c-surface) / 0.36), rgb(var(--c-surface) / 0.18));
     box-shadow:
       0 18px 44px -20px rgba(9, 7, 12, 0.42),
       0 6px 18px -10px var(--pink-shadow),
       inset 0 1px 0 rgb(var(--c-surface) / 0.85);
+    backdrop-filter: blur(22px) saturate(135%);
+    -webkit-backdrop-filter: blur(22px) saturate(135%);
   }
 
   .glass-panel {
@@ -1725,17 +1726,73 @@ body::before {
 }
 .compact-add-row.is-member-add { grid-template-columns: minmax(0, 1fr) auto; }
 
+.site-top-nav-surface {
+  background: linear-gradient(180deg, rgb(var(--c-surface) / 0.34), rgb(var(--c-surface) / 0.13));
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+}
+
+.site-bottom-nav {
+  isolation: isolate;
+}
+
+.site-bottom-nav::before {
+  content: "";
+  position: absolute;
+  inset: -1.15rem 0 -0.25rem;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgb(var(--c-surface) / 0.22), rgb(var(--c-surface) / 0.06) 68%, transparent);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  mask-image: linear-gradient(to top, #000 45%, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000 45%, transparent);
+}
+
+.mobile-profile-shortcut {
+  position: fixed;
+  top: max(0.72rem, env(safe-area-inset-top));
+  right: max(0.78rem, env(safe-area-inset-right));
+  z-index: 42;
+  display: grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  place-items: center;
+  border: 1px solid rgb(var(--c-surface) / 0.7);
+  border-radius: 999px;
+  background: rgb(var(--c-surface) / 0.22);
+  box-shadow: 0 12px 28px -16px rgba(9, 7, 12, 0.62), inset 0 1px 0 rgb(var(--c-surface) / 0.74);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  transition: transform 150ms var(--ease-out), background 150ms ease;
+}
+
+.mobile-profile-shortcut:active { transform: scale(0.9); }
+.mobile-profile-shortcut:hover { background: rgb(var(--c-surface) / 0.34); }
+
+/* A comment sheet owns the lower screen. Keeping the global chrome out of it
+   avoids the translucent double-navigation effect behind comments. */
+body:has(.mobile-comments-layer) .site-bottom-nav,
+body:has(.mobile-comments-layer) .mobile-profile-shortcut {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .nav-compose-button {
   display: grid;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.55rem;
+  height: 2.12rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgb(var(--c-surface) / 0.72);
-  border-radius: 999px;
+  border: 1px solid rgb(var(--c-surface) / 0.82);
+  border-radius: 10px;
   background: rgb(var(--c-accent));
   color: rgb(var(--c-on-ink));
-  box-shadow: 0 10px 25px -15px rgba(9, 7, 12, 0.58), inset 0 1px 0 rgb(var(--c-surface) / 0.36);
+  box-shadow:
+    -3px 0 rgba(114, 234, 223, 0.78),
+    3px 0 rgba(255, 196, 163, 0.74),
+    0 10px 25px -15px rgba(9, 7, 12, 0.58),
+    inset 0 1px 0 rgb(var(--c-surface) / 0.36);
   transition: transform 160ms var(--ease-out), filter 160ms ease;
 }
 
@@ -1753,6 +1810,32 @@ body::before {
   transition: transform 130ms ease;
 }
 .fx-nav-create:active { transform: scale(0.9); }
+
+@media (max-width: 1023px) {
+  .site-bottom-dock > a {
+    min-width: 0;
+    flex: 1 1 0;
+    border-radius: 12px;
+    padding-inline: 0.15rem;
+  }
+
+  .site-bottom-dock .nav-item-active {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgb(var(--c-ink)) !important;
+  }
+}
+
+:root[data-design="fashion"] .mobile-profile-shortcut {
+  border-color: #16130f;
+  border-radius: 0;
+  background: rgba(243, 239, 230, 0.76);
+  box-shadow: 3px 3px 0 rgba(22, 19, 16, 0.72);
+}
+
+:root[data-design="fashion"] .site-bottom-nav::before {
+  background: linear-gradient(0deg, rgba(243, 239, 230, 0.88), rgba(243, 239, 230, 0.16) 68%, transparent);
+}
 
 @keyframes quick-post-in {
   from { opacity: 0; transform: translateY(16px) scale(0.975); }
@@ -1832,10 +1915,13 @@ body::before {
   .compact-add-row input:nth-child(2) { grid-column: 1 / -1; }
   .compact-add-row button { grid-column: 2; grid-row: 1; }
   .compact-add-row.is-member-add input:nth-child(1) { grid-column: 1; }
+}
 
-  /* Phone gallery is intentionally a different surface: one image at a time,
-     touch-scroll snapping, and a bottom comment sheet instead of a cramped
-     desktop lightbox. */
+/* The vertical feed needs a real phone-shaped viewport: portrait 4:3 or
+   taller. Narrow desktop windows deliberately keep the normal album. */
+@media (max-width: 1023px) and (max-aspect-ratio: 3 / 4) {
+  /* One image at a time, touch-scroll snapping, and a bottom comment sheet
+     instead of a cramped desktop lightbox. */
   .mobile-gallery {
     position: relative;
     height: 100dvh;
@@ -1866,6 +1952,21 @@ body::before {
     color: #fff;
   }
 
+  .mobile-gallery-media {
+    position: absolute;
+    inset: 0;
+    touch-action: pan-y;
+    outline: none;
+  }
+
+  .mobile-gallery-media:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: 0.55rem;
+    border: 2px solid white;
+    border-radius: 14px;
+  }
+
   .mobile-gallery-image {
     position: absolute;
     inset: 0;
@@ -1880,8 +1981,26 @@ body::before {
     inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(9, 7, 12, 0.58), transparent 28%, transparent 48%, rgba(9, 7, 12, 0.8) 100%),
+      linear-gradient(180deg, rgba(9, 7, 12, 0.38), transparent 27%, transparent 50%, rgba(9, 7, 12, 0.76) 100%),
       linear-gradient(90deg, rgba(9, 7, 12, 0.12), transparent 45%, rgba(9, 7, 12, 0.16));
+  }
+
+  .mobile-gallery-like-burst {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 22px rgba(9, 7, 12, 0.52));
+    animation: mobile-like-burst 680ms cubic-bezier(0.18, 0.88, 0.28, 1) both;
+  }
+
+  @keyframes mobile-like-burst {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-12deg); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(3deg); }
+    58% { opacity: 1; transform: translate(-50%, -56%) scale(0.96); }
+    100% { opacity: 0; transform: translate(-50%, -72%) scale(0.84); }
   }
 
   .mobile-gallery-top,
@@ -1896,25 +2015,13 @@ body::before {
     inset: max(0.9rem, env(safe-area-inset-top)) 0 auto;
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 0.7rem;
-    padding: 0 0.9rem;
-  }
-
-  .mobile-gallery-index {
-    border: 1px solid rgba(255, 255, 255, 0.34);
-    border-radius: 999px;
-    background: rgba(9, 7, 12, 0.28);
-    padding: 0.32rem 0.55rem;
-    font-size: 0.7rem;
-    font-weight: 900;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    padding: 0 4.35rem 0 0.9rem;
   }
 
   .mobile-gallery-source {
     display: flex;
-    max-width: min(76vw, 285px);
+    max-width: 100%;
     align-items: center;
     gap: 0.55rem;
     color: white;
@@ -1926,7 +2033,7 @@ body::before {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 0.75rem;
-    padding: 1rem 0.9rem calc(6.25rem + env(safe-area-inset-bottom));
+    padding: 1rem 0.9rem calc(5.9rem + env(safe-area-inset-bottom));
   }
 
   .mobile-gallery-copy { min-width: 0; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.48); }
@@ -1934,30 +2041,35 @@ body::before {
   .mobile-gallery-copy span { display: block; margin-top: 0.45rem; font-size: 0.7rem; font-weight: 800; color: rgba(255, 255, 255, 0.72); }
 
   .mobile-gallery-actions {
-    display: grid;
-    gap: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.84rem;
+    padding-bottom: 0.1rem;
   }
 
   .mobile-gallery-action {
-    display: grid;
-    min-width: 3.35rem;
-    min-height: 3.35rem;
-    place-items: center;
-    gap: 0.06rem;
-    border: 1px solid rgba(255, 255, 255, 0.38);
-    border-radius: 999px;
-    background: rgba(9, 7, 12, 0.32);
+    display: flex;
+    min-width: 3.1rem;
+    min-height: 3rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+    border: 0;
+    background: transparent;
     color: white;
-    font-size: 0.64rem;
+    font-size: 0.72rem;
     font-weight: 900;
-    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: transform 130ms var(--ease-out), background 130ms ease, color 130ms ease;
+    line-height: 1;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    transition: transform 130ms var(--ease-out), color 130ms ease, opacity 130ms ease;
   }
 
+  .mobile-gallery-action svg { filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45)); }
   .mobile-gallery-action:active { transform: scale(0.9); }
-  .mobile-gallery-action.is-liked { border-color: rgba(255, 104, 185, 0.9); background: rgba(238, 79, 179, 0.43); color: #fff; }
+  .mobile-gallery-action:disabled { opacity: 0.62; }
+  .mobile-gallery-action.is-liked { color: #ff5ca7; }
 
   .mobile-gallery-more {
     display: grid;
@@ -2027,6 +2139,8 @@ body::before {
       linear-gradient(180deg, rgb(var(--c-surface) / 0.82), rgb(var(--c-surface) / 0.66));
     box-shadow: 0 -28px 76px -42px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgb(var(--c-surface) / 0.9);
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    backdrop-filter: blur(22px) saturate(130%);
+    -webkit-backdrop-filter: blur(22px) saturate(130%);
     animation: comments-sheet-in 300ms var(--ease-out) both;
   }
 
@@ -2038,13 +2152,10 @@ body::before {
   :root[data-design="fashion"] .mobile-gallery { background: #16130f; }
   :root[data-design="fashion"] .mobile-gallery-image { filter: grayscale(1) contrast(1.08); }
   :root[data-design="fashion"] .mobile-gallery-shade { background: linear-gradient(180deg, rgba(22, 19, 16, 0.62), transparent 34%, transparent 48%, rgba(22, 19, 16, 0.86) 100%); }
-  :root[data-design="fashion"] .mobile-gallery-index,
   :root[data-design="fashion"] .mobile-gallery-action {
-    border-radius: 0;
-    border-color: rgba(243, 239, 230, 0.7);
-    background: rgba(22, 19, 16, 0.46);
+    color: #f3efe6;
   }
-  :root[data-design="fashion"] .mobile-gallery-action.is-liked { border-color: #c39857; background: rgba(195, 152, 87, 0.48); }
+  :root[data-design="fashion"] .mobile-gallery-action.is-liked { color: #c39857; }
 }
 
 /* ------------------------------------------------------------------

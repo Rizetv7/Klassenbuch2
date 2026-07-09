@@ -5,21 +5,21 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-quick-post-mobile-gallery";
+const NEWS_VERSION = "2026-07-09-photo-feed-polish";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
   {
-    title: "Neu: Direkt posten",
-    text: "Mit dem Plus kannst du einen Eintrag sofort erstellen, ohne zuerst zu einer Person zu gehen.",
+    title: "Bilder neu gestaltet",
+    text: "Auf dem iPhone sieht der Bilderfeed ruhiger aus. Doppeltippe ein Bild, um es direkt zu liken.",
   },
   {
-    title: "Bilder auf dem iPhone",
-    text: "Das Album läuft dort jetzt als vertikaler Feed mit Likes, Teilen und Kommentaren von unten.",
+    title: "Bilder immer griffbereit",
+    text: "Der Bilder-Tab ist unten. Dein eigenes Profil findest du nun oben rechts.",
   },
   {
-    title: "Klasse schneller finden",
-    text: "Schüler:innen und Lehrpersonen lassen sich jetzt durchsuchen; neue Lehrpersonen werden kompakter hinzugefügt.",
+    title: "Besserer Überblick",
+    text: "Der Hochformat-Feed startet nur auf wirklich telefonartigen Bildschirmen; sonst bleibt das Album sichtbar.",
   },
 ];
 

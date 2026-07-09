@@ -113,7 +113,9 @@ function useCompactGallery() {
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 760px)");
+    // The vertical feed is for genuinely phone-shaped viewports. A narrow
+    // desktop window stays an album instead of unexpectedly becoming TikTok.
+    const query = window.matchMedia("(max-width: 1023px) and (max-aspect-ratio: 3 / 4)");
     const update = () => setCompact(query.matches);
     update();
     query.addEventListener("change", update);
@@ -341,14 +343,23 @@ function MobilePhotoFeed({
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [sharedPostId, setSharedPostId] = useState<string | null>(null);
+  const [likeBurst, setLikeBurst] = useState<{ postId: string; x: number; y: number; key: number } | null>(null);
   const activeIndexRef = useRef(0);
+  const tapStartRef = useRef<{ postId: string; x: number; y: number } | null>(null);
+  const lastTapRef = useRef<{ postId: string; x: number; y: number; time: number } | null>(null);
+  const lastImageLikeRef = useRef<{ postId: string; time: number } | null>(null);
+  const burstTimerRef = useRef<number | null>(null);
 
   const activePost = posts[activeIndex];
   const commentsPost = commentsPostId ? posts.find((post) => post.id === commentsPostId) ?? null : null;
 
-  async function toggleLike(post: Post) {
+  useEffect(() => () => {
+    if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
+  }, []);
+
+  async function setLiked(post: Post, likedByMe: boolean) {
     if (busyPostId) return;
-    const likedByMe = !post.likedByMe;
+    if (post.likedByMe === likedByMe) return;
     onUpdatePost(post.id, { likedByMe, likeCount: Math.max(0, post.likeCount + (likedByMe ? 1 : -1)) });
     setBusyPostId(post.id);
     try {
@@ -361,6 +372,53 @@ function MobilePhotoFeed({
     } finally {
       setBusyPostId(null);
     }
+  }
+
+  function toggleLike(post: Post) {
+    void setLiked(post, !post.likedByMe);
+  }
+
+  function likeFromImage(post: Post, target: HTMLElement, clientX?: number, clientY?: number) {
+    const now = Date.now();
+    const previousLike = lastImageLikeRef.current;
+    if (previousLike && previousLike.postId === post.id && now - previousLike.time < 420) return;
+    lastImageLikeRef.current = { postId: post.id, time: now };
+
+    const rect = target.getBoundingClientRect();
+    const x = clientX === undefined ? 50 : Math.max(8, Math.min(92, ((clientX - rect.left) / rect.width) * 100));
+    const y = clientY === undefined ? 50 : Math.max(8, Math.min(92, ((clientY - rect.top) / rect.height) * 100));
+    const key = now;
+
+    setLikeBurst({ postId: post.id, x, y, key });
+    if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = window.setTimeout(() => {
+      setLikeBurst((current) => (current?.key === key ? null : current));
+    }, 680);
+
+    // A double tap only adds a like, like the native photo feeds. Unliking is
+    // deliberately kept on the heart button so accidental double taps are safe.
+    if (!post.likedByMe) void setLiked(post, true);
+  }
+
+  function handleTouchStart(post: Post, event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "touch") return;
+    tapStartRef.current = { postId: post.id, x: event.clientX, y: event.clientY };
+  }
+
+  function handleTouchEnd(post: Post, event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "touch") return;
+    const start = tapStartRef.current;
+    tapStartRef.current = null;
+    if (!start || start.postId !== post.id || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 18) return;
+
+    const now = Date.now();
+    const previous = lastTapRef.current;
+    if (previous && previous.postId === post.id && now - previous.time < 330 && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) < 34) {
+      lastTapRef.current = null;
+      likeFromImage(post, event.currentTarget, event.clientX, event.clientY);
+      return;
+    }
+    lastTapRef.current = { postId: post.id, x: event.clientX, y: event.clientY, time: now };
   }
 
   async function share(post: Post) {
@@ -404,18 +462,43 @@ function MobilePhotoFeed({
           const author = post.anonymous || !post.author ? null : post.author;
           return (
             <article className="mobile-gallery-slide" key={post.id} aria-current={index === activeIndex ? "true" : undefined}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.imageUrl!}
-                alt={post.text || source.title}
-                loading={index < 2 ? "eager" : "lazy"}
-                decoding="async"
-                className="mobile-gallery-image"
-              />
+              <div
+                className="mobile-gallery-media"
+                role="button"
+                tabIndex={0}
+                aria-label="Bild doppelt antippen, um es zu liken"
+                onPointerDown={(event) => handleTouchStart(post, event)}
+                onPointerUp={(event) => handleTouchEnd(post, event)}
+                onPointerCancel={() => { tapStartRef.current = null; }}
+                onDoubleClick={(event) => likeFromImage(post, event.currentTarget, event.clientX, event.clientY)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  likeFromImage(post, event.currentTarget);
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.imageUrl!}
+                  alt={post.text || source.title}
+                  loading={index < 2 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="mobile-gallery-image"
+                />
+              </div>
               <div className="mobile-gallery-shade" />
+              {likeBurst?.postId === post.id ? (
+                <span
+                  key={likeBurst.key}
+                  className="mobile-gallery-like-burst"
+                  style={{ left: `${likeBurst.x}%`, top: `${likeBurst.y}%` }}
+                  aria-hidden="true"
+                >
+                  <IconHeart size={92} filled />
+                </span>
+              ) : null}
 
               <div className="mobile-gallery-top">
-                <span className="mobile-gallery-index">{index + 1} / {posts.length}</span>
                 <Link href={source.href} className="mobile-gallery-source">
                   <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={32} />
                   <span className="min-w-0"><span className="block truncate font-black">{source.title}</span><span className="block text-[10px] font-bold text-white/72">{source.label} · {shortDate(post.createdAt)}</span></span>
@@ -428,7 +511,7 @@ function MobilePhotoFeed({
                   <span>{author ? `Eingereicht von ${author.name}` : "Anonym eingereicht"}</span>
                 </div>
                 <div className="mobile-gallery-actions" aria-label="Bildaktionen">
-                  <button type="button" onClick={() => void toggleLike(post)} disabled={busyPostId === post.id} className={`mobile-gallery-action ${post.likedByMe ? "is-liked" : ""}`} aria-label="Gefällt mir">
+                  <button type="button" onClick={() => toggleLike(post)} disabled={busyPostId === post.id} className={`mobile-gallery-action ${post.likedByMe ? "is-liked" : ""}`} aria-label="Gefällt mir">
                     <IconHeart size={25} filled={post.likedByMe} />
                     <span>{post.likeCount}</span>
                   </button>

@@ -89,7 +89,7 @@ export function IconPlus({ className, size }: P) {
 export function IconHeart({ className, size, filled }: P) {
   return (
     <svg {...base(size, className)} fill={filled ? "currentColor" : "none"} strokeWidth={filled ? 0 : 1.9}>
-      <path d="M12 21.1 10.7 20C5.1 15.1 2.3 12.7 2.3 8.9 2.3 5.8 4.7 3.5 7.7 3.5c1.7 0 3.3.8 4.3 2 1-1.2 2.6-2 4.3-2 3 0 5.4 2.3 5.4 5.4 0 3.8-2.8 6.2-8.4 11.1L12 21.1Z" />
+      <path d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z" />
     </svg>
   );
 }

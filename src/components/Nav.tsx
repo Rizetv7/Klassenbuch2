@@ -65,7 +65,7 @@ const MOBILE_ITEMS = [
   { kind: "link" as const, href: "/classes", label: "Klasse", Icon: IconUsers },
   { kind: "post" as const, label: "Posten", Icon: IconPlus },
   { kind: "link" as const, href: "/polls", label: "Umfragen", Icon: IconPoll },
-  { kind: "link" as const, href: "/profile", label: "Profil", Icon: IconUser },
+  { kind: "link" as const, href: "/bilder", label: "Bilder", Icon: IconImage },
 ];
 
 type NavUser = {
@@ -106,11 +106,12 @@ export function SiteNav() {
       {/* Aquarell chrome and the Couture masthead are both rendered;
           CSS (.aq-only / .fx-only) shows exactly one — instant, flash-free */}
       <TopNav me={me} onOpenPost={() => setPostOpen(true)} />
-      <BottomNav me={me} onOpenPost={() => setPostOpen(true)} />
+      <BottomNav onOpenPost={() => setPostOpen(true)} />
       <div className="fx-only">
         <FashionMasthead onOpenPost={() => setPostOpen(true)} />
-        <FashionBottomNav me={me} onOpenPost={() => setPostOpen(true)} />
+        <FashionBottomNav onOpenPost={() => setPostOpen(true)} />
       </div>
+      {me ? <MobileProfileShortcut me={me} /> : null}
       {postOpen ? <QuickPostDialog onClose={() => setPostOpen(false)} /> : null}
     </>
   );
@@ -151,10 +152,10 @@ function FashionMasthead({ onOpenPost }: { onOpenPost: () => void }) {
   );
 }
 
-function FashionBottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
+function FashionBottomNav({ onOpenPost }: { onOpenPost: () => void }) {
   const isActive = useActive();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
+    <nav className="site-bottom-nav fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="border-t border-ink/85 bg-[#f3efe6] pb-[max(0.4rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-md items-center justify-around px-2 pt-2.5 pb-1.5">
           {MOBILE_ITEMS.map((it) => {
@@ -165,7 +166,6 @@ function FashionBottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: 
                 </button>
               );
             }
-            const profile = it.href === "/profile" && me;
             return (
               <Link
                 key={it.href}
@@ -174,11 +174,7 @@ function FashionBottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: 
                   isActive(it.href) ? "text-ink" : "text-ink/50"
                 }`}
               >
-                {profile ? (
-                  <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={20} ring={false} />
-                ) : (
-                  <it.Icon size={19} className="transition" />
-                )}
+                <it.Icon size={19} className="transition" />
                 <span className={`fx-link !p-0 text-[9px] ${isActive(it.href) ? "is-active" : ""}`}>{it.label}</span>
               </Link>
             );
@@ -193,7 +189,7 @@ function TopNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void
   const isActive = useActive();
   return (
     <header className="aq-only sticky top-0 z-30 hidden lg:block">
-      <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
+      <div className="surface site-top-nav-surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
         <Link href="/" className="display mr-2 text-2xl leading-none">Maturaziitig</Link>
         <nav className="ml-auto flex items-center gap-1">
           <button type="button" onClick={onOpenPost} className="btn-accent !px-3.5 !py-2 text-sm" title="Neuen Eintrag posten">
@@ -232,12 +228,12 @@ function TopNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void
   );
 }
 
-function BottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
+function BottomNav({ onOpenPost }: { onOpenPost: () => void }) {
   const isActive = useActive();
   return (
-    <nav className="aq-only fixed inset-x-0 bottom-0 z-30 lg:hidden">
+    <nav className="aq-only site-bottom-nav fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-sm px-4 pb-4">
-        <div className="dock flex items-center justify-around px-2.5 py-2">
+        <div className="dock site-bottom-dock flex items-center justify-around px-2.5 py-2">
           {MOBILE_ITEMS.map((it) => {
             if (it.kind === "post") {
               return (
@@ -253,7 +249,6 @@ function BottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => v
                 </button>
               );
             }
-            const profile = it.href === "/profile" && me;
             const active = isActive(it.href);
             return (
               <Link
@@ -266,11 +261,7 @@ function BottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => v
                 }`}
                 style={active ? { animation: "nav-pop 340ms cubic-bezier(0.24, 1.4, 0.36, 1) both" } : undefined}
               >
-                {profile ? (
-                  <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={22} ring={false} />
-                ) : (
-                  <it.Icon size={21} className="transition" />
-                )}
+                <it.Icon size={21} className="transition" />
                 {it.label}
               </Link>
             );
@@ -278,5 +269,18 @@ function BottomNav({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => v
         </div>
       </div>
     </nav>
+  );
+}
+
+function MobileProfileShortcut({ me }: { me: NavUser }) {
+  return (
+    <Link
+      href="/profile"
+      className="mobile-profile-shortcut lg:hidden"
+      aria-label={`Zum Profil von ${me.name}`}
+      title="Mein Profil"
+    >
+      <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={34} ring={false} />
+    </Link>
   );
 }
