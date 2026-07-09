@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, type Post } from "@/components/PostCard";
 import { CreatePost } from "@/components/CreatePost";
@@ -144,17 +145,35 @@ export default function TopicPage() {
         </section>
       )}
 
-      {/* Lightbox */}
-      {lightbox && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setLightbox(null)}>
-          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setLightbox(null)} className="mb-2 ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink">
-              <IconClose size={18} />
-            </button>
-            <PostCard post={lightbox} showContext={false} onDeleted={removePost} />
-          </div>
-        </div>
-      )}
+      {/* Gallery viewer: the full post (incl. comments) in a clean sheet */}
+      {lightbox &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setLightbox(null)}
+          >
+            <div className="absolute inset-0 animate-fade-in bg-black/60 backdrop-blur-sm" />
+            <div
+              className="lightbox-in relative max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-[30px] p-3 pt-2 sm:max-h-[86vh] sm:rounded-[30px]"
+              style={{ background: "linear-gradient(180deg, rgb(var(--c-surface) / 0.35), rgb(var(--c-surface) / 0.2)), var(--page-bg)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 z-10 mb-1 flex justify-end pt-1">
+                <button
+                  onClick={() => setLightbox(null)}
+                  aria-label="Schliessen"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink shadow-soft transition hover:rotate-90"
+                >
+                  <IconClose size={17} />
+                </button>
+              </div>
+              <PostCard post={lightbox} showContext={false} onDeleted={removePost} />
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
     </PageReveal>
   );

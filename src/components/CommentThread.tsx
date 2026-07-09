@@ -115,7 +115,7 @@ function Composer({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2">
+    <form onSubmit={handleSubmit} className="mt-2 animate-fade-up">
       {(image || uploading) && (
         <div className="mb-2 flex items-center gap-2">
           {uploading ? (

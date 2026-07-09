@@ -7,7 +7,7 @@ import { InlineLoading, PageLoading, PageReveal } from "@/components/LoadingStat
 import { Avatar } from "@/components/Nav";
 import { ImportWizard } from "@/components/ImportWizard";
 import { ThemeMenu } from "@/components/ThemeMenu";
-import { clearApiCache, swrJson } from "@/lib/swr";
+import { clearApiCache, prefetchJson, swrJson } from "@/lib/swr";
 
 type Member = {
   id: string;
@@ -182,7 +182,15 @@ function ProjectsTab({ classId }: { classId: string }) {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topics.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/topics/${t.id}`} className="glass-card group overflow-hidden p-2 transition hover:-translate-y-1">
+            <Link
+              key={t.id}
+              href={`/classes/${classId}/topics/${t.id}`}
+              onPointerEnter={() => {
+                prefetchJson(`/api/topics/${t.id}`);
+                prefetchJson(`/api/posts?classId=${classId}&topicId=${t.id}&limit=100`);
+              }}
+              className="glass-card group overflow-hidden p-2 transition hover:-translate-y-1"
+            >
               <div className="project-cover h-36 rounded-[24px] border-0">
                 {t.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -209,6 +217,31 @@ function ProjectsTab({ classId }: { classId: string }) {
   );
 }
 
+// Join code as a tap-to-copy chip: one tap, code is in the clipboard.
+function CopyCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {}
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Code kopieren"
+      className="group flex items-center gap-2 rounded-full bg-white/25 px-4 py-2 transition hover:bg-white/40 active:scale-95"
+    >
+      <span className="font-mono text-2xl font-black tracking-widest">{code}</span>
+      <span className={`text-[11px] font-black ${copied ? "animate-fade-in text-ink/80" : "text-ink/45"}`}>
+        {copied ? "Kopiert ✓" : "Kopieren"}
+      </span>
+    </button>
+  );
+}
+
 function MemberGrid({ members, classId, empty }: { members: Member[]; classId: string; empty: string }) {
   if (members.length === 0) return <p className="text-muted text-center py-6">{empty}</p>;
   const ordered = [...members].sort((a, b) => b.postCount - a.postCount || a.displayName.localeCompare(b.displayName));
@@ -220,6 +253,9 @@ function MemberGrid({ members, classId, empty }: { members: Member[]; classId: s
           <Link
             key={m.id}
             href={`/classes/${classId}/members/${m.id}`}
+            // warm the person's posts the moment the finger/cursor arrives —
+            // the page then opens instantly from cache
+            onPointerEnter={() => prefetchJson(`/api/posts?classId=${classId}&subjectMembershipId=${m.id}`)}
             className="glass-card group flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5"
           >
             <Avatar name={m.displayName} url={m.avatarUrl} accent={m.accentColor} size={38} />
@@ -281,7 +317,15 @@ function TeachersTab({ classId }: { classId: string }) {
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
           {teachers.map((t) => (
-            <Link key={t.id} href={`/classes/${classId}/teachers/${t.id}`} className="glass-card flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5">
+            <Link
+              key={t.id}
+              href={`/classes/${classId}/teachers/${t.id}`}
+              onPointerEnter={() => {
+                prefetchJson(`/api/teachers/${t.id}`);
+                prefetchJson(`/api/posts?classId=${classId}&teacherId=${t.id}`);
+              }}
+              className="glass-card flex min-h-[86px] items-center gap-2 p-2.5 transition hover:-translate-y-0.5"
+            >
               <Avatar name={t.name} url={t.avatarUrl} accent={t.accentColor} size={38} />
               <div className="min-w-0">
                 <p className="truncate text-sm font-black leading-tight">{t.name}</p>
@@ -419,7 +463,7 @@ function ManagePanel({ data, onChange }: { data: ClassDetail; onChange: () => vo
       <section className="space-y-3 border-b border-white/35 pb-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div><p className="section-label">Zugang</p><h2 className="display text-3xl">Einladung</h2></div>
-          <span className="font-mono text-2xl font-black tracking-widest">{data.joinCode}</span>
+          <CopyCode code={data.joinCode} />
         </div>
         {isOwner ? (
           <div className="flex flex-col gap-2 sm:flex-row">

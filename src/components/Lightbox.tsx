@@ -106,7 +106,7 @@ export function Lightbox({
           src={src}
           alt={caption || ""}
           onClick={(e) => e.stopPropagation()}
-          className="max-h-full max-w-full rounded-[22px] object-contain shadow-soft"
+          className="lightbox-in max-h-full max-w-full rounded-[22px] object-contain shadow-soft"
         />
       </div>
 

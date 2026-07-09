@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Avatar } from "./Nav";
 import { CommentThread } from "./CommentThread";
 import { Lightbox } from "./Lightbox";
-import { IconHeart, IconComment, IconClose } from "./Icons";
+import { IconHeart, IconComment, IconClose, IconShare } from "./Icons";
 
 export type Post = {
   id: string;
@@ -36,6 +36,14 @@ type CardPerson = {
   href?: string | null;
 };
 
+// Deep link target: the page where this post lives.
+function postPath(post: Post) {
+  if (post.topic) return `/classes/${post.class.id}/topics/${post.topic.id}`;
+  if (post.teacher) return `/classes/${post.class.id}/teachers/${post.teacher.id}`;
+  if (post.subject) return `/classes/${post.class.id}/members/${post.subject.id}`;
+  return `/classes/${post.class.id}`;
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
@@ -60,9 +68,12 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [imageOpen, setImageOpen] = useState(false);
+  const [burst, setBurst] = useState(0);
+  const [shared, setShared] = useState(false);
   const commentsRef = useRef<HTMLDivElement>(null);
 
   async function toggleLike() {
+    if (!liked) setBurst((b) => b + 1); // sparkle burst on every fresh like
     setLiked((v) => !v);
     setLikeCount((c) => c + (liked ? -1 : 1));
     const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
@@ -75,6 +86,24 @@ export function PostCard({
 
   function jumpToComments() {
     commentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function sharePost() {
+    const url = `${window.location.origin}${postPath(post)}`;
+    const title = post.kind === "QUOTE" && post.text ? `“${post.text}”` : "Aus unserer Maturaziitig";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: title, url });
+        return;
+      }
+    } catch {
+      return; // user dismissed the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      setTimeout(() => setShared(false), 1600);
+    } catch {}
   }
 
   async function deletePost() {
@@ -155,9 +184,11 @@ export function PostCard({
             </div>
           )}
         </div>
-        <button onClick={deletePost} title="Löschen" className="ml-auto rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral hover:rotate-90">
-          <IconClose size={16} />
-        </button>
+        {post.deletableByMe !== false && (
+          <button onClick={deletePost} title="Löschen" className="ml-auto rounded-full bg-white/25 px-2 py-2 text-ink/25 transition hover:bg-white/50 hover:text-coral hover:rotate-90">
+            <IconClose size={16} />
+          </button>
+        )}
       </div>
 
       {/* body */}
@@ -212,14 +243,23 @@ export function PostCard({
       </p>
 
       {/* actions */}
-      <div className="soft-divider relative z-10 mt-3 flex items-center gap-5 pt-3 text-sm font-black">
-        <button onClick={toggleLike} className="group/like flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition-all duration-150 hover:bg-white/45 active:scale-90">
+      <div className="soft-divider relative z-10 mt-3 flex items-center gap-4 pt-3 text-sm font-black">
+        <button onClick={toggleLike} className="group/like relative flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 transition-all duration-150 hover:bg-white/45 active:scale-90">
           <IconHeart size={19} filled={liked} className={`${liked ? "text-coral animate-pop" : "text-ink/60"} group-hover/like:animate-wiggle`} />
           <span className="text-ink/70">{likeCount}</span>
+          {burst > 0 && <span key={burst} className="like-burst" aria-hidden="true" />}
         </button>
         <button onClick={jumpToComments} className="flex items-center gap-1.5 rounded-full bg-white/25 px-2 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90">
           <IconComment size={19} />
           <span className="text-ink/70">{commentCount}</span>
+        </button>
+        <button
+          onClick={sharePost}
+          title="Teilen"
+          className="ml-auto flex items-center gap-1.5 rounded-full bg-white/25 px-2.5 py-1.5 text-ink/60 transition-all duration-150 hover:bg-white/45 hover:text-ink active:scale-90"
+        >
+          <IconShare size={18} />
+          {shared && <span className="animate-fade-in text-[11px] text-ink/70">Link kopiert ✓</span>}
         </button>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Post } from "./PostCard";
+import { IconPlus } from "./Icons";
 import { uploadImageFile } from "@/lib/uploadImage";
 
 type Kind = "QUOTE" | "IMAGE" | "TEXT";
@@ -104,11 +105,14 @@ export function CreatePost({
       {kind === "IMAGE" ? (
         <div className="relative z-10 space-y-3">
           <label className="block">
-            <span className="flex min-h-[130px] w-full cursor-pointer flex-col items-center justify-center rounded-[30px] border border-dashed border-white/50 bg-white/20 px-5 py-6 text-center transition hover:bg-white/30">
-              <span className="display text-4xl leading-none">Bilder</span>
-              <span className="mt-1 text-sm font-black text-ink/60">
+            <span className="flex min-h-[130px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[30px] border border-dashed border-white/55 bg-white/20 px-5 py-6 text-center transition hover:border-white/80 hover:bg-white/30 active:scale-[0.99]">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-white/45 text-hotpink transition">
+                <IconPlus size={22} />
+              </span>
+              <span className="text-sm font-black text-ink/75">
                 {files.length > 0 ? `${files.length} Bild(er) gewählt — ändern` : "Bilder auswählen"}
               </span>
+              <span className="text-xs font-bold text-ink/45">Mehrere möglich · werden automatisch verkleinert</span>
             </span>
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickFiles(e.target.files)} />
           </label>

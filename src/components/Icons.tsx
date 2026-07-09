@@ -118,3 +118,13 @@ export function IconDownload({ className, size }: P) {
     </svg>
   );
 }
+
+export function IconShare({ className, size }: P) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 14V4" />
+      <path d="m8.5 7 3.5-3.5L15.5 7" />
+      <path d="M7 11H6a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1" />
+    </svg>
+  );
+}

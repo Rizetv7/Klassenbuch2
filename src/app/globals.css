@@ -1080,11 +1080,111 @@ body::before {
 }
 
 .poll-option-winner {
+  position: relative;
   animation: poll-rise 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+/* a single light sweep crowns the leading option */
+.poll-option-winner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 30%, rgb(var(--c-surface) / 0.35) 50%, transparent 70%);
+  transform: translateX(-110%);
+  animation: poll-shine 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+
+@keyframes poll-shine {
+  to {
+    transform: translateX(110%);
+  }
 }
 
 .vote-pop {
   animation: vote-pop 0.42s ease both;
+}
+
+/* ------------------------------------------------------------------
+   Like burst: a ring + eight sparkle dots explode out of the heart the
+   moment it is tapped.
+   ------------------------------------------------------------------ */
+.like-burst {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.like-burst::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: transparent;
+  box-shadow:
+    0 -18px 0 -1px rgb(var(--c-danger)),
+    13px -13px 0 -2px rgb(var(--c-accent)),
+    18px 0 0 -1px rgb(var(--c-danger)),
+    13px 13px 0 -2px rgb(var(--c-accent)),
+    0 18px 0 -1px rgb(var(--c-danger)),
+    -13px 13px 0 -2px rgb(var(--c-accent)),
+    -18px 0 0 -1px rgb(var(--c-danger)),
+    -13px -13px 0 -2px rgb(var(--c-accent));
+  animation: burst-dots 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.like-burst::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2.5px solid rgb(var(--c-danger));
+  animation: burst-ring 0.5s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+@keyframes burst-ring {
+  from {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes burst-dots {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+/* Lightbox: the photo zooms gently out of the page instead of snapping */
+.lightbox-in {
+  animation: lightbox-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -1128,7 +1228,10 @@ body::before {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* end on `none` (not translateY(0)): with fill:both a lingering
+       transform would turn sections into containing blocks and trap any
+       position:fixed overlay rendered inside them */
+    transform: none;
   }
 }
 
