@@ -1544,9 +1544,9 @@ body::before {
   align-items: center;
   justify-content: center;
   gap: 0.72rem;
-  border: 1px solid rgb(var(--c-surface) / 0.42);
+  border: 1px solid rgba(248, 241, 223, 0.28);
   border-radius: 28px;
-  background: linear-gradient(180deg, rgb(var(--c-surface) / 0.26), rgb(var(--c-surface) / 0.12));
+  background: linear-gradient(180deg, rgba(29, 23, 43, 0.84), rgba(18, 14, 28, 0.76));
   box-shadow: 0 20px 56px -42px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgb(var(--c-surface) / 0.58);
   padding: 0.65rem 0.35rem;
   backdrop-filter: blur(16px) saturate(125%);
@@ -1594,14 +1594,16 @@ body::before {
 .gallery-rail-action.is-liked { color: #ff6aa8; }
 
 .gallery-viewer-panel {
+  --c-ink: 248 241 223;
+  --c-surface: 54 47 79;
   min-height: 0;
   overflow: auto;
-  border: 1px solid rgb(var(--c-surface) / 0.58);
+  border: 1px solid rgba(248, 241, 223, 0.3);
   border-radius: 34px;
   background:
-    radial-gradient(78% 48% at 100% 0%, rgb(var(--c-accent) / 0.12), transparent 64%),
-    linear-gradient(180deg, rgb(var(--c-surface) / 0.76), rgb(var(--c-surface) / 0.58));
-  box-shadow: 0 28px 70px -48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgb(var(--c-surface) / 0.85);
+    radial-gradient(78% 48% at 100% 0%, rgba(255, 106, 213, 0.16), transparent 64%),
+    linear-gradient(180deg, rgba(29, 23, 43, 0.94), rgba(18, 14, 28, 0.9));
+  box-shadow: 0 28px 70px -48px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(248, 241, 223, 0.18);
   padding: 1rem;
   animation: gallery-comments-in 300ms var(--ease-out) both;
 }
@@ -2050,6 +2052,7 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   }
 
   .mobile-gallery.has-comments .mobile-gallery-feed { overflow: hidden; }
+  .mobile-gallery.has-comments .mobile-gallery-slide.is-active { background: #09070c; }
 
   .mobile-gallery-feed::-webkit-scrollbar { display: none; }
 
@@ -2075,6 +2078,17 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   }
 
   .mobile-gallery.has-comments .mobile-gallery-slide[aria-current="true"] .mobile-gallery-media {
+    top: max(0.9rem, env(safe-area-inset-top));
+    right: 1rem;
+    bottom: auto;
+    left: 1rem;
+    height: min(31dvh, 256px);
+    overflow: hidden;
+    border-radius: 27px;
+    box-shadow: 0 20px 52px -32px rgba(0, 0, 0, 0.84);
+  }
+
+  .mobile-gallery-media.is-comments-preview {
     top: max(0.9rem, env(safe-area-inset-top));
     right: 1rem;
     bottom: auto;
@@ -2287,6 +2301,8 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   }
 
   .mobile-comments-sheet {
+    --c-ink: 248 241 223;
+    --c-surface: 54 47 79;
     position: absolute;
     z-index: 1;
     top: min(36dvh, 320px);
@@ -2297,14 +2313,14 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
     max-height: none;
     overflow: auto;
     overscroll-behavior: contain;
-    border: 1px solid rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(248, 241, 223, 0.3);
     border-radius: 32px 32px 0 0;
     background:
-      radial-gradient(92% 46% at 0% 0%, rgba(169, 221, 245, 0.3), transparent 68%),
-      linear-gradient(180deg, rgba(248, 241, 223, 0.97), rgba(248, 241, 223, 0.93));
-    box-shadow: 0 -24px 68px -42px rgba(0, 0, 0, 0.84), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+      radial-gradient(92% 46% at 0% 0%, rgba(255, 106, 213, 0.16), transparent 68%),
+      linear-gradient(180deg, rgba(29, 23, 43, 0.96), rgba(18, 14, 28, 0.93));
+    box-shadow: 0 -24px 68px -42px rgba(0, 0, 0, 0.84), inset 0 1px 0 rgba(248, 241, 223, 0.18);
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
-    color: #1a1521;
+    color: rgb(var(--c-ink));
     backdrop-filter: blur(18px) saturate(125%);
     -webkit-backdrop-filter: blur(18px) saturate(125%);
     animation: comments-sheet-in 300ms var(--ease-out) both;
@@ -2312,7 +2328,7 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
 
   .mobile-comment-context {
     margin-top: 0.7rem;
-    border-top: 1px solid rgba(26, 21, 33, 0.12);
+    border-top: 1px solid rgba(248, 241, 223, 0.18);
     padding-top: 0.75rem;
   }
 

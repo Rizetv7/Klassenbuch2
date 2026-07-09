@@ -545,9 +545,9 @@ function MobileGalleryViewer({
           const source = sourceInfo(post);
           const author = post.anonymous || !post.author ? null : post.author;
           return (
-            <article className="mobile-gallery-slide" key={post.id} aria-current={index === activeIndex ? "true" : undefined}>
+            <article className={`mobile-gallery-slide ${index === activeIndex ? "is-active" : ""}`} key={post.id} aria-current={index === activeIndex ? "true" : undefined}>
               <div
-                className="mobile-gallery-media"
+                className={`mobile-gallery-media ${commentsPostId === post.id ? "is-comments-preview" : ""}`}
                 role="button"
                 tabIndex={0}
                 aria-label="Bild doppelt antippen, um es zu liken"

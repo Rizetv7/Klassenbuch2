@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-gallery-viewer-refinement";
+const NEWS_VERSION = "2026-07-09-readable-comments";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
