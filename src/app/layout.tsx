@@ -31,17 +31,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // so the server<->client attribute diff on <html> is expected
     <html lang="de" suppressHydrationWarning>
       <head>
-        {/* Apply the saved theme + light/dark mode before first paint. */}
+        {/* Apply the saved design + theme + light/dark mode before first paint. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              '(function(){try{var t=localStorage.getItem("mz-theme");if(t!=="standard"&&t!=="insta")t="standard";var m=localStorage.getItem("mz-mode")==="dark"?"dark":"light";var d=document.documentElement;d.dataset.theme=t;d.dataset.mode=(t==="insta")?"dark":m;}catch(e){}})();',
+              '(function(){try{var el=document.documentElement;var g=localStorage.getItem("mz-design");if(g!=="fashion")g="aquarell";el.dataset.design=g;if(g==="fashion"){el.dataset.theme="standard";el.dataset.mode="light";return;}var t=localStorage.getItem("mz-theme");if(t!=="standard"&&t!=="insta")t="standard";var m=localStorage.getItem("mz-mode")==="dark"?"dark":"light";el.dataset.theme=t;el.dataset.mode=(t==="insta")?"dark":m;}catch(e){}})();',
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Fraunces:opsz,wght@9..144,700;9..144,800;9..144,900&family=Inter:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
       </head>

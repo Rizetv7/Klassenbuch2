@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconClose } from "./Icons";
-import { THEMES, type ThemeId } from "@/lib/themes";
-import { setLocalTheme, setMode, storedMode, storedTheme, type Mode } from "@/lib/theme";
+import { DESIGNS, THEMES, type DesignId, type ThemeId } from "@/lib/themes";
+import { setLocalDesign, setLocalTheme, setMode, storedDesign, storedMode, storedTheme, type Mode } from "@/lib/theme";
 
 function IconPalette({ size = 18 }: { size?: number }) {
   return (
@@ -92,6 +92,33 @@ function PreviewInsta() {
   );
 }
 
+function PreviewFashion() {
+  return (
+    <div className="flex h-full w-full flex-col" style={{ background: "#f3efe6" }}>
+      <div className="flex items-center justify-between px-2.5 pt-2">
+        <span className="h-1 w-6" style={{ background: "rgba(22,19,16,0.4)" }} />
+        <span style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 17, color: "#16130f", lineHeight: 1 }}>Maturaziitig</span>
+        <span className="h-1 w-6" style={{ background: "rgba(22,19,16,0.4)" }} />
+      </div>
+      <div className="mx-2.5 mt-1.5" style={{ borderTop: "1px solid #16130f" }} />
+      <div className="mx-2.5 mt-2 flex flex-1 gap-2">
+        <div className="flex-1" style={{ border: "1px solid #16130f", background: "linear-gradient(135deg,#d8d2c4 0%,#a49c8c 100%)" }} />
+        <div className="flex w-[46%] flex-col gap-1.5">
+          <span style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 12, color: "#16130f", lineHeight: 1.05 }}>“Ein Zitat wie auf dem Laufsteg”</span>
+          <span className="h-1 w-10/12" style={{ background: "rgba(22,19,16,0.3)" }} />
+          <span className="h-1 w-7/12" style={{ background: "rgba(22,19,16,0.3)" }} />
+          <span className="mt-auto h-2 w-9" style={{ background: "#9e0f1b" }} />
+        </div>
+      </div>
+      <div className="mx-2.5 my-2 flex items-center gap-1.5" style={{ borderTop: "1px solid rgba(22,19,16,0.5)", paddingTop: 5 }}>
+        <span className="h-1 w-8" style={{ background: "#16130f" }} />
+        <span className="h-1 w-5" style={{ background: "rgba(22,19,16,0.35)" }} />
+        <span className="ml-auto h-1 w-5" style={{ background: "rgba(22,19,16,0.35)" }} />
+      </div>
+    </div>
+  );
+}
+
 function PreviewAmina() {
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ background: "#fff1a8" }}>
@@ -136,6 +163,7 @@ export function ThemeMenu({
   const [open, setOpen] = useState(false);
   const [mode, setModeState] = useState<Mode>("light");
   const [active, setActive] = useState<ThemeId>("standard");
+  const [design, setDesign] = useState<DesignId>("aquarell");
   const [viewer, setViewer] = useState<Viewer | null>(null);
   const [viewerChecked, setViewerChecked] = useState(false);
   const [aminaBusy, setAminaBusy] = useState(false);
@@ -164,6 +192,7 @@ export function ThemeMenu({
     if (!open) return;
     setModeState(storedMode());
     setActive(storedTheme());
+    setDesign(storedDesign());
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeMenu();
     };
@@ -209,6 +238,12 @@ export function ThemeMenu({
     setLocalTheme(next); // applies instantly across the whole app
   }
 
+  function pickDesign(next: DesignId) {
+    if (next === design) return;
+    setDesign(next);
+    setLocalDesign(next); // swaps the whole experience instantly
+  }
+
   async function activateAmina() {
     if (!viewer?.aminaAvailable || aminaBusy) return;
     setAminaBusy(true);
@@ -231,6 +266,7 @@ export function ThemeMenu({
 
   const activeInfo = THEMES.find((t) => t.id === active);
   const modeLocked = !!activeInfo?.alwaysDark;
+  const themesLocked = design !== "aquarell"; // themes only refine Aquarell
   const aminaHint = !viewerChecked
     ? "Wird geprüft …"
     : viewer?.aminaAvailable
@@ -273,55 +309,29 @@ export function ThemeMenu({
                 </button>
               </div>
 
-              <div className="space-y-5 px-5 pb-2 pt-4">
-                {/* light / dark for the standard look */}
+              <div className="space-y-6 px-5 pb-2 pt-4">
+                {/* ============ DESIGNS: complete experiences ============ */}
                 <div>
-                  <p className="mb-2 text-xs font-black uppercase text-ink/50">Modus · für dich</p>
-                  <div className="grid grid-cols-2 gap-1.5 rounded-full border border-white/45 bg-white/20 p-1.5">
-                    {(["light", "dark"] as const).map((m) => {
-                      const selected = !modeLocked && mode === m;
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          disabled={modeLocked}
-                          onClick={() => pickMode(m)}
-                          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-black transition-all duration-150 active:scale-95 disabled:opacity-45 ${
-                            selected ? "animate-pop bg-ink text-oncolor shadow-soft" : "text-ink/60 hover:text-ink"
-                          }`}
-                        >
-                          {m === "light" ? <IconSun /> : <IconMoon />}
-                          {m === "light" ? "Hell" : "Dunkel"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {modeLocked && (
-                    <p className="mt-1.5 pl-1 text-[11px] font-bold text-ink/45">„{activeInfo?.name}“ ist immer dunkel.</p>
-                  )}
-                </div>
-
-                {/* personal theme */}
-                <div>
-                  <p className="mb-2 text-xs font-black uppercase text-ink/50">Design · für dich</p>
+                  <p className="mb-0.5 text-xs font-black uppercase text-ink/50">Designs</p>
+                  <p className="mb-2 text-[11px] font-bold text-ink/45">Komplett eigene Erlebnisse — Layout, Navigation & Stil ändern sich.</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {THEMES.map((t) => {
-                      const selected = active === t.id;
+                    {DESIGNS.map((d) => {
+                      const selected = design === d.id;
                       return (
                         <button
-                          key={t.id}
+                          key={d.id}
                           type="button"
-                          onClick={() => pickTheme(t.id)}
+                          onClick={() => pickDesign(d.id)}
                           className={`group relative overflow-hidden rounded-[22px] border-2 text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${
                             selected ? "border-hotpink shadow-soft" : "border-white/40 hover:border-white/70"
                           }`}
                         >
                           <div className="h-28 overflow-hidden">
-                            {t.id === "insta" ? <PreviewInsta /> : <PreviewStandard />}
+                            {d.id === "fashion" ? <PreviewFashion /> : <PreviewStandard />}
                           </div>
                           <div className="border-t border-white/30 bg-white/20 px-3 py-2">
-                            <p className="text-sm font-black leading-tight">{t.name}</p>
-                            <p className="mt-0.5 text-[10px] font-bold leading-tight text-ink/50">{t.tagline}</p>
+                            <p className="text-sm font-black leading-tight">{d.name}</p>
+                            <p className="mt-0.5 text-[10px] font-bold leading-tight text-ink/50">{d.tagline}</p>
                           </div>
                           {selected && (
                             <span className="absolute right-2 top-2 grid h-6 w-6 animate-pop-in place-items-center rounded-full bg-hotpink text-[13px] font-black text-snow shadow-soft">
@@ -347,6 +357,68 @@ export function ThemeMenu({
                     </button>
                   </div>
                   {aminaError && <p className="mt-2 text-xs font-black text-red-700">{aminaError}</p>}
+                </div>
+
+                {/* ============ THEMES: Aquarell refinements ============ */}
+                <div className={themesLocked ? "opacity-45" : ""}>
+                  <p className="mb-0.5 text-xs font-black uppercase text-ink/50">Themes · nur fürs Aquarell-Design</p>
+                  <p className="mb-2 text-[11px] font-bold text-ink/45">
+                    {themesLocked
+                      ? "Wechsle zum Aquarell-Design, um Themes zu nutzen."
+                      : "Ändern nur Farben & Stimmung — das Erlebnis bleibt gleich."}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {THEMES.map((t) => {
+                      const selected = !themesLocked && active === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          disabled={themesLocked}
+                          onClick={() => pickTheme(t.id)}
+                          className={`group relative overflow-hidden rounded-[22px] border-2 text-left transition-all duration-200 enabled:hover:-translate-y-0.5 enabled:active:scale-[0.97] disabled:cursor-not-allowed ${
+                            selected ? "border-hotpink shadow-soft" : "border-white/40 enabled:hover:border-white/70"
+                          }`}
+                        >
+                          <div className="h-20 overflow-hidden">
+                            {t.id === "insta" ? <PreviewInsta /> : <PreviewStandard />}
+                          </div>
+                          <div className="border-t border-white/30 bg-white/20 px-3 py-1.5">
+                            <p className="text-xs font-black leading-tight">{t.name}</p>
+                          </div>
+                          {selected && (
+                            <span className="absolute right-2 top-2 grid h-6 w-6 animate-pop-in place-items-center rounded-full bg-hotpink text-[13px] font-black text-snow shadow-soft">
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-full border border-white/45 bg-white/20 p-1.5">
+                    {(["light", "dark"] as const).map((m) => {
+                      const selected = !themesLocked && !modeLocked && mode === m;
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          disabled={themesLocked || modeLocked}
+                          onClick={() => pickMode(m)}
+                          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-black transition-all duration-150 active:scale-95 disabled:opacity-45 ${
+                            selected ? "animate-pop bg-ink text-oncolor shadow-soft" : "text-ink/60 hover:text-ink"
+                          }`}
+                        >
+                          {m === "light" ? <IconSun /> : <IconMoon />}
+                          {m === "light" ? "Hell" : "Dunkel"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {!themesLocked && modeLocked && (
+                    <p className="mt-1.5 pl-1 text-[11px] font-bold text-ink/45">„{activeInfo?.name}“ ist immer dunkel.</p>
+                  )}
                 </div>
               </div>
             </div>

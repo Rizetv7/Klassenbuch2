@@ -9,10 +9,13 @@ import type { Post } from "@/components/PostCard";
 import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { HomeAttribution, uploaderPerson } from "@/components/HomeAttribution";
+import { FashionHome } from "@/components/FashionHome";
 import { prefetchAppData, swrJson } from "@/lib/swr";
+import { useDesign } from "@/lib/useDesign";
 
 export default function HomePage() {
   const router = useRouter();
+  const design = useDesign();
   const [me, setMe] = useState<{ name: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -52,6 +55,21 @@ export default function HomePage() {
 
   if (!me) {
     return <LoginCard />;
+  }
+
+  // The Couture design replaces the whole home layout with an editorial issue.
+  if (design === "fashion") {
+    return (
+      <PageReveal>
+        <FashionHome
+          meName={me.name}
+          posts={posts}
+          memory={memory}
+          hasClass={hasClass}
+          pollDeck={polls.length > 0 ? <HomePollDeck polls={polls} onChange={setPolls} /> : null}
+        />
+      </PageReveal>
+    );
   }
 
   const imagePosts = posts.filter((p) => p.imageUrl);

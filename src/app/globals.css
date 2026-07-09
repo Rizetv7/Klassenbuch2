@@ -590,6 +590,375 @@ body::before {
   box-shadow: none;
 }
 
+/* ====================================================================
+   COUTURE DESIGN — a standalone high-fashion experience. Not a theme:
+   ivory paper, black hairline rules, huge Fraunces serifs, couture-red
+   accents, razor-sharp corners, grayscale photography that blooms into
+   color on touch. Layout/navigation swaps live in the components
+   (masthead, editorial home); this block carries the visual language.
+   ==================================================================== */
+:root[data-design="fashion"] {
+  --c-ink: 22 19 16;
+  --c-surface: 22 19 16; /* every hairline becomes a black rule */
+  --c-muted: 122 112 100;
+  --c-accent: 158 15 27; /* couture red */
+  --c-danger: 158 15 27;
+  --c-on-ink: 244 240 231;
+  --fx-gold: #a8842c; /* gold-foil details */
+  --fx-paper: #f3efe6;
+  --page-bg: #f3efe6; /* ivory paper */
+  --ink: #16130f;
+  --muted: rgba(22, 19, 16, 0.55);
+  --glass-line: rgba(22, 19, 16, 0.85);
+  --pink-shadow: rgba(0, 0, 0, 0);
+  --avatar-ring: #16130f;
+}
+
+/* ivory paper with a soft vignette and the faintest grain — reads as
+   heavy magazine stock instead of a flat fill */
+:root[data-design="fashion"] body::before {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+    radial-gradient(120% 90% at 50% 0%, #f7f3ea 0%, #f3efe6 52%, #ebe4d4 100%);
+}
+
+:root[data-design="fashion"] .liquid-bg {
+  display: none;
+}
+
+/* nothing is rounded on the runway */
+:root[data-design="fashion"] [class*="rounded"] {
+  border-radius: 0;
+}
+
+/* flat paper surfaces with black hairline frames */
+:root[data-design="fashion"] .glass,
+:root[data-design="fashion"] .card,
+:root[data-design="fashion"] .surface,
+:root[data-design="fashion"] .glass-card,
+:root[data-design="fashion"] .glass-panel,
+:root[data-design="fashion"] .post-card,
+:root[data-design="fashion"] .hero-frame {
+  background: transparent;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  box-shadow: none;
+}
+:root[data-design="fashion"] .post-card::before,
+:root[data-design="fashion"] .hero-frame::after {
+  background: none;
+}
+:root[data-design="fashion"] a.glass-card:hover,
+:root[data-design="fashion"] button.glass-card:hover {
+  box-shadow: none;
+  border-color: rgb(var(--c-accent));
+}
+
+/* editorial controls: sharp, uppercase, letter-spaced */
+:root[data-design="fashion"] .btn {
+  border-radius: 0;
+  box-shadow: none;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+  font-weight: 800;
+}
+:root[data-design="fashion"] .btn-primary {
+  background: #16130f;
+  color: #f3efe6;
+  /* inner hairline — like a foil-stamped frame on the button */
+  box-shadow: inset 0 0 0 1px #16130f, inset 0 0 0 2.5px rgba(243, 239, 230, 0.65);
+}
+:root[data-design="fashion"] .btn-primary:hover {
+  background: rgb(var(--c-accent));
+  box-shadow: inset 0 0 0 1px rgb(var(--c-accent)), inset 0 0 0 2.5px rgba(243, 239, 230, 0.7);
+  transform: none;
+}
+:root[data-design="fashion"] .btn-soft,
+:root[data-design="fashion"] .btn-ghost {
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  background: transparent;
+}
+:root[data-design="fashion"] .btn-soft:hover,
+:root[data-design="fashion"] .btn-ghost:hover {
+  background: #16130f;
+  color: #f3efe6;
+  transform: none;
+}
+
+:root[data-design="fashion"] .input {
+  border-radius: 0;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+:root[data-design="fashion"] .input:focus {
+  border-color: rgb(var(--c-accent));
+  --tw-ring-color: rgb(var(--c-accent) / 0.15);
+}
+
+:root[data-design="fashion"] .chip,
+:root[data-design="fashion"] .tab {
+  border-radius: 0;
+  border: 1px solid rgba(22, 19, 16, 0.55);
+  background: transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+}
+:root[data-design="fashion"] .tab {
+  font-size: 11px;
+}
+:root[data-design="fashion"] .tab-active {
+  background: #16130f;
+  border-color: #16130f;
+  color: #f3efe6;
+  box-shadow: none;
+}
+
+/* headline serifs: lighter weight, tighter, magazine-like */
+:root[data-design="fashion"] .display {
+  font-weight: 550;
+  letter-spacing: -0.015em;
+}
+:root[data-design="fashion"] .quote-big {
+  font-weight: 500;
+  font-style: italic;
+}
+:root[data-design="fashion"] .section-label {
+  letter-spacing: 0.3em;
+  font-weight: 700;
+}
+/* handwriting becomes an italic serif — editorial, not scrapbook */
+:root[data-design="fashion"] .font-hand {
+  font-family: var(--font-display);
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+:root[data-design="fashion"] .postit,
+:root[data-design="fashion"] .postit:nth-child(3n),
+:root[data-design="fashion"] .postit:nth-child(3n + 1) {
+  background: #fbf8f1;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+:root[data-design="fashion"] .postit:hover {
+  transform: none;
+  border-color: rgb(var(--c-accent));
+  box-shadow: none;
+}
+
+:root[data-design="fashion"] .polaroid {
+  background: #fbf8f1;
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+:root[data-design="fashion"] .polaroid:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgb(var(--c-accent));
+}
+
+:root[data-design="fashion"] .project-cover {
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  background: #16130f;
+  box-shadow: none;
+}
+
+:root[data-design="fashion"] .soft-divider {
+  border-color: rgba(22, 19, 16, 0.35);
+}
+
+:root[data-design="fashion"] .dock {
+  border: 1px solid rgba(22, 19, 16, 0.85);
+  border-radius: 0;
+  background: #f3efe6;
+  box-shadow: none;
+}
+
+:root[data-design="fashion"] .loading-panel,
+:root[data-design="fashion"] .loading-mark {
+  border: 1px solid rgba(22, 19, 16, 0.25);
+  border-radius: 0 !important;
+  background: rgba(22, 19, 16, 0.05);
+  box-shadow: none;
+}
+
+/* Surfaces that are near-solid white in Aquarell (banners, badges, viewer
+   buttons) read as paper here — the surface channel is black for hairlines,
+   so high alphas must not become ink blocks. */
+:root[data-design="fashion"] [class*="bg-white/6"],
+:root[data-design="fashion"] [class*="bg-white/7"],
+:root[data-design="fashion"] [class*="bg-white/8"],
+:root[data-design="fashion"] [class*="bg-white/9"] {
+  background-color: #faf6ee;
+}
+
+/* the design picker sheet becomes a clean paper card (overrides its
+   inline gradient) */
+:root[data-design="fashion"] .theme-sheet {
+  background: #f5f1e8 !important;
+  border: 1px solid #16130f;
+}
+
+/* photography: grayscale on the page, color on touch */
+:root[data-design="fashion"] .post-card img,
+:root[data-design="fashion"] .glass-card img,
+:root[data-design="fashion"] .polaroid img,
+:root[data-design="fashion"] .fx-photo img {
+  filter: grayscale(1) contrast(1.06);
+  transition: filter 0.5s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-design="fashion"] .post-card:hover img,
+:root[data-design="fashion"] .glass-card:hover img,
+:root[data-design="fashion"] .polaroid:hover img,
+:root[data-design="fashion"] .fx-photo:hover img {
+  filter: grayscale(0) contrast(1);
+}
+
+/* ---- couture building blocks used by the fashion components ---- */
+
+/* which nav renders: CSS-driven so there is no flash and no hydration risk */
+.fx-only {
+  display: none !important;
+}
+:root[data-design="fashion"] .fx-only {
+  display: block !important;
+}
+:root[data-design="fashion"] .aq-only {
+  display: none !important;
+}
+
+.fx-rule {
+  border-top: 1px solid rgba(22, 19, 16, 0.85);
+}
+
+/* the classic thick-thin newspaper double rule */
+.fx-rule-double {
+  border-top: 3px solid #16130f;
+  position: relative;
+}
+.fx-rule-double::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  border-top: 1px solid #16130f;
+}
+
+.fx-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.fx-gold {
+  color: var(--fx-gold, #a8842c);
+}
+
+/* centred magazine section divider:  ——— ✦ TITEL ✦ ——— */
+.fx-sect {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.fx-sect::before,
+.fx-sect::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid rgba(22, 19, 16, 0.75);
+}
+
+/* photographs sit in a double mat, like framed prints in a gallery */
+.fx-frame {
+  border: 1px solid rgba(22, 19, 16, 0.9);
+  background: #fbf8f1;
+  padding: 6px;
+}
+.fx-frame > * {
+  outline: 1px solid rgba(22, 19, 16, 0.55);
+}
+
+.fx-link {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 11px;
+  font-weight: 800;
+  padding-bottom: 3px;
+}
+.fx-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fx-link:hover::after,
+.fx-link.is-active::after {
+  transform: scaleX(1);
+}
+
+/* the runway ticker: an endless band of quotes on lacquer black,
+   framed by gold hairlines */
+.fx-marquee {
+  overflow: hidden;
+  background: #16130f;
+  color: #f3efe6;
+  border-top: 1px solid var(--fx-gold, #a8842c);
+  border-bottom: 1px solid var(--fx-gold, #a8842c);
+}
+.fx-marquee-quote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.fx-marquee-track {
+  display: inline-flex;
+  gap: 2.5rem;
+  padding: 0.62rem 0;
+  white-space: nowrap;
+  will-change: transform;
+  animation: fx-marquee 30s linear infinite;
+}
+.fx-marquee:hover .fx-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes fx-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* editorial index rows (quotes of the season) */
+.fx-row {
+  transition: color 0.25s ease, padding-left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fx-row:hover {
+  color: rgb(var(--c-accent));
+  padding-left: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-marquee-track {
+    animation: none;
+  }
+}
+
 /* Design menu sheet: slides up from the bottom on phones, pops in centred
    on desktop. */
 .theme-sheet {

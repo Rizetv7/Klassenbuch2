@@ -92,16 +92,87 @@ export function SiteNav() {
   if (path === "/login" || path === "/register" || isInternal || isAminaMode) return null;
   return (
     <>
+      {/* Aquarell chrome and the Couture masthead are both rendered;
+          CSS (.aq-only / .fx-only) shows exactly one — instant, flash-free */}
       <TopNav me={me} />
       <BottomNav me={me} />
+      <div className="fx-only">
+        <FashionMasthead />
+        <FashionBottomNav me={me} />
+      </div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------
+// COUTURE navigation: a magazine masthead on top (all viewports) and a
+// hairline text bar at the bottom on phones.
+// ---------------------------------------------------------------------
+function FashionMasthead() {
+  const isActive = useActive();
+  const today = new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "long", year: "numeric" });
+  return (
+    <header className="bg-transparent">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="fx-rule-double flex items-center justify-between pt-3 text-ink/60">
+          <p className="fx-label hidden pt-2 sm:block">Digitales Jahrbuch</p>
+          <p className="fx-label fx-gold pt-2">{today}</p>
+          <p className="fx-label hidden pt-2 sm:block">Ausgabe N° {new Date().getFullYear()}</p>
+        </div>
+        <Link href="/" className="block py-2 text-center sm:py-3">
+          <span className="display block text-5xl leading-none tracking-tight sm:text-7xl">Maturaziitig</span>
+          <span className="fx-label mt-1.5 block text-ink/45">
+            <span className="fx-gold">✦</span>&nbsp;&nbsp;Das Magazin deiner Klasse&nbsp;&nbsp;<span className="fx-gold">✦</span>
+          </span>
+        </Link>
+        <nav className="fx-rule hidden items-center justify-center gap-8 py-2.5 lg:flex">
+          {ITEMS.map((it) => (
+            <Link key={it.href} href={it.href} className={`fx-link ${isActive(it.href) ? "is-active text-ink" : "text-ink/60 hover:text-ink"}`}>
+              {it.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="fx-rule-double" style={{ transform: "scaleY(-1)" }} />
+      </div>
+    </header>
+  );
+}
+
+function FashionBottomNav({ me }: { me: NavUser | null }) {
+  const isActive = useActive();
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
+      <div className="border-t border-ink/85 bg-[#f3efe6] pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-md items-center justify-around px-2 pt-2.5 pb-1.5">
+          {ITEMS.map((it) => {
+            const profile = it.href === "/profile" && me;
+            return (
+              <Link
+                key={it.href}
+                href={it.href}
+                className={`flex flex-col items-center gap-1 px-2 transition active:scale-95 ${
+                  isActive(it.href) ? "text-ink" : "text-ink/50"
+                }`}
+              >
+                {profile ? (
+                  <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={20} ring={false} />
+                ) : (
+                  <it.Icon size={19} className="transition" />
+                )}
+                <span className={`fx-link !p-0 text-[9px] ${isActive(it.href) ? "is-active" : ""}`}>{it.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
   );
 }
 
 function TopNav({ me }: { me: NavUser | null }) {
   const isActive = useActive();
   return (
-    <header className="sticky top-0 z-30 hidden lg:block">
+    <header className="aq-only sticky top-0 z-30 hidden lg:block">
       <div className="surface mx-auto mt-4 flex max-w-6xl items-center gap-2 px-4 py-2">
         <Link href="/" className="display mr-2 text-2xl leading-none">Maturaziitig</Link>
         <nav className="ml-auto flex items-center gap-1">
@@ -140,7 +211,7 @@ function TopNav({ me }: { me: NavUser | null }) {
 function BottomNav({ me }: { me: NavUser | null }) {
   const isActive = useActive();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
+    <nav className="aq-only fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-sm px-4 pb-4">
         <div className="dock flex items-center justify-around px-2.5 py-2">
           {ITEMS.map((it) => {
