@@ -1707,6 +1707,11 @@ body::before {
   animation: quick-post-in 340ms var(--ease-out) both;
 }
 
+.quick-post-dialog.is-closing {
+  pointer-events: none;
+  animation: quick-post-out 220ms ease-in both;
+}
+
 .quick-post-head,
 .mobile-comments-head {
   display: flex;
@@ -1730,6 +1735,47 @@ body::before {
 
 .quick-post-close:hover { transform: rotate(8deg); background: rgb(var(--c-surface) / 0.42); }
 .quick-post-close:active { transform: scale(0.92); }
+
+.quick-composer-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.95rem;
+  border: 1px solid rgb(var(--c-surface) / 0.45);
+  border-radius: 22px;
+  background: rgb(var(--c-surface) / 0.16);
+  padding: 0.32rem;
+}
+
+.quick-composer-switch button {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  border-radius: 17px;
+  color: rgb(var(--c-ink) / 0.58);
+  font-size: 0.8rem;
+  font-weight: 900;
+  transition: transform 160ms var(--ease-out), color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.quick-composer-switch button:hover { color: rgb(var(--c-ink)); background: rgb(var(--c-surface) / 0.2); }
+.quick-composer-switch button:active { transform: scale(0.96); }
+.quick-composer-switch button.is-active {
+  background: rgb(var(--c-surface) / 0.58);
+  color: rgb(var(--c-ink));
+  box-shadow: 0 8px 18px -13px rgba(9, 7, 12, 0.58), inset 0 1px 0 rgb(var(--c-surface) / 0.74);
+  animation: quick-mode-select 260ms var(--ease-out) both;
+}
+
+.quick-composer-pane { animation: quick-pane-in 300ms var(--ease-out) both; }
+
+.quick-poll-form {
+  border: 1px solid rgb(var(--c-surface) / 0.42);
+  border-radius: 26px;
+  background: rgb(var(--c-surface) / 0.1);
+}
 
 .quick-post-class,
 .quick-post-note {
@@ -1786,6 +1832,7 @@ body::before {
   background: rgb(var(--c-surface) / 0.42);
   box-shadow: 0 20px 52px -34px rgba(9, 7, 12, 0.64), inset 0 1px 0 rgb(var(--c-surface) / 0.7);
   padding: 0.55rem;
+  animation: quick-picker-in 220ms var(--ease-out) both;
 }
 
 .quick-target-list {
@@ -1935,6 +1982,26 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
 
 @keyframes quick-post-in {
   from { opacity: 0; transform: translateY(16px) scale(0.975); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes quick-post-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(12px) scale(0.982); }
+}
+
+@keyframes quick-mode-select {
+  from { transform: scale(0.94); }
+  to { transform: none; }
+}
+
+@keyframes quick-pane-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes quick-picker-in {
+  from { opacity: 0; transform: translateY(-7px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
 
@@ -2444,6 +2511,16 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   color: rgb(var(--c-ink));
 }
 
+.news-pop-close:disabled,
+.news-pop .btn-primary:disabled {
+  cursor: wait;
+  opacity: 0.54;
+}
+
+.news-pop-close:disabled {
+  animation: news-close-wait 1.5s linear both;
+}
+
 .news-pop-list {
   position: relative;
   z-index: 1;
@@ -2498,6 +2575,11 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
 @keyframes news-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-accent) / 0.22); }
   50% { box-shadow: 0 0 0 8px rgb(var(--c-accent) / 0); }
+}
+
+@keyframes news-close-wait {
+  from { box-shadow: inset 0 0 0 0 rgb(var(--c-accent) / 0.74); }
+  to { box-shadow: inset 2.35rem 0 0 0 rgb(var(--c-accent) / 0.74); }
 }
 
 @media (min-width: 640px) {

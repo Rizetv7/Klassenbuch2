@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CreatePost } from "./CreatePost";
+import { CreatePoll } from "./CreatePoll";
 import { Avatar } from "./Nav";
-import { IconClose } from "./Icons";
+import { IconClose, IconPoll, IconPlus } from "./Icons";
 import { swrJson } from "@/lib/swr";
 
 type ClassSummary = { id: string; name: string };
@@ -40,6 +41,23 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState("");
+  const [composerMode, setComposerMode] = useState<"post" | "poll">("post");
+  const [closing, setClosing] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+  }, []);
+
+  function requestClose() {
+    if (closing) return;
+    setClosing(true);
+    closeTimerRef.current = window.setTimeout(onClose, 220);
+  }
+
+  function finish() {
+    window.setTimeout(requestClose, 420);
+  }
 
   useEffect(() => {
     return swrJson<{ classes?: ClassSummary[]; error?: string }>("/api/classes", (data, meta) => {
@@ -56,7 +74,7 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => {
-    if (!classId) return;
+    if (!classId || composerMode !== "post") return;
     setDetail(null);
     setTeachers([]);
     setTarget(null);
@@ -73,7 +91,7 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
       stopDetail();
       stopTeachers();
     };
-  }, [classId]);
+  }, [classId, composerMode]);
 
   const targets = useMemo<Target[]>(() => {
     const people = (detail?.members ?? []).map((member) => ({
@@ -108,17 +126,26 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
   const className = classes?.find((item) => item.id === classId)?.name;
 
   return (
-    <div className="quick-post-layer" role="dialog" aria-modal="true" aria-label="Schnell posten">
-      <section className="quick-post-dialog">
+    <div className="quick-post-layer" role="dialog" aria-modal="true" aria-label="Schnell erstellen">
+      <section className={`quick-post-dialog ${closing ? "is-closing" : ""}`}>
         <header className="quick-post-head">
           <div>
-            <p className="section-label">Direkt teilen</p>
-            <h2 className="display text-4xl leading-[0.92]">Neuer Eintrag</h2>
+            <p className="section-label">Direkt erstellen</p>
+            <h2 className="display text-4xl leading-[0.92]">Neu</h2>
           </div>
-          <button type="button" onClick={onClose} className="quick-post-close" aria-label="Schliessen">
+          <button type="button" onClick={requestClose} className="quick-post-close" aria-label="Schliessen">
             <IconClose size={20} />
           </button>
         </header>
+
+        <div className="quick-composer-switch" role="tablist" aria-label="Art auswählen">
+          <button type="button" role="tab" aria-selected={composerMode === "post"} onClick={() => setComposerMode("post")} className={composerMode === "post" ? "is-active" : ""}>
+            <IconPlus size={17} /> Eintrag
+          </button>
+          <button type="button" role="tab" aria-selected={composerMode === "poll"} onClick={() => setComposerMode("poll")} className={composerMode === "poll" ? "is-active" : ""}>
+            <IconPoll size={17} /> Umfrage
+          </button>
+        </div>
 
         {classes === null ? (
           <p className="quick-post-note">Bereitet deine Klasse vor…</p>
@@ -140,10 +167,21 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
               <p className="quick-post-class">{className}</p>
             )}
 
-            {!detail ? (
+            {composerMode === "poll" ? (
+              <div className="quick-composer-pane" key={`poll-${classId}`}>
+                <CreatePoll
+                  classes={classes}
+                  initialClassId={classId}
+                  hideClassPicker
+                  compact
+                  onCreated={() => undefined}
+                  onFinished={finish}
+                />
+              </div>
+            ) : !detail ? (
               <p className="quick-post-note">Personen werden geladen…</p>
             ) : (
-              <>
+              <div className="quick-composer-pane" key={`post-${classId}`}>
                 <div className="quick-target-wrap">
                   <button
                     type="button"
@@ -202,10 +240,10 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
                     subjectMembershipId={target.kind === "member" ? target.id : undefined}
                     teacherId={target.kind === "teacher" ? target.id : undefined}
                     onCreated={() => undefined}
-                    onFinished={() => window.setTimeout(onClose, 380)}
+                    onFinished={finish}
                   />
                 ) : <p className="quick-post-note">Wähle zuerst, über wen du etwas posten möchtest.</p>}
-              </>
+              </div>
             )}
           </div>
         )}

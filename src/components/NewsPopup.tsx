@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-readable-comments";
+const NEWS_VERSION = "2026-07-09-quick-polls-and-final-update";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
@@ -19,7 +19,7 @@ const ITEMS = [
   },
   {
     title: "Weitere Verbesserungen",
-    text: "Direkt posten, Personen schneller finden und viele kleine Verbesserungen für einen flüssigeren Alltag.",
+    text: "Direkt posten, Umfragen im Plus-Menü erstellen, Personen schneller finden und viele kleine Verbesserungen für einen flüssigeren Alltag.",
   },
 ];
 
@@ -27,6 +27,7 @@ export function NewsPopup() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [canClose, setCanClose] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -42,7 +43,17 @@ export function NewsPopup() {
     }
   }, [mounted, pathname]);
 
+  useEffect(() => {
+    if (!open) {
+      setCanClose(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setCanClose(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
   function close() {
+    if (!canClose) return;
     try {
       localStorage.setItem(NEWS_KEY, NEWS_VERSION);
     } catch {}
@@ -59,7 +70,7 @@ export function NewsPopup() {
             <span className="news-pop-badge">Was ist neu</span>
             <h2 className="display mt-2 text-4xl leading-[0.9] sm:text-5xl">Update</h2>
           </div>
-          <button type="button" className="news-pop-close" onClick={close} aria-label="Schliessen">
+          <button type="button" className="news-pop-close" onClick={close} aria-label="Schliessen" disabled={!canClose}>
             <IconClose size={18} />
           </button>
         </div>
@@ -76,8 +87,8 @@ export function NewsPopup() {
           ))}
         </div>
 
-        <button type="button" className="btn-primary relative z-10 mt-4 w-full" onClick={close}>
-          Alles klar
+        <button type="button" className="btn-primary relative z-10 mt-4 w-full" onClick={close} disabled={!canClose}>
+          {canClose ? "Alles klar" : "Einen Moment…"}
         </button>
       </section>
     </div>,

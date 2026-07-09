@@ -9,11 +9,19 @@ type PollMode = "CUSTOM" | "STUDENTS" | "TEACHERS";
 export function CreatePoll({
   classes,
   onCreated,
+  initialClassId,
+  hideClassPicker = false,
+  compact = false,
+  onFinished,
 }: {
   classes: ClassOption[];
   onCreated: (poll: Poll) => void;
+  initialClassId?: string;
+  hideClassPicker?: boolean;
+  compact?: boolean;
+  onFinished?: () => void;
 }) {
-  const [classId, setClassId] = useState(classes[0]?.id ?? "");
+  const [classId, setClassId] = useState(initialClassId || classes[0]?.id || "");
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [mode, setMode] = useState<PollMode>("CUSTOM");
@@ -57,15 +65,16 @@ export function CreatePoll({
       setOptions(["", ""]);
       setAnonymous(false);
       setMultipleChoice(false);
+      onFinished?.();
     } else {
       setError(d?.error || "Umfrage konnte nicht erstellt werden.");
     }
   }
 
   return (
-    <form onSubmit={submit} className="glass-panel space-y-4 p-4 sm:p-5">
+    <form onSubmit={submit} className={`${compact ? "quick-poll-form" : "glass-panel"} space-y-4 p-4 sm:p-5`}>
       <div>
-        <p className="section-label mb-2">Neue Umfrage</p>
+        {!compact && <p className="section-label mb-2">Neue Umfrage</p>}
         <input
           className="input text-lg font-black"
           placeholder="Was sollen wir abstimmen?"
@@ -76,7 +85,7 @@ export function CreatePoll({
         />
       </div>
 
-      {classes.length > 1 && (
+      {classes.length > 1 && !hideClassPicker && (
         <select className="input" value={classId} onChange={(e) => setClassId(e.target.value)} required>
           {classes.map((klass) => (
             <option key={klass.id} value={klass.id}>{klass.name}</option>
