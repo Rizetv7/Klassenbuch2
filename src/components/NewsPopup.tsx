@@ -5,21 +5,21 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { IconClose } from "./Icons";
 
-const NEWS_VERSION = "2026-07-09-photo-feed-polish";
+const NEWS_VERSION = "2026-07-09-overview-update";
 const NEWS_KEY = "mz-news-version";
 
 const ITEMS = [
   {
-    title: "Bilder neu gestaltet",
-    text: "Auf dem iPhone sieht der Bilderfeed ruhiger aus. Doppeltippe ein Bild, um es direkt zu liken.",
+    title: "Themes",
+    text: "Gestalte deine Maturaziitig mit einem persönlichen Aquarell-Theme.",
   },
   {
-    title: "Bilder immer griffbereit",
-    text: "Der Bilder-Tab ist unten. Dein eigenes Profil findest du nun oben rechts.",
+    title: "Bilder",
+    text: "Das Album ist schneller, auf dem iPhone optimiert und Bilder lassen sich gross anschauen, liken und kommentieren.",
   },
   {
-    title: "Besserer Überblick",
-    text: "Der Hochformat-Feed startet nur auf wirklich telefonartigen Bildschirmen; sonst bleibt das Album sichtbar.",
+    title: "Weitere Verbesserungen",
+    text: "Direkt posten, Personen schneller finden und viele kleine Verbesserungen für einen flüssigeren Alltag.",
   },
 ];
 

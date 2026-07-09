@@ -1571,7 +1571,11 @@ body::before {
 .gallery-comments {
   margin-top: 0.8rem;
   border-top: 1px solid rgb(var(--c-ink) / 0.08);
-  padding-top: 0.8rem;
+  border-radius: 22px;
+  background: rgb(var(--c-surface) / 0.1);
+  padding: 0.8rem;
+  backdrop-filter: blur(12px) saturate(125%);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
 }
 
 /* ------------------------------------------------------------------
@@ -1917,17 +1921,17 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   .compact-add-row.is-member-add input:nth-child(1) { grid-column: 1; }
 }
 
-/* The vertical feed needs a real phone-shaped viewport: portrait 4:3 or
-   taller. Narrow desktop windows deliberately keep the normal album. */
+/* The vertical viewer only appears after a photo is selected on a genuine
+   phone-shaped viewport. The album itself remains visible on every screen. */
 @media (max-width: 1023px) and (max-aspect-ratio: 3 / 4) {
-  /* One image at a time, touch-scroll snapping, and a bottom comment sheet
-     instead of a cramped desktop lightbox. */
   .mobile-gallery {
-    position: relative;
+    position: fixed;
+    inset: 0;
+    z-index: 85;
     height: 100dvh;
-    margin: -1.5rem -1rem -7rem;
     overflow: hidden;
     background: #09070c;
+    animation: page-fade 180ms ease-out both;
   }
 
   .mobile-gallery-feed {
@@ -2048,6 +2052,21 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
     padding-bottom: 0.1rem;
   }
 
+  .mobile-gallery-subject {
+    display: grid;
+    width: 3.15rem;
+    height: 3.15rem;
+    place-items: center;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.84);
+    border-radius: 999px;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.3);
+    transition: transform 150ms var(--ease-out), border-color 150ms ease;
+  }
+
+  .mobile-gallery-subject:active { transform: scale(0.9); }
+  .mobile-gallery-subject:hover { border-color: white; }
+
   .mobile-gallery-action {
     display: flex;
     min-width: 3.1rem;
@@ -2070,6 +2089,28 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   .mobile-gallery-action:active { transform: scale(0.9); }
   .mobile-gallery-action:disabled { opacity: 0.62; }
   .mobile-gallery-action.is-liked { color: #ff5ca7; }
+
+  .mobile-gallery-close {
+    position: absolute;
+    top: max(0.8rem, env(safe-area-inset-top));
+    right: max(0.8rem, env(safe-area-inset-right));
+    z-index: 4;
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.54);
+    border-radius: 999px;
+    background: rgba(9, 7, 12, 0.26);
+    color: white;
+    box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 130ms var(--ease-out), background 130ms ease;
+  }
+
+  .mobile-gallery-close:active { transform: scale(0.9); }
+  .mobile-gallery-close:hover { background: rgba(9, 7, 12, 0.48); }
 
   .mobile-gallery-more {
     display: grid;
@@ -2114,7 +2155,7 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   .mobile-comments-layer {
     position: fixed;
     inset: 0;
-    z-index: 86;
+    z-index: 90;
     display: grid;
     align-items: end;
     animation: page-fade 150ms ease-out both;
@@ -2123,29 +2164,63 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
   .mobile-comments-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(9, 7, 12, 0.4);
+    background: rgba(9, 7, 12, 0.22);
+    backdrop-filter: blur(4px) saturate(116%);
+    -webkit-backdrop-filter: blur(4px) saturate(116%);
+  }
+
+  .mobile-comments-preview {
+    position: absolute;
+    z-index: 1;
+    top: max(1.05rem, env(safe-area-inset-top));
+    right: 1rem;
+    left: 1rem;
+    height: min(31dvh, 256px);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.46);
+    border-radius: 25px;
+    background: #09070c;
+    box-shadow: 0 20px 52px -30px rgba(0, 0, 0, 0.8), inset 0 1px rgba(255, 255, 255, 0.36);
+    animation: comments-preview-in 340ms var(--ease-out) both;
+  }
+
+  .mobile-comments-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #09070c;
   }
 
   .mobile-comments-sheet {
     position: relative;
-    z-index: 1;
-    max-height: min(72dvh, 680px);
+    z-index: 2;
+    width: 100%;
+    max-height: min(63dvh, 680px);
     overflow: auto;
     overscroll-behavior: contain;
     border: 1px solid rgb(var(--c-surface) / 0.62);
     border-radius: 30px 30px 0 0;
     background:
       radial-gradient(95% 48% at 0% 0%, rgba(169, 221, 245, 0.22), transparent 68%),
-      linear-gradient(180deg, rgb(var(--c-surface) / 0.82), rgb(var(--c-surface) / 0.66));
+      linear-gradient(180deg, rgb(var(--c-surface) / 0.78), rgb(var(--c-surface) / 0.6));
     box-shadow: 0 -28px 76px -42px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgb(var(--c-surface) / 0.9);
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
     backdrop-filter: blur(22px) saturate(130%);
     -webkit-backdrop-filter: blur(22px) saturate(130%);
     animation: comments-sheet-in 300ms var(--ease-out) both;
+    transition: max-height 220ms var(--ease-out);
   }
+
+  .mobile-comments-sheet:has(.comment-empty) { max-height: min(48dvh, 440px); }
 
   @keyframes comments-sheet-in {
     from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes comments-preview-in {
+    from { opacity: 0; transform: translateY(16px) scale(0.94); }
     to { opacity: 1; transform: none; }
   }
 
@@ -2156,6 +2231,14 @@ body:has(.mobile-comments-layer) .mobile-profile-shortcut {
     color: #f3efe6;
   }
   :root[data-design="fashion"] .mobile-gallery-action.is-liked { color: #c39857; }
+  :root[data-design="fashion"] .mobile-gallery-subject,
+  :root[data-design="fashion"] .mobile-gallery-close,
+  :root[data-design="fashion"] .mobile-comments-preview {
+    border-radius: 0;
+    border-color: #f3efe6;
+  }
+  :root[data-design="fashion"] .mobile-comments-preview { background: #16130f; }
+  :root[data-design="fashion"] .mobile-comments-preview img { filter: grayscale(1) contrast(1.08); }
 }
 
 /* ------------------------------------------------------------------

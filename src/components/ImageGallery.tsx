@@ -225,22 +225,6 @@ export function ImageGallery() {
     return <p className="text-coral font-black">{error}</p>;
   }
 
-  if (compactGallery) {
-    return (
-      <PageReveal>
-        <MobilePhotoFeed
-          posts={posts}
-          nextCursor={nextCursor}
-          loadingMore={loadingMore}
-          error={error}
-          sentinelRef={sentinelRef}
-          onLoadMore={() => void loadMore()}
-          onUpdatePost={updatePost}
-        />
-      </PageReveal>
-    );
-  }
-
   return (
     <PageReveal>
       <div className="aq-gallery space-y-5">
@@ -309,53 +293,98 @@ export function ImageGallery() {
         {error && posts.length > 0 && <p className="text-center text-sm font-black text-coral">{error}</p>}
 
         {selectedIndex >= 0 && posts[selectedIndex] && (
-          <GalleryViewer
-            posts={posts}
-            index={selectedIndex}
-            onClose={removeSelected}
-            onSelect={(post) => setSelectedId(post.id)}
-            onUpdatePost={updatePost}
-          />
+          compactGallery ? (
+            <MobileGalleryViewer
+              posts={posts}
+              index={selectedIndex}
+              nextCursor={nextCursor}
+              loadingMore={loadingMore}
+              onClose={removeSelected}
+              onSelect={(post) => setSelectedId(post.id)}
+              onLoadMore={() => void loadMore()}
+              onUpdatePost={updatePost}
+            />
+          ) : (
+            <GalleryViewer
+              posts={posts}
+              index={selectedIndex}
+              onClose={removeSelected}
+              onSelect={(post) => setSelectedId(post.id)}
+              onUpdatePost={updatePost}
+            />
+          )
         )}
       </div>
     </PageReveal>
   );
 }
 
-function MobilePhotoFeed({
+function MobileGalleryViewer({
   posts,
+  index,
   nextCursor,
   loadingMore,
-  error,
-  sentinelRef,
+  onClose,
+  onSelect,
   onLoadMore,
   onUpdatePost,
 }: {
   posts: Post[];
+  index: number;
   nextCursor: string | null;
   loadingMore: boolean;
-  error: string;
-  sentinelRef: React.RefObject<HTMLDivElement>;
+  onClose: () => void;
+  onSelect: (post: Post) => void;
   onLoadMore: () => void;
   onUpdatePost: (id: string, update: Partial<Post>) => void;
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(index);
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [sharedPostId, setSharedPostId] = useState<string | null>(null);
   const [likeBurst, setLikeBurst] = useState<{ postId: string; x: number; y: number; key: number } | null>(null);
+  const feedRef = useRef<HTMLDivElement | null>(null);
   const activeIndexRef = useRef(0);
   const tapStartRef = useRef<{ postId: string; x: number; y: number } | null>(null);
   const lastTapRef = useRef<{ postId: string; x: number; y: number; time: number } | null>(null);
   const lastImageLikeRef = useRef<{ postId: string; time: number } | null>(null);
   const burstTimerRef = useRef<number | null>(null);
 
-  const activePost = posts[activeIndex];
   const commentsPost = commentsPostId ? posts.find((post) => post.id === commentsPostId) ?? null : null;
 
   useEffect(() => () => {
     if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
   }, []);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const feed = feedRef.current;
+      if (!feed) return;
+      activeIndexRef.current = index;
+      setActiveIndex(index);
+      feed.scrollTop = feed.clientHeight * index;
+    });
+    return () => window.cancelAnimationFrame(frame);
+    // The selected image only determines the first frame of this viewer.
+    // Subsequent changes come from its own vertical scroll position.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
 
   async function setLiked(post: Post, likedByMe: boolean) {
     if (busyPostId) return;
@@ -434,19 +463,12 @@ function MobilePhotoFeed({
     } catch {}
   }
 
-  if (posts.length === 0) {
-    return (
-      <div className="mobile-gallery-empty">
-        <p className="section-label">Fotoalbum</p>
-        <h1 className="display mt-2 text-5xl leading-[0.9]">Noch keine Bilder.</h1>
-        <Link href="/classes" className="btn-primary mt-5">Zur Klasse</Link>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
-  return (
-    <div className="mobile-gallery" aria-label="Bilder Feed">
+  return createPortal(
+    <div className={`mobile-gallery mobile-gallery-viewer ${commentsPost ? "has-comments" : ""}`} role="dialog" aria-modal="true" aria-label="Bild ansehen">
       <div
+        ref={feedRef}
         className="mobile-gallery-feed"
         onScroll={(event) => {
           const element = event.currentTarget;
@@ -454,7 +476,9 @@ function MobilePhotoFeed({
           if (next !== activeIndexRef.current) {
             activeIndexRef.current = next;
             setActiveIndex(next);
+            onSelect(posts[next]);
           }
+          if (next >= posts.length - 4 && nextCursor && !loadingMore) onLoadMore();
         }}
       >
         {posts.map((post, index) => {
@@ -511,6 +535,9 @@ function MobilePhotoFeed({
                   <span>{author ? `Eingereicht von ${author.name}` : "Anonym eingereicht"}</span>
                 </div>
                 <div className="mobile-gallery-actions" aria-label="Bildaktionen">
+                  <Link href={source.href} className="mobile-gallery-subject" aria-label={`${source.title} ansehen`}>
+                    <Avatar name={source.title} url={source.avatarUrl} accent={source.accentColor} size={42} />
+                  </Link>
                   <button type="button" onClick={() => toggleLike(post)} disabled={busyPostId === post.id} className={`mobile-gallery-action ${post.likedByMe ? "is-liked" : ""}`} aria-label="Gefällt mir">
                     <IconHeart size={25} filled={post.likedByMe} />
                     <span>{post.likeCount}</span>
@@ -529,17 +556,21 @@ function MobilePhotoFeed({
           );
         })}
 
-        <div ref={sentinelRef} className="mobile-gallery-more">
+        <div className="mobile-gallery-more">
           {nextCursor ? <button type="button" onClick={onLoadMore} disabled={loadingMore}>{loadingMore ? "Lädt Bilder…" : "Mehr Bilder laden"}</button> : <span>Album vollständig</span>}
         </div>
       </div>
 
-      {error ? <p className="mobile-gallery-error">{error}</p> : null}
-      {activePost ? <span className="sr-only">Aktives Bild {activeIndex + 1}</span> : null}
+      <button type="button" onClick={onClose} className="mobile-gallery-close" aria-label="Zurück zum Album"><IconClose size={20} /></button>
+      <span className="sr-only">Aktives Bild {activeIndex + 1}</span>
 
       {commentsPost ? (
         <div className="mobile-comments-layer" role="dialog" aria-modal="true" aria-label="Kommentare">
           <button type="button" onClick={() => setCommentsPostId(null)} className="mobile-comments-backdrop" aria-label="Kommentare schliessen" />
+          <div className="mobile-comments-preview" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={commentsPost.imageUrl!} alt="" />
+          </div>
           <section className="mobile-comments-sheet">
             <div className="mobile-comments-head">
               <div><p className="section-label">Öffentlich</p><h2 className="display text-3xl leading-none">Kommentare</h2></div>
@@ -553,7 +584,8 @@ function MobilePhotoFeed({
           </section>
         </div>
       ) : null}
-    </div>
+    </div>,
+    document.body
   );
 }
 
