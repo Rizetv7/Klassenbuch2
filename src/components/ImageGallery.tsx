@@ -50,8 +50,11 @@ function mergePosts(current: Post[], incoming: Post[], mode: "prepend" | "append
   return next;
 }
 
-function cardVariant(post: Post, index: number) {
-  let hash = index * 97;
+// Deterministic per photo id — NEVER index-based: when new photos arrive
+// (polling/prepend) indexes shift, and index-based variants made every
+// existing photo suddenly change shape/tilt (the album visibly reshuffled).
+function cardVariant(post: Post) {
+  let hash = 2166136261;
   for (let i = 0; i < post.id.length; i++) hash = (hash * 31 + post.id.charCodeAt(i)) >>> 0;
   const shapes = ["portrait", "square", "landscape", "tall", "snapshot", "wide"];
   return {
@@ -276,7 +279,7 @@ export function ImageGallery() {
           <section className="gallery-album" aria-label="Alle Bilder">
             {posts.map((post, index) => {
               const source = sourceInfo(post);
-              const variant = cardVariant(post, index);
+              const variant = cardVariant(post);
               return (
                 <button
                   key={post.id}

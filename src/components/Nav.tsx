@@ -60,13 +60,14 @@ const ITEMS = [
   { href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
+// 5 Punkte, das Plus sitzt exakt in der Mitte — das Profil lebt oben
+// als Avatar-Shortcut (MobileProfileShortcut), nicht in der Bar.
 const MOBILE_ITEMS = [
   { kind: "link" as const, href: "/", label: "Home", Icon: IconHome },
   { kind: "link" as const, href: "/classes", label: "Klasse", Icon: IconUsers },
   { kind: "post" as const, label: "Posten", Icon: IconPlus },
   { kind: "link" as const, href: "/bilder", label: "Bilder", Icon: IconImage },
   { kind: "link" as const, href: "/polls", label: "Umfragen", Icon: IconPoll },
-  { kind: "link" as const, href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
 type NavUser = {

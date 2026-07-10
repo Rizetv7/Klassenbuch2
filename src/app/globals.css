@@ -1297,6 +1297,13 @@ body::before {
   color: rgb(var(--c-ink) / 0.7);
 }
 
+/* The album section must NOT take the page-reveal child animation on top
+   of the per-photo photo-rise — the double fade/rise flickered badly. */
+.page-reveal > * > .gallery-album {
+  opacity: 1;
+  animation: none;
+}
+
 .gallery-album {
   column-count: 2;
   column-gap: clamp(0.72rem, 2.1vw, 1.25rem);
@@ -1314,9 +1321,6 @@ body::before {
   transform: translateY(var(--lift)) rotate(var(--tilt));
   animation: photo-rise 520ms var(--ease-out) both;
   animation-delay: var(--stagger);
-  /* off-screen photos cost nothing: skip layout/paint until scrolled near */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 280px;
 }
 
 .gallery-photo-inner {
