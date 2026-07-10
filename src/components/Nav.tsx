@@ -39,7 +39,7 @@ export function Avatar({
 
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/70 font-black text-ink/75"
+      className="app-avatar inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/70 font-black text-ink/75"
       style={{ width: size, height: size, fontSize: size * 0.38, ...ringStyle }}
     >
       {url ? (
@@ -105,17 +105,83 @@ export function SiteNav() {
   if (path === "/login" || path === "/register" || isInternal || isAminaMode) return null;
   return (
     <>
-      {/* Aquarell chrome and the Couture masthead are both rendered;
-          CSS (.aq-only / .fx-only) shows exactly one — instant, flash-free */}
+      {/* Every standalone design owns its chrome; CSS shows exactly one. */}
       <TopNav me={me} onOpenPost={() => setPostOpen(true)} />
       <BottomNav onOpenPost={() => setPostOpen(true)} />
       <div className="fx-only">
         <FashionMasthead onOpenPost={() => setPostOpen(true)} />
         <FashionBottomNav onOpenPost={() => setPostOpen(true)} />
       </div>
+      <div className="nb-app-only">
+        <NachbilderMasthead me={me} onOpenPost={() => setPostOpen(true)} />
+        <NachbilderBottomNav onOpenPost={() => setPostOpen(true)} />
+      </div>
       {me ? <MobileProfileShortcut me={me} /> : null}
       {postOpen ? <QuickPostDialog onClose={() => setPostOpen(false)} /> : null}
     </>
+  );
+}
+
+// ---------------------------------------------------------------------
+// NACHBILDER navigation: a thin archive register instead of a glass dock.
+// The immersive homepage carries its own controls and hides this chrome.
+// ---------------------------------------------------------------------
+function NachbilderMasthead({ me, onOpenPost }: { me: NavUser | null; onOpenPost: () => void }) {
+  const isActive = useActive();
+  return (
+    <header className="nb-site-header">
+      <div className="nb-site-header-inner">
+        <Link href="/" className="nb-site-brand">
+          <span>Nachbilder</span>
+          <small>Maturaziitig · Archiv {new Date().getFullYear()}</small>
+        </Link>
+        <nav className="nb-site-links" aria-label="Hauptnavigation">
+          {ITEMS.map((item, index) => {
+            const profile = item.href === "/profile" && me;
+            return (
+              <Link key={item.href} href={item.href} className={isActive(item.href) ? "is-active" : ""}>
+                <span className="nb-site-link-number">{String(index + 1).padStart(2, "0")}</span>
+                <span>{item.label}</span>
+                {profile ? <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={27} ring={false} /> : null}
+              </Link>
+            );
+          })}
+        </nav>
+        <button type="button" onClick={onOpenPost} className="nb-site-create" aria-label="Neuen Eintrag posten">
+          <IconPlus size={18} />
+          <span>Neue Spur</span>
+        </button>
+        {me ? (
+          <Link href="/profile" className="nb-site-mobile-profile" aria-label={`Zum Profil von ${me.name}`}>
+            <Avatar name={me.name} url={me.avatarUrl} accent={me.accentColor} size={32} ring={false} />
+          </Link>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+
+function NachbilderBottomNav({ onOpenPost }: { onOpenPost: () => void }) {
+  const isActive = useActive();
+  return (
+    <nav className="nb-site-bottom" aria-label="Mobile Navigation">
+      {MOBILE_ITEMS.map((item, index) => {
+        if (item.kind === "post") {
+          return (
+            <button key="post" type="button" onClick={onOpenPost} className="nb-site-bottom-create" aria-label="Neuen Eintrag posten">
+              <IconPlus size={22} />
+            </button>
+          );
+        }
+        return (
+          <Link key={item.href} href={item.href} className={isActive(item.href) ? "is-active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <item.Icon size={18} />
+            <small>{item.label}</small>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

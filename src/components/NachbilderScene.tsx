@@ -33,6 +33,7 @@ type FragmentMesh = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> & {
     restRotation: number;
     source: string | null;
     textureRequested: boolean;
+    hasImage: boolean;
   };
 };
 
@@ -47,46 +48,60 @@ function hash(value: string) {
   return result >>> 0;
 }
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function selectStageFragments(fragments: MemoryFragment[], max: number) {
+  const byStageSeed = (a: MemoryFragment, b: MemoryFragment) => hash(`stage-${a.id}`) - hash(`stage-${b.id}`);
+  const pictured = fragments.filter((fragment) => fragment.imageUrl || fragment.avatarUrl).sort(byStageSeed);
+  const textOnly = fragments.filter((fragment) => !fragment.imageUrl && !fragment.avatarUrl).sort(byStageSeed);
+  const textBudget = pictured.length > 0 ? Math.min(4, Math.max(2, Math.floor(max * 0.22))) : max;
+  const chosen = [
+    ...pictured.slice(0, Math.max(0, max - textBudget)),
+    ...textOnly.slice(0, textBudget),
+  ];
+  if (chosen.length < max) {
+    const chosenIds = new Set(chosen.map((fragment) => fragment.id));
+    const remaining = [...pictured, ...textOnly].filter((fragment) => !chosenIds.has(fragment.id));
+    chosen.push(...remaining.slice(0, max - chosen.length));
+  }
+  return chosen.sort(byStageSeed);
 }
 
-function fallbackTexture(fragment: MemoryFragment) {
+function fallbackTexture(fragment: MemoryFragment, index: number) {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 320;
+  canvas.width = 320;
+  canvas.height = 420;
   const context = canvas.getContext("2d");
   if (!context) return null;
 
   const color = fragment.accentColor || "#9b8fc1";
-  const gradient = context.createLinearGradient(0, 0, 256, 320);
-  gradient.addColorStop(0, "#101522");
-  gradient.addColorStop(0.55, color);
-  gradient.addColorStop(1, "#080a11");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 256, 320);
-
-  context.globalAlpha = 0.13;
-  for (let i = 0; i < 90; i++) {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "rgba(8,11,19,0.58)";
+  context.fillRect(10, 10, 300, 400);
+  context.globalAlpha = 0.44;
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.strokeRect(11, 11, 298, 398);
+  context.globalAlpha = 0.08;
+  for (let i = 0; i < 54; i++) {
     const seed = hash(`${fragment.id}-${i}`);
-    context.fillStyle = i % 2 ? "#ffffff" : "#06070c";
-    context.fillRect(seed % 256, (seed >>> 8) % 320, 1 + (seed % 3), 1);
+    context.fillStyle = "#ffffff";
+    context.fillRect(18 + (seed % 284), 18 + ((seed >>> 8) % 384), 1, 1);
   }
   context.globalAlpha = 1;
-  context.fillStyle = "rgba(246,242,231,0.92)";
-  context.font = "600 66px Georgia, serif";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillText(initials(fragment.name), 128, 155);
-  context.fillStyle = "rgba(246,242,231,0.68)";
-  context.font = "600 14px system-ui, sans-serif";
-  context.fillText(fragment.role.toUpperCase(), 128, 270);
+  context.fillStyle = "rgba(239,237,228,0.38)";
+  context.font = "700 17px system-ui, sans-serif";
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.fillText(String(index + 1).padStart(2, "0"), 30, 46);
+  context.fillStyle = "rgba(239,237,228,0.9)";
+  context.font = "500 31px Georgia, serif";
+  const shortName = fragment.name.length > 18 ? `${fragment.name.slice(0, 17)}…` : fragment.name;
+  context.fillText(shortName, 30, 330);
+  context.fillStyle = "rgba(239,237,228,0.46)";
+  context.font = "700 13px system-ui, sans-serif";
+  context.fillText(fragment.role.toUpperCase(), 30, 365);
+  context.globalAlpha = 0.5;
+  context.fillStyle = color;
+  context.fillRect(30, 386, 54, 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -122,7 +137,7 @@ function startLiteScene(
     return () => {};
   }
 
-  const visible = fragments.slice(0, window.matchMedia("(max-width: 720px)").matches ? 18 : 34);
+  const visible = fragments;
   const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
   const images = new Map<string, HTMLImageElement>();
   let width = 1;
@@ -174,26 +189,25 @@ function startLiteScene(
     context.fillStyle = background;
     context.fillRect(0, 0, width, height);
 
-    if (!reducedMotion && pointerId === null) rotation += 0.00034;
+    if (!reducedMotion && pointerId === null) rotation += 0.00018;
     const centerX = width * 0.5;
     const centerY = height * 0.49;
-    const spreadX = Math.min(width * 0.37, 470) * zoom;
-    const spreadY = Math.min(height * 0.35, 300) * zoom;
+    const spreadX = Math.min(width * 0.39, 500) * zoom;
+    const spreadY = Math.min(height * 0.3, 250) * zoom;
     const layout = visible.map((fragment, index) => {
       const seed = hash(fragment.id);
       const angle = index * GOLDEN_ANGLE + rotation;
       const depth = (Math.sin(angle) + 1) * 0.5;
-      const ring = 0.56 + ((seed >>> 5) % 42) / 100;
+      const ring = 0.78 + ((seed >>> 5) % 21) / 100;
       const x = centerX + Math.cos(angle) * spreadX * ring;
-      const normalized = visible.length === 1 ? 0 : index / (visible.length - 1) - 0.5;
       const breathing = reducedMotion ? 0 : Math.sin(seconds * 0.42 + seed * 0.001) * 5;
-      const y = centerY + normalized * spreadY * 1.62 + Math.sin(angle * 1.7) * 34 + breathing;
-      const scale = 0.68 + depth * 0.43;
+      const y = centerY + Math.sin(angle) * spreadY * ring + breathing;
+      const scale = 0.72 + depth * 0.24;
       return { fragment, seed, angle, depth, x, y, scale };
     }).sort((a, b) => a.depth - b.depth);
 
     context.lineWidth = 0.7;
-    context.strokeStyle = "rgba(206,214,226,0.12)";
+    context.strokeStyle = "rgba(206,214,226,0.07)";
     context.beginPath();
     for (let index = 0; index < layout.length - 2; index += 2) {
       context.moveTo(layout[index].x, layout[index].y);
@@ -204,34 +218,31 @@ function startLiteScene(
     hitAreas = [];
     for (const item of layout) {
       const selected = activeRef.current === item.fragment.id;
-      const cardWidth = (width < 700 ? 74 : 102) * item.scale * (selected ? 1.12 : 1);
-      const cardHeight = cardWidth * 1.28;
+      const source = item.fragment.imageUrl || item.fragment.avatarUrl;
+      const cardWidth = (source ? (width < 700 ? 62 : 88) : (width < 700 ? 38 : 48)) * item.scale * (selected ? 1.1 : 1);
+      const cardHeight = cardWidth * (source ? 1.28 : 1.72);
       const image = images.get(item.fragment.id);
       context.save();
       context.translate(item.x, item.y);
       context.rotate(((item.seed % 15) - 7) * 0.012 + Math.sin(item.angle) * 0.025);
       context.shadowColor = item.fragment.accentColor;
-      context.shadowBlur = selected ? 24 : 9;
-      context.globalAlpha = selected ? 1 : 0.74 + item.depth * 0.18;
+      context.shadowBlur = selected ? 18 : source ? 6 : 0;
+      context.globalAlpha = selected ? 1 : source ? 0.78 + item.depth * 0.14 : 0.42;
       if (image) {
         context.drawImage(image, -cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
         context.fillStyle = "rgba(5,7,14,0.18)";
         context.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
       } else {
-        const fill = context.createLinearGradient(0, -cardHeight / 2, 0, cardHeight / 2);
-        fill.addColorStop(0, "#151b29");
-        fill.addColorStop(0.56, item.fragment.accentColor);
-        fill.addColorStop(1, "#090b13");
-        context.fillStyle = fill;
+        context.fillStyle = "rgba(9,12,20,0.68)";
         context.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
-        context.fillStyle = "rgba(245,242,233,0.92)";
-        context.font = `${Math.round(cardWidth * 0.31)}px Georgia, serif`;
+        context.fillStyle = "rgba(245,242,233,0.72)";
+        context.font = `${Math.max(8, Math.round(cardWidth * 0.17))}px Georgia, serif`;
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.fillText(initials(item.fragment.name), 0, -2);
+        context.fillText(item.fragment.name.split(" ")[0].slice(0, 8), 0, cardHeight * 0.22);
       }
       context.shadowBlur = 0;
-      context.strokeStyle = selected ? "rgba(244,241,232,0.82)" : "rgba(222,224,218,0.42)";
+      context.strokeStyle = selected ? "rgba(244,241,232,0.82)" : source ? "rgba(222,224,218,0.34)" : "rgba(222,224,218,0.2)";
       context.strokeRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
       context.restore();
       hitAreas.push({ id: item.fragment.id, x: item.x - cardWidth / 2, y: item.y - cardHeight / 2, width: cardWidth, height: cardHeight });
@@ -334,8 +345,8 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
     host.appendChild(canvas);
 
     const mobile = window.matchMedia("(max-width: 720px)").matches;
-    const maxFragments = mobile ? 24 : 46;
-    const visibleFragments = fragments.slice(0, maxFragments);
+    const maxFragments = mobile ? 11 : 17;
+    const visibleFragments = selectStageFragments(fragments, maxFragments);
     if (!supportsUsableWebGL()) {
       const stopLite = startLiteScene(canvas, visibleFragments, reducedMotion, activeRef, onHoverRef, onSelectRef, onReadyRef);
       return () => {
@@ -368,9 +379,9 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
     renderer.setClearColor(0x050711, 1);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x050711, 0.055);
+    scene.fog = new THREE.FogExp2(0x050711, 0.048);
     const camera = new THREE.PerspectiveCamera(mobile ? 54 : 45, 1, 0.1, 40);
-    camera.position.set(0, 0, mobile ? 8.6 : 7.4);
+    camera.position.set(0, 0, mobile ? 9.1 : 8.8);
 
     const sculpture = new THREE.Group();
     sculpture.rotation.set(-0.08, -0.18, 0.02);
@@ -408,17 +419,19 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
 
     visibleFragments.forEach((fragment, index) => {
       const seed = hash(fragment.id);
-      const count = Math.max(visibleFragments.length, 1);
-      const normalized = count === 1 ? 0.5 : index / (count - 1);
-      const y = (0.5 - normalized) * (mobile ? 5.2 : 5.8);
-      const radius = mobile ? 2.2 + ((seed >>> 4) % 80) / 100 : 3.05 + ((seed >>> 4) % 105) / 100;
       const theta = index * GOLDEN_ANGLE + (seed % 100) / 190;
+      const radius = mobile ? 2.55 + ((seed >>> 4) % 45) / 100 : 3.75 + ((seed >>> 4) % 62) / 100;
       const x = Math.cos(theta) * radius;
-      const z = Math.sin(theta) * 1.65 - ((seed >>> 12) % 50) / 100;
+      const y = Math.sin(theta) * (mobile ? 2.75 : 3.05) + (((seed >>> 10) % 31) - 15) / 100;
+      const z = -0.95 + ((seed >>> 15) % 130) / 100;
       const base = new THREE.Vector3(x, y, z);
 
-      const width = mobile ? 1.05 : 1.2 + (seed % 22) / 100;
-      const height = width * (1.18 + ((seed >>> 5) % 30) / 100);
+      const source = fragment.imageUrl || fragment.avatarUrl;
+      const hasImage = !!source;
+      const width = hasImage
+        ? (mobile ? 0.68 : 0.82 + (seed % 12) / 100)
+        : (mobile ? 0.38 : 0.48 + (seed % 8) / 100);
+      const height = width * (hasImage ? 1.3 : 1.72);
       const geometry = new THREE.PlaneGeometry(width, height, 6, 8);
       const positions = geometry.attributes.position as THREE.BufferAttribute;
       for (let vertex = 0; vertex < positions.count; vertex++) {
@@ -431,23 +444,23 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
       geometry.computeVertexNormals();
       geometries.push(geometry);
 
-      const fallback = fallbackTexture(fragment);
+      const fallback = fallbackTexture(fragment, index);
       if (fallback) textures.push(fallback);
       const material = new THREE.MeshBasicMaterial({
         map: fallback,
         color: 0xffffff,
         transparent: true,
-        opacity: 0.82,
-        side: THREE.DoubleSide,
-        depthWrite: false,
+        opacity: hasImage ? 0.88 : 0.36,
+        side: THREE.FrontSide,
+        depthWrite: hasImage,
       });
       materials.push(material);
 
       const mesh = new THREE.Mesh(geometry, material) as FragmentMesh;
       const restRotation = ((seed % 17) - 8) * 0.011;
-      const source = fragment.imageUrl || fragment.avatarUrl;
       mesh.position.copy(base);
-      mesh.rotation.set((seed % 9) * 0.006, -theta * 0.05, restRotation);
+      mesh.lookAt(camera.position);
+      mesh.rotateZ(restRotation);
       mesh.userData = {
         id: fragment.id,
         base,
@@ -455,6 +468,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
         restRotation,
         source,
         textureRequested: false,
+        hasImage,
       };
       sculpture.add(mesh);
       meshes.push(mesh);
@@ -463,7 +477,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
       const edgeMaterial = new THREE.LineBasicMaterial({
         color: new THREE.Color(fragment.accentColor || "#d9d5c8"),
         transparent: true,
-        opacity: 0.32,
+        opacity: hasImage ? 0.2 : 0.12,
       });
       const frame = new THREE.LineSegments(edges, edgeMaterial);
       frame.position.z = 0.012;
@@ -487,7 +501,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
     const connectionMaterial = new THREE.LineBasicMaterial({
       color: 0xb8c7dc,
       transparent: true,
-      opacity: 0.105,
+      opacity: 0.055,
       depthWrite: false,
     });
     const connections = new THREE.LineSegments(connectionGeometry, connectionMaterial);
@@ -495,7 +509,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
     geometries.push(connectionGeometry);
     materials.push(connectionMaterial);
 
-    const particleCount = mobile ? 260 : 720;
+    const particleCount = mobile ? 140 : 360;
     const particlePositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
       const seed = hash(`particle-${i}`);
@@ -509,7 +523,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
       color: 0xd7d5c9,
       size: mobile ? 0.018 : 0.022,
       transparent: true,
-      opacity: 0.36,
+      opacity: 0.25,
       depthWrite: false,
     });
     const particles = new THREE.Points(particleGeometry, particleMaterial);
@@ -577,8 +591,8 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
         dragX = event.clientX;
         dragY = event.clientY;
         if (Math.abs(event.clientX - dragStartX) + Math.abs(event.clientY - dragStartY) > 7) moved = true;
-        velocityY = dx * 0.0028;
-        velocityX = dy * 0.0021;
+        velocityY = dx * 0.0022;
+        velocityX = dy * 0.0014;
         sculpture.rotation.y += velocityY;
         sculpture.rotation.x += velocityX;
         return;
@@ -603,7 +617,7 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
     };
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
-      cameraTargetZ = THREE.MathUtils.clamp(cameraTargetZ + event.deltaY * 0.004, mobile ? 6.6 : 4.7, mobile ? 10.2 : 9.5);
+      cameraTargetZ = THREE.MathUtils.clamp(cameraTargetZ + event.deltaY * 0.003, mobile ? 7.7 : 7.15, mobile ? 10.5 : 10.8);
       idleSince = performance.now();
     };
 
@@ -627,9 +641,10 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
       velocityY *= 0.92;
       if (!reducedMotion && dragPointer === null) {
         sculpture.rotation.x += velocityX;
-        sculpture.rotation.y += velocityY + (isIdle ? 0.00032 : 0);
+        sculpture.rotation.y += velocityY + (isIdle ? 0.00014 : 0);
       }
       camera.position.z += (cameraTargetZ - camera.position.z) * 0.075;
+      sculpture.updateMatrixWorld(true);
 
       meshes.forEach((mesh) => {
         const selected = mesh.userData.id === active;
@@ -637,12 +652,14 @@ export function NachbilderScene({ fragments, activeId, reducedMotion, onHover, o
         const breathing = reducedMotion ? 0 : Math.sin(seconds * 0.42 + mesh.userData.phase) * 0.055;
         mesh.position.x += (mesh.userData.base.x - mesh.position.x) * 0.045;
         mesh.position.y = mesh.userData.base.y + breathing;
-        mesh.position.z = mesh.userData.base.z + (selected ? 0.34 : 0) + breathing * 0.7;
-        mesh.rotation.z = mesh.userData.restRotation + (reducedMotion ? 0 : Math.sin(seconds * 0.25 + mesh.userData.phase) * 0.025);
-        const scale = selected ? 1.16 : 1;
+        mesh.position.z = mesh.userData.base.z + (selected ? 0.22 : 0) + breathing * 0.45;
+        mesh.lookAt(camera.position);
+        mesh.rotateZ(mesh.userData.restRotation + (reducedMotion ? 0 : Math.sin(seconds * 0.22 + mesh.userData.phase) * 0.014));
+        const scale = selected ? 1.1 : 1;
         mesh.scale.x += (scale - mesh.scale.x) * 0.1;
         mesh.scale.y += (scale - mesh.scale.y) * 0.1;
-        mesh.material.opacity += ((selected ? 1 : 0.78) - mesh.material.opacity) * 0.08;
+        const restingOpacity = mesh.userData.hasImage ? 0.86 : 0.3;
+        mesh.material.opacity += ((selected ? 1 : restingOpacity) - mesh.material.opacity) * 0.08;
       });
       if (!reducedMotion) particles.rotation.y = seconds * 0.004;
 

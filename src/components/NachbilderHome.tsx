@@ -495,11 +495,6 @@ function ExploreOverlay({ hovered, visited, total }: { hovered: MemoryFragment |
         <strong>{hovered?.name || ""}</strong>
         {hovered?.text && <span>{hovered.text}</span>}
       </div>
-      <div className="nb-explore-guide">
-        <span>ziehen · drehen</span>
-        <span>scrollen · annähern</span>
-        <span>klicken · erinnern</span>
-      </div>
       <p className="nb-visited"><span>{String(visited).padStart(2, "0")}</span> / {String(total).padStart(2, "0")} besucht</p>
     </div>
   );
