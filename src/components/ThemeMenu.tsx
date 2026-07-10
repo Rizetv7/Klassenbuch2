@@ -119,6 +119,24 @@ function PreviewFashion() {
   );
 }
 
+function PreviewNachbilder() {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#050711]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_42%_44%,rgba(117,139,190,0.2),transparent_43%)]" />
+      <span className="absolute left-[18%] top-[23%] h-10 w-8 -rotate-6 border border-[#d9d5c8]/60 bg-[#7d6ca5]/20 shadow-[0_0_18px_rgba(170,151,220,0.22)]" />
+      <span className="absolute left-[42%] top-[12%] h-12 w-9 rotate-3 border border-[#d9d5c8]/50 bg-[#64859a]/20 shadow-[0_0_20px_rgba(120,174,202,0.2)]" />
+      <span className="absolute right-[17%] top-[30%] h-9 w-7 rotate-6 border border-[#d9d5c8]/55 bg-[#a88478]/20 shadow-[0_0_16px_rgba(209,164,142,0.18)]" />
+      <span className="absolute bottom-[16%] left-[33%] h-8 w-6 rotate-12 border border-[#d9d5c8]/45 bg-[#876c79]/20" />
+      <span className="absolute bottom-[12%] right-[31%] h-11 w-8 -rotate-3 border border-[#d9d5c8]/50 bg-[#758d86]/20" />
+      <span className="absolute left-[29%] top-[43%] h-px w-[43%] rotate-6 bg-[#d9d5c8]/25" />
+      <div className="absolute inset-x-2.5 bottom-2 flex items-end justify-between text-[#ece9df]">
+        <span className="font-serif text-[12px] leading-none">Nachbilder</span>
+        <span className="text-[6px] font-bold uppercase text-[#ece9df]/55">Explore / Index</span>
+      </div>
+    </div>
+  );
+}
+
 function PreviewAmina() {
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ background: "#fff1a8" }}>
@@ -327,7 +345,7 @@ export function ThemeMenu({
                           }`}
                         >
                           <div className="h-28 overflow-hidden">
-                            {d.id === "fashion" ? <PreviewFashion /> : <PreviewStandard />}
+                            {d.id === "fashion" ? <PreviewFashion /> : d.id === "nachbilder" ? <PreviewNachbilder /> : <PreviewStandard />}
                           </div>
                           <div className="border-t border-white/30 bg-white/20 px-3 py-2">
                             <p className="text-sm font-black leading-tight">{d.name}</p>

@@ -10,13 +10,14 @@ import { PollCard, type Poll } from "@/components/PollCard";
 import { PageLoading, PageReveal } from "@/components/LoadingState";
 import { HomeAttribution, uploaderPerson } from "@/components/HomeAttribution";
 import { FashionHome } from "@/components/FashionHome";
+import { NachbilderHome } from "@/components/NachbilderHome";
 import { prefetchAppData, swrJson } from "@/lib/swr";
 import { useDesign } from "@/lib/useDesign";
 
 export default function HomePage() {
   const router = useRouter();
   const design = useDesign();
-  const [me, setMe] = useState<{ name: string } | null>(null);
+  const [me, setMe] = useState<{ name: string; avatarUrl?: string | null; accentColor?: string | null } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [memory, setMemory] = useState<Post | null>(null);
@@ -70,6 +71,10 @@ export default function HomePage() {
         />
       </PageReveal>
     );
+  }
+
+  if (design === "nachbilder") {
+    return <NachbilderHome me={me} posts={posts} hasClass={hasClass} />;
   }
 
   const imagePosts = posts.filter((p) => p.imageUrl);

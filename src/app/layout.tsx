@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./nachbilder.css";
 import { SiteNav } from "@/components/Nav";
 import { LiquidBackground } from "@/components/LiquidBackground";
 import { PwaSetup } from "@/components/PwaSetup";
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html:
-              '(function(){try{var el=document.documentElement;var g=localStorage.getItem("mz-design");if(g!=="fashion")g="aquarell";el.dataset.design=g;if(g==="fashion"){el.dataset.theme="standard";el.dataset.mode="light";return;}var t=localStorage.getItem("mz-theme");if(t!=="standard"&&t!=="insta")t="standard";var m=localStorage.getItem("mz-mode")==="dark"?"dark":"light";el.dataset.theme=t;el.dataset.mode=(t==="insta")?"dark":m;}catch(e){}})();',
+              '(function(){try{var el=document.documentElement;var g=localStorage.getItem("mz-design");if(g!=="fashion"&&g!=="nachbilder")g="aquarell";el.dataset.design=g;if(g!=="aquarell"){el.dataset.theme="standard";el.dataset.mode="light";return;}var t=localStorage.getItem("mz-theme");if(t!=="standard"&&t!=="insta")t="standard";var m=localStorage.getItem("mz-mode")==="dark"?"dark":"light";el.dataset.theme=t;el.dataset.mode=(t==="insta")?"dark":m;}catch(e){}})();',
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

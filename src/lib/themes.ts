@@ -1,7 +1,8 @@
 // Registry for the two levels of personalization:
 //
 // DESIGNS are complete, standalone experiences — they may change layout,
-// navigation, typography and interactions (Aquarell, Couture/High-Fashion;
+// navigation, typography and interactions (Aquarell, Couture/High-Fashion,
+// Nachbilder;
 // the Amina mode is its own guarded design living under /amina).
 //
 // THEMES are light variations (colors, mood, small UI details) and apply
@@ -10,7 +11,7 @@
 //
 // Both are personal per-device choices stored in localStorage.
 
-export const DESIGN_IDS = ["aquarell", "fashion"] as const;
+export const DESIGN_IDS = ["aquarell", "fashion", "nachbilder"] as const;
 export type DesignId = (typeof DESIGN_IDS)[number];
 
 export type DesignInfo = {
@@ -32,6 +33,12 @@ export const DESIGNS: DesignInfo[] = [
     id: "fashion",
     name: "Couture",
     tagline: "High-Fashion-Magazin: Ivory, Serifen, rote Akzente.",
+    supportsThemes: false,
+  },
+  {
+    id: "nachbilder",
+    name: "Nachbilder",
+    tagline: "Ein dunkles, räumliches Archiv aus Licht und Erinnerungen.",
     supportsThemes: false,
   },
 ];
