@@ -82,6 +82,7 @@ function Composer({
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const canSend = !busy && !uploading && !sending && (text.trim().length > 0 || !!image);
@@ -105,11 +106,14 @@ function Composer({
     e.preventDefault();
     if (!canSend) return;
     setSending(true);
+    setSendError(false);
     const ok = await onSubmit(text.trim(), image);
     setSending(false);
     if (ok) {
       setText("");
       setImage(null);
+    } else {
+      setSendError(true); // keep the draft, tell the person what happened
     }
   }
 
@@ -158,6 +162,9 @@ function Composer({
         />
         <button className="btn-primary shrink-0" disabled={!canSend}>Senden</button>
       </div>
+      {sendError && (
+        <p className="mt-1.5 pl-1 text-xs font-black text-coral">Senden fehlgeschlagen — bitte nochmal versuchen.</p>
+      )}
     </form>
   );
 }

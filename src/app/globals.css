@@ -1314,6 +1314,9 @@ body::before {
   transform: translateY(var(--lift)) rotate(var(--tilt));
   animation: photo-rise 520ms var(--ease-out) both;
   animation-delay: var(--stagger);
+  /* off-screen photos cost nothing: skip layout/paint until scrolled near */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
 }
 
 .gallery-photo-inner {

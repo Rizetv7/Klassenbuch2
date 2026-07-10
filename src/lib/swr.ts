@@ -65,6 +65,21 @@ export function swrJson<T>(url: string, onData: (data: T | null, meta: SwrMeta) 
   };
 }
 
+// Force-refresh a cached endpoint (e.g. right after creating content),
+// so the next visit paints the new state instantly.
+export function refreshJson(url: string) {
+  try {
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) writeCache(url, data);
+      })
+      .catch(() => {});
+  } catch {
+    // best-effort
+  }
+}
+
 // Warm the cache for a page the user is likely to open next.
 export function prefetchJson(url: string) {
   try {

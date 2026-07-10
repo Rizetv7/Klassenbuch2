@@ -164,7 +164,7 @@ export function ImageGallery() {
         if (meta.status === 401) router.push("/login");
         if (!meta.fromCache) {
           setError("Bilder konnten nicht geladen werden.");
-          setPosts([]);
+          setPosts((current) => current ?? []); // keep what's on screen
         }
         return;
       }
@@ -181,6 +181,7 @@ export function ImageGallery() {
   useEffect(() => {
     if (selectedId) return;
     const interval = window.setInterval(() => {
+      if (document.hidden) return; // no background polling
       fetch(FIRST_PAGE)
         .then((res) => (res.ok ? res.json() : null))
         .then((data: GalleryResponse | null) => {
@@ -262,7 +263,7 @@ export function ImageGallery() {
               Alle Bildmomente aus deiner Maturaziitig, locker gemischt wie ein kleines Album.
             </p>
           </div>
-          <span className="gallery-count">{posts.length} Bilder</span>
+          <span className="gallery-count">{posts.length} {posts.length === 1 ? "Bild" : "Bilder"}</span>
         </header>
 
         {posts.length === 0 ? (
@@ -799,13 +800,17 @@ function GalleryViewer({
   return createPortal(
     <div className={`gallery-viewer ${closing ? "is-closing" : ""}`} role="dialog" aria-modal="true" onClick={requestClose}>
       <div className="gallery-viewer-top" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="gallery-round-button" onClick={() => onSelect(previous)} aria-label="Vorheriges Bild">
-          ‹
-        </button>
+        {posts.length > 1 && (
+          <button type="button" className="gallery-round-button" onClick={() => onSelect(previous)} aria-label="Vorheriges Bild">
+            ‹
+          </button>
+        )}
         <div className="gallery-viewer-counter">{index + 1} / {posts.length}</div>
-        <button type="button" className="gallery-round-button" onClick={() => onSelect(next)} aria-label="Nächstes Bild">
-          ›
-        </button>
+        {posts.length > 1 && (
+          <button type="button" className="gallery-round-button" onClick={() => onSelect(next)} aria-label="Nächstes Bild">
+            ›
+          </button>
+        )}
         <button type="button" className="gallery-round-button ml-auto" onClick={requestClose} aria-label="Schliessen">
           <IconClose size={20} />
         </button>

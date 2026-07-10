@@ -64,8 +64,9 @@ const MOBILE_ITEMS = [
   { kind: "link" as const, href: "/", label: "Home", Icon: IconHome },
   { kind: "link" as const, href: "/classes", label: "Klasse", Icon: IconUsers },
   { kind: "post" as const, label: "Posten", Icon: IconPlus },
-  { kind: "link" as const, href: "/polls", label: "Umfragen", Icon: IconPoll },
   { kind: "link" as const, href: "/bilder", label: "Bilder", Icon: IconImage },
+  { kind: "link" as const, href: "/polls", label: "Umfragen", Icon: IconPoll },
+  { kind: "link" as const, href: "/profile", label: "Profil", Icon: IconUser },
 ];
 
 type NavUser = {
@@ -232,7 +233,7 @@ function BottomNav({ onOpenPost }: { onOpenPost: () => void }) {
   const isActive = useActive();
   return (
     <nav className="aq-only site-bottom-nav fixed inset-x-0 bottom-0 z-30 lg:hidden">
-      <div className="mx-auto max-w-sm px-4 pb-4">
+      <div className="mx-auto max-w-md px-3 pb-4">
         <div className="dock site-bottom-dock flex items-center justify-around px-2.5 py-2">
           {MOBILE_ITEMS.map((it) => {
             if (it.kind === "post") {
@@ -254,7 +255,7 @@ function BottomNav({ onOpenPost }: { onOpenPost: () => void }) {
               <Link
                 key={it.href}
                 href={it.href}
-                className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-[10px] font-black transition-all duration-150 active:scale-90 sm:px-4 sm:text-[11px] ${
+                className={`flex flex-col items-center gap-0.5 rounded-full px-2 py-1.5 text-[10px] font-black transition-all duration-150 active:scale-90 sm:px-3.5 sm:text-[11px] ${
                   active
                     ? "nav-item-active bg-ink text-oncolor shadow-soft"
                     : "text-ink/65 hover:text-ink"

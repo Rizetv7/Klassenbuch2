@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { uploadImageFile } from "@/lib/uploadImage";
 import { Avatar } from "./Nav";
 import { IconPencil } from "./Icons";
@@ -69,8 +70,21 @@ export function ProfileImagePicker({
         </span>
       </button>
 
-      {open && (
-        <div className="glass-card mx-auto max-w-sm p-3 text-left">
+      {open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[75] flex items-end justify-center sm:items-center sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setOpen(false)}
+          >
+            <div className="absolute inset-0 animate-fade-in bg-black/55 backdrop-blur-sm" />
+            <div
+              className="lightbox-in relative max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] p-4 sm:rounded-[28px]"
+              style={{ background: "linear-gradient(180deg, rgb(var(--c-surface) / 0.35), rgb(var(--c-surface) / 0.2)), var(--page-bg)" }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="section-label mb-3">Profilbild</p>
           <div className="flex flex-wrap gap-2">
             <label className="btn-soft cursor-pointer text-sm">
               Bild hochladen
@@ -107,8 +121,17 @@ export function ProfileImagePicker({
             <p className="mt-3 text-xs font-bold text-ink/50">Ohne manuelle Auswahl wird automatisch das erste gepostete Bild verwendet.</p>
           )}
           {error && <p className="mt-2 text-xs font-black text-coral">{error}</p>}
-        </div>
-      )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="mt-4 w-full text-center text-xs font-black text-ink/50 underline"
+              >
+                Schliessen
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

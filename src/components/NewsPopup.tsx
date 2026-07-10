@@ -33,7 +33,7 @@ export function NewsPopup() {
 
   useEffect(() => {
     if (!mounted) return;
-    if (pathname.startsWith("/amina") || pathname.startsWith("/archivzugang")) return;
+    if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/amina") || pathname.startsWith("/archivzugang")) return;
     try {
       if (localStorage.getItem(NEWS_KEY) === NEWS_VERSION) return;
       const timer = window.setTimeout(() => setOpen(true), 650);

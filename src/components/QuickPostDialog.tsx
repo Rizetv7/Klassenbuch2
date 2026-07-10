@@ -5,7 +5,7 @@ import { CreatePost } from "./CreatePost";
 import { CreatePoll } from "./CreatePoll";
 import { Avatar } from "./Nav";
 import { IconClose, IconPoll, IconPlus } from "./Icons";
-import { swrJson } from "@/lib/swr";
+import { refreshJson, swrJson } from "@/lib/swr";
 
 type ClassSummary = { id: string; name: string };
 type Member = {
@@ -81,6 +81,15 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
     closeTimerRef.current = window.setTimeout(onClose, 220);
   }
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") requestClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closing]);
+
   function finish() {
     window.setTimeout(requestClose, 420);
   }
@@ -90,6 +99,7 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
       if (data?.classes) {
         setClasses(data.classes);
         setClassId((current) => current || data.classes?.[0]?.id || "");
+        setError("");
         return;
       }
       if (!meta.fromCache) {
@@ -107,8 +117,12 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
     setPickerOpen(false);
     setSearch("");
     const stopDetail = swrJson<ClassDetail>(`/api/classes/${classId}`, (data, meta) => {
-      if (data) setDetail(data);
-      else if (!meta.fromCache) setError("Die Personen dieser Klasse konnten nicht geladen werden.");
+      if (data) {
+        setDetail(data);
+        setError("");
+      } else if (!meta.fromCache) {
+        setError("Die Personen dieser Klasse konnten nicht geladen werden.");
+      }
     });
     const stopTeachers = swrJson<{ teachers?: Teacher[] }>(`/api/classes/${classId}/teachers`, (data) => {
       if (data) setTeachers(data.teachers ?? []);
@@ -152,8 +166,8 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
   const className = classes?.find((item) => item.id === classId)?.name;
 
   return (
-    <div className="quick-post-layer" role="dialog" aria-modal="true" aria-label="Schnell erstellen">
-      <section className={`quick-post-dialog ${closing ? "is-closing" : ""}`}>
+    <div className="quick-post-layer" role="dialog" aria-modal="true" aria-label="Schnell erstellen" onClick={requestClose}>
+      <section className={`quick-post-dialog ${closing ? "is-closing" : ""}`} onClick={(event) => event.stopPropagation()}>
         <header className="quick-post-head">
           <div>
             <p className="section-label">Direkt erstellen</p>
@@ -200,7 +214,10 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
                   initialClassId={classId}
                   hideClassPicker
                   compact
-                  onCreated={() => undefined}
+                  onCreated={() => {
+                    refreshJson("/api/polls");
+                    refreshJson("/api/home");
+                  }}
                   onFinished={finish}
                 />
               </div>
@@ -265,7 +282,10 @@ export function QuickPostDialog({ onClose }: { onClose: () => void }) {
                     classId={classId}
                     subjectMembershipId={target.kind === "member" ? target.id : undefined}
                     teacherId={target.kind === "teacher" ? target.id : undefined}
-                    onCreated={() => undefined}
+                    onCreated={() => {
+                      refreshJson("/api/home");
+                      refreshJson("/api/images?limit=32");
+                    }}
                     onFinished={finish}
                   />
                 ) : <p className="quick-post-note">Wähle zuerst, über wen du etwas posten möchtest.</p>}
