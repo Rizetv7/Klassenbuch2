@@ -34,6 +34,7 @@ model User {
   polls             Poll[]             @relation("PollAuthor")
   pollVotes         PollVote[]
   importItems       ImportItem[]
+  importBatches     ImportBatch[]
   ownedClasses      Class[]            @relation("ClassOwner")
   topics            Topic[]            @relation("TopicCreator")
   teachers          Teacher[]          @relation("TeacherCreator")
@@ -71,13 +72,14 @@ model Class {
   createdAt   DateTime  @default(now())
   archivedAt  DateTime?
 
-  owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  memberships Membership[]
-  posts       Post[]
-  topics      Topic[]
-  teachers    Teacher[]
-  polls       Poll[]
-  importItems ImportItem[]
+  owner         User          @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberships   Membership[]
+  posts         Post[]
+  topics        Topic[]
+  teachers      Teacher[]
+  polls         Poll[]
+  importItems   ImportItem[]
+  importBatches ImportBatch[]
 
   @@index([archivedAt])
 }
@@ -153,20 +155,23 @@ model Post {
   saidByName          String? // who said the quote (used in projects)
   anonymous           Boolean  @default(false) // hide the author
   imageUrl            String?
+  importBatchId       String?
   createdAt           DateTime @default(now())
 
-  class    Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
-  author   User        @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  subject  Membership? @relation("PostSubject", fields: [subjectMembershipId], references: [id], onDelete: Cascade)
-  teacher  Teacher?    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  topic    Topic?      @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  comments Comment[]
-  likes    Like[]
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  author      User         @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  subject     Membership?  @relation("PostSubject", fields: [subjectMembershipId], references: [id], onDelete: Cascade)
+  teacher     Teacher?     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  topic       Topic?       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  comments    Comment[]
+  likes       Like[]
 
   @@index([classId])
   @@index([subjectMembershipId])
   @@index([teacherId])
   @@index([topicId])
+  @@index([importBatchId])
 }
 
 model Comment {
@@ -257,20 +262,45 @@ model PollVote {
 }
 
 model ImportItem {
-  id          String   @id @default(cuid())
-  classId     String
-  createdById String
-  rawName     String
-  targetType  String   @default("STUDENT") // STUDENT | TEACHER
-  kind        String   @default("QUOTE") // QUOTE | TEXT | IMAGE
-  text        String?
-  context     String?
-  imageUrl    String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  classId       String
+  createdById   String
+  importBatchId String?
+  rawName       String
+  targetType    String   @default("STUDENT") // STUDENT | TEACHER
+  kind          String   @default("QUOTE") // QUOTE | TEXT | IMAGE
+  text          String?
+  context       String?
+  imageUrl      String?
+  createdAt     DateTime @default(now())
 
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  creator User  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator     User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
 
   @@index([classId])
+  @@index([createdById])
+  @@index([importBatchId])
+}
+
+// Keeps every pasted import together, including entries that are assigned
+// to a person only later. This lets admins audit and anonymize one import as
+// a single operation without altering or deleting the original content.
+model ImportBatch {
+  id           String    @id @default(cuid())
+  classId      String
+  createdById  String
+  sourceType   String    @default("PASTE") // PASTE | LEGACY_DETECTED
+  sourceText   String?
+  itemCount    Int
+  anonymizedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  class        Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  posts        Post[]
+  pendingItems ImportItem[]
+
+  @@index([classId, createdAt])
   @@index([createdById])
 }

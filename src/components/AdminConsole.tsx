@@ -38,6 +38,7 @@ export type AdminPost = {
   } | null;
   teacher?: AdminPerson | null;
   topic?: { id: string; name: string } | null;
+  importBatch?: { id: string; sourceType: string; createdAt: string } | null;
   comments: AdminComment[];
   _count: { likes: number; comments: number };
 };
@@ -84,24 +85,31 @@ export function AdminHeader({ backHref }: { backHref?: string }) {
   }
 
   return (
-    <header className="surface mb-8 flex items-center gap-3 px-4 py-2.5">
+    <header className="admin-header">
       {backHref ? (
         <Link
           href={backHref}
           aria-label="Zurück zur Übersicht"
           title="Zurück zur Übersicht"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink text-lg font-black text-oncolor transition active:scale-95"
+          className="admin-icon-button"
         >
           ←
         </Link>
       ) : null}
-      <div className="min-w-0">
-        <p className="section-label leading-none">Interner Bereich</p>
-        <p className="display truncate text-xl leading-tight">Maturaziitig Archiv</p>
+      <Link href="/archivzugang/uebersicht" className="admin-brand">
+        <span className="admin-status-dot" />
+        <div>
+          <p>Interner Bereich</p>
+          <strong>Maturaziitig Kontrolle</strong>
+        </div>
+      </Link>
+      <div className="admin-header-context">
+        <span>Live-Daten</span>
+        <strong>Geschützte Admin-Sitzung</strong>
       </div>
       <button
         type="button"
-        className="btn-soft ml-auto !px-4 !py-2"
+        className="admin-button is-quiet ml-auto"
         onClick={logout}
         disabled={busy}
       >
@@ -363,7 +371,7 @@ export function AdminPostEntry({ post }: { post: AdminPost }) {
   const targetAvatar = post.subject?.user || post.teacher || null;
 
   return (
-    <article className="glass-card overflow-hidden p-3 sm:p-4">
+    <article className="admin-content-card">
       <div className="flex flex-wrap items-center gap-3">
         {targetAvatar ? (
           <Avatar
@@ -377,6 +385,7 @@ export function AdminPostEntry({ post }: { post: AdminPost }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip !py-1">{post.kind === "QUOTE" ? "Zitat" : post.kind === "IMAGE" ? "Bild" : "Notiz"}</span>
             {post.anonymous ? <span className="chip !border-hotpink/40 !bg-hotpink/15">Anonym veröffentlicht</span> : null}
+            {post.importBatch ? <span className="chip">Import</span> : null}
           </div>
           {target ? <p className="mt-1 truncate text-sm font-black text-ink/65">{target}</p> : null}
         </div>
@@ -416,7 +425,7 @@ export function AdminPostEntry({ post }: { post: AdminPost }) {
 
 export function AdminPollEntry({ poll }: { poll: AdminPoll }) {
   return (
-    <article className="glass-card p-4 sm:p-5">
+    <article className="admin-content-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap gap-2">

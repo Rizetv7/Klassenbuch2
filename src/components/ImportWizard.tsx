@@ -278,6 +278,7 @@ export function ImportWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sourceText: raw,
           entries: drafts.map((d) => {
             const matchKey = matchFor(d.rawName);
             return {

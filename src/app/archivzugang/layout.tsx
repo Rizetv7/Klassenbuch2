@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "../admin.css";
 
 export const metadata: Metadata = {
   title: "Internes Archiv",
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function InternalLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <div className="admin-shell">
+      <div className="admin-workspace">{children}</div>
+    </div>
+  );
 }

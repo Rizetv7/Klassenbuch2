@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminHeader, AdminPerson, formatAdminDate, RenameUser } from "@/components/AdminConsole";
@@ -23,12 +24,25 @@ type ClassOverview = {
     polls: number;
     teachers: number;
     topics: number;
+    importBatches: number;
+    importItems: number;
+  };
+  insights: {
+    quotes: number;
+    notes: number;
+    images: number;
+    anonymousPosts: number;
+    comments: number;
+    likes: number;
+    pollVotes: number;
+    lastActivityAt: string;
   };
 };
 
 type UserOverview = AdminPerson & {
   email?: string | null;
   createdAt: string;
+  lastActivityAt?: string | null;
   memberships: Array<{
     id: string;
     role: string;
@@ -37,74 +51,105 @@ type UserOverview = AdminPerson & {
     leftAt: string | null;
     class: { id: string; name: string };
   }>;
-  _count: { posts: number; comments: number; polls: number };
+  _count: { posts: number; comments: number; polls: number; pollVotes: number };
 };
 
+type ActivityEvent = {
+  id: string;
+  type: string;
+  at: string;
+  title: string;
+  detail?: string | null;
+  class: { id: string; name: string };
+  person: AdminPerson;
+};
+
+type DailyActivity = { day: string; posts: number; comments: number; polls: number; votes: number };
+
 type OverviewData = {
-  stats: { classes: number; users: number; posts: number; polls: number };
+  stats: {
+    classes: number;
+    activeClasses: number;
+    users: number;
+    activeMemberships: number;
+    posts: number;
+    quotes: number;
+    notes: number;
+    images: number;
+    anonymousPosts: number;
+    comments: number;
+    likes: number;
+    polls: number;
+    pollVotes: number;
+    importBatches: number;
+    pendingImports: number;
+  };
   classes: ClassOverview[];
   users: UserOverview[];
+  recentActivity: ActivityEvent[];
+  dailyActivity: DailyActivity[];
 };
+
+type ClassSort = "activity" | "members" | "posts" | "name";
 
 export default function InternalOverviewPage() {
   const router = useRouter();
   const [data, setData] = useState<OverviewData | null>(null);
   const [tab, setTab] = useState<"classes" | "users">("classes");
   const [query, setQuery] = useState("");
+  const [classSort, setClassSort] = useState<ClassSort>("activity");
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/overview", { cache: "no-store" })
-      .then(async (res) => {
-        if (res.status === 401) {
+      .then(async (response) => {
+        if (response.status === 401) {
           router.replace("/archivzugang");
           return null;
         }
-        if (!res.ok) throw new Error("Übersicht konnte nicht geladen werden.");
-        return res.json();
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.error || "Übersicht konnte nicht geladen werden.");
+        return body;
       })
       .then((next) => {
         if (next) setData(next);
       })
-      .catch((err) => setError(err.message));
+      .catch((reason) => setError(reason instanceof Error ? reason.message : "Übersicht konnte nicht geladen werden."));
   }, [router]);
 
   const visibleClasses = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("de-CH");
-    if (!needle || !data) return data?.classes ?? [];
-    return data.classes.filter((item) =>
-      [item.name, item.school, item.gradYear, item.owner.name]
+    const filtered = (data?.classes ?? []).filter((item) =>
+      !needle || [item.name, item.school, item.gradYear, item.owner.name, item.joinCode]
         .filter(Boolean)
         .some((value) => String(value).toLocaleLowerCase("de-CH").includes(needle)),
     );
-  }, [data, query]);
+    return [...filtered].sort((a, b) => {
+      if (classSort === "name") return a.name.localeCompare(b.name, "de-CH");
+      if (classSort === "members") return b._count.memberships - a._count.memberships;
+      if (classSort === "posts") return b._count.posts - a._count.posts;
+      return new Date(b.insights.lastActivityAt).getTime() - new Date(a.insights.lastActivityAt).getTime();
+    });
+  }, [classSort, data, query]);
 
   const visibleUsers = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("de-CH");
-    if (!needle || !data) return data?.users ?? [];
+    if (!data) return [];
     return data.users.filter((user) =>
-      [user.name, user.email, ...user.memberships.map((membership) => membership.class.name)]
+      !needle || [user.name, user.email, ...user.memberships.map((membership) => membership.class.name)]
         .filter(Boolean)
         .some((value) => String(value).toLocaleLowerCase("de-CH").includes(needle)),
     );
   }, [data, query]);
 
   function updateUser(updated: AdminPerson) {
-    setData((current) =>
-      current
-        ? {
-            ...current,
-            users: current.users.map((user) =>
-              user.id === updated.id ? { ...user, ...updated } : user,
-            ),
-            classes: current.classes.map((klass) =>
-              klass.owner.id === updated.id
-                ? { ...klass, owner: { ...klass.owner, ...updated } }
-                : klass,
-            ),
-          }
-        : current,
-    );
+    setData((current) => current ? {
+      ...current,
+      users: current.users.map((user) => user.id === updated.id ? { ...user, ...updated } : user),
+      classes: current.classes.map((klass) => klass.owner.id === updated.id
+        ? { ...klass, owner: { ...klass.owner, ...updated } }
+        : klass),
+    } : current);
   }
 
   if (!data && !error) return <PageLoading label="Interne Übersicht lädt" />;
@@ -112,124 +157,65 @@ export default function InternalOverviewPage() {
   return (
     <PageReveal>
       <AdminHeader />
-      {error ? <div className="glass-panel p-8 text-center font-black text-coral">{error}</div> : null}
+      {error ? <div className="admin-alert is-error">{error}</div> : null}
       {data ? (
         <>
-          <section className="mb-7">
-            <p className="section-label mb-2">Gesamtübersicht</p>
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              {[
-                ["Klassen", data.stats.classes],
-                ["Personen", data.stats.users],
-                ["Beiträge", data.stats.posts],
-                ["Umfragen", data.stats.polls],
-              ].map(([label, value], index) => (
-                <div key={String(label)} className={`glass-card p-4 ${index % 2 ? "lg:mt-3" : ""}`}>
-                  <p className="section-label">{label}</p>
-                  <p className="display mt-1 text-4xl">{value}</p>
-                </div>
-              ))}
+          <section className="admin-page-head">
+            <div>
+              <p className="admin-kicker">Systemweite Übersicht</p>
+              <h1>Kontrollzentrum</h1>
+              <p>Klassen, Personen, Inhalte, Aktivität und Importe an einem Ort. Anonyme Inhalte bleiben für diese geschützte Sitzung intern nachvollziehbar.</p>
+            </div>
+            <div className="admin-page-meta">
+              <div><span>Aktive Klassen</span><strong>{data.stats.activeClasses}/{data.stats.classes}</strong></div>
+              <div><span>Offene Importe</span><strong>{data.stats.pendingImports}</strong></div>
             </div>
           </section>
 
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className={`tab ${tab === "classes" ? "tab-active" : ""}`}
-                onClick={() => setTab("classes")}
-              >
-                Alle Klassen
-              </button>
-              <button
-                type="button"
-                className={`tab ${tab === "users" ? "tab-active" : ""}`}
-                onClick={() => setTab("users")}
-              >
-                Alle Personen
-              </button>
+          <Stats data={data} />
+
+          <section className="admin-dashboard-grid mb-6">
+            <div className="admin-panel">
+              <div className="admin-panel-head">
+                <div><p className="admin-kicker">Letzte 14 Tage</p><h2>Aktivität</h2></div>
+                <span className="admin-badge">Live</span>
+              </div>
+              <ActivityChart days={data.dailyActivity} />
             </div>
-            <label className="sm:ml-auto sm:w-72">
-              <span className="sr-only">Suchen</span>
-              <input
-                className="input !py-2.5"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={tab === "classes" ? "Klasse suchen" : "Person suchen"}
-                type="search"
-              />
-            </label>
+            <div className="admin-panel">
+              <div className="admin-panel-head">
+                <div><p className="admin-kicker">Klassenübergreifend</p><h2>Neueste Vorgänge</h2></div>
+              </div>
+              <ActivityList events={data.recentActivity.slice(0, 9)} />
+            </div>
+          </section>
+
+          <div className="admin-tabs">
+            <button type="button" className={`admin-tab ${tab === "classes" ? "is-active" : ""}`} onClick={() => { setTab("classes"); setQuery(""); }}>
+              Klassen <span className="admin-tab-count">{data.classes.length}</span>
+            </button>
+            <button type="button" className={`admin-tab ${tab === "users" ? "is-active" : ""}`} onClick={() => { setTab("users"); setQuery(""); }}>
+              Personen <span className="admin-tab-count">{data.users.length}</span>
+            </button>
+          </div>
+
+          <div className="admin-toolbar">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === "classes" ? "Klasse, Schule, Owner oder Code suchen" : "Name, E-Mail oder Klasse suchen"} type="search" />
+            {tab === "classes" ? (
+              <select value={classSort} onChange={(event) => setClassSort(event.target.value as ClassSort)} aria-label="Klassen sortieren">
+                <option value="activity">Neueste Aktivität</option>
+                <option value="members">Meiste Personen</option>
+                <option value="posts">Meiste Beiträge</option>
+                <option value="name">Name</option>
+              </select>
+            ) : null}
+            <span className="admin-toolbar-result">{tab === "classes" ? visibleClasses.length : visibleUsers.length} sichtbar</span>
           </div>
 
           {tab === "classes" ? (
-            <section className="grid gap-3 md:grid-cols-2">
-              {visibleClasses.map((klass, index) => (
-                <Link
-                  key={klass.id}
-                  href={`/archivzugang/klasse/${klass.id}`}
-                  className={`glass-card group min-h-[205px] p-5 transition hover:-translate-y-0.5 ${index % 2 ? "md:mt-5" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="section-label">{klass.school || "Klasse"}</p>
-                      <h2 className="display truncate text-4xl leading-tight">{klass.name}</h2>
-                      {klass.gradYear ? <p className="text-sm font-black text-ink/65">Abschluss {klass.gradYear}</p> : null}
-                    </div>
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-xl text-oncolor transition group-hover:translate-x-0.5">→</span>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {klass.archivedAt ? <span className="chip !border-coral/40 !bg-coral/15 !text-coral">Archiviert</span> : null}
-                    <span className="chip">{klass._count.memberships} Personen</span>
-                    <span className="chip">{klass._count.posts} Beiträge</span>
-                    <span className="chip">{klass._count.polls} Umfragen</span>
-                    <span className="chip">{klass._count.teachers} Lehrpersonen</span>
-                  </div>
-                  <div className="mt-5 flex items-center gap-2">
-                    <Avatar name={klass.owner.name} url={klass.owner.avatarUrl} accent={klass.owner.accentColor} size={28} ring={false} />
-                    <p className="text-xs font-black text-ink/55">Erstellt von {klass.owner.name} · {formatAdminDate(klass.createdAt)}</p>
-                  </div>
-                </Link>
-              ))}
-              {visibleClasses.length === 0 ? <EmptyResult /> : null}
-            </section>
+            <ClassTable classes={visibleClasses} />
           ) : (
-            <section className="grid gap-2 lg:grid-cols-2">
-              {visibleUsers.map((user) => (
-                <article key={user.id} className="glass-card flex min-h-[108px] items-start gap-3 p-3.5">
-                  {user.memberships[0] ? (
-                    <Link href={`/archivzugang/klasse/${user.memberships[0].class.id}/person/${user.memberships[0].id}`}>
-                      <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={52} />
-                    </Link>
-                  ) : (
-                    <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={52} />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h2 className="truncate text-base font-black">
-                          {user.memberships[0] ? (
-                            <Link className="hover:underline" href={`/archivzugang/klasse/${user.memberships[0].class.id}/person/${user.memberships[0].id}`}>
-                              {user.name}
-                            </Link>
-                          ) : user.name}
-                        </h2>
-                        <p className="truncate text-xs font-bold text-ink/45">{user.email || "Keine E-Mail"}</p>
-                      </div>
-                      <p className="text-xs font-black text-ink/45">{user._count.posts} Beiträge</p>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {user.memberships.length ? user.memberships.map((membership) => (
-                        <Link key={membership.id} href={`/archivzugang/klasse/${membership.class.id}/person/${membership.id}`} className="chip !py-1 hover:bg-white/35">
-                          {membership.class.name} · {membership.role === "OWNER" ? "Owner" : membership.role === "MODERATOR" ? "Mod" : "Mitglied"}
-                        </Link>
-                      )) : <span className="text-xs font-bold text-ink/40">Noch ohne Klasse</span>}
-                    </div>
-                    <RenameUser user={user} onSaved={updateUser} />
-                  </div>
-                </article>
-              ))}
-              {visibleUsers.length === 0 ? <EmptyResult /> : null}
-            </section>
+            <UserTable users={visibleUsers} onUserSaved={updateUser} />
           )}
         </>
       ) : null}
@@ -237,6 +223,153 @@ export default function InternalOverviewPage() {
   );
 }
 
-function EmptyResult() {
-  return <div className="glass-panel p-8 text-center font-bold text-ink/55">Keine passenden Einträge.</div>;
+function Stats({ data }: { data: OverviewData }) {
+  const cards = [
+    { label: "Klassen", value: data.stats.classes, detail: `${data.stats.activeMemberships} aktive Mitgliedschaften`, color: "#1f6f55" },
+    { label: "Personen", value: data.stats.users, detail: "Registrierte Konten", color: "#486a93" },
+    { label: "Beiträge", value: data.stats.posts, detail: `${data.stats.quotes} Zitate · ${data.stats.notes} Notizen`, color: "#8a6b9b" },
+    { label: "Bilder", value: data.stats.images, detail: `${data.stats.anonymousPosts} anonyme Beiträge`, color: "#b87858" },
+    { label: "Reaktionen", value: data.stats.likes + data.stats.comments, detail: `${data.stats.likes} Likes · ${data.stats.comments} Kommentare`, color: "#b94a55" },
+    { label: "Umfrage-Stimmen", value: data.stats.pollVotes, detail: `${data.stats.polls} Umfragen`, color: "#c18a50" },
+  ];
+  return (
+    <section className="admin-stat-grid">
+      {cards.map((card) => (
+        <article key={card.label} className="admin-stat-card" style={{ "--stat-color": card.color } as CSSProperties}>
+          <span>{card.label}</span>
+          <strong>{card.value}</strong>
+          <small>{card.detail}</small>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function ActivityChart({ days }: { days: DailyActivity[] }) {
+  const max = Math.max(1, ...days.flatMap((day) => [day.posts, day.comments, day.polls, day.votes]));
+  const height = (value: number) => `${Math.max(2, Math.round((value / max) * 142))}px`;
+  return (
+    <>
+      <div className="admin-chart">
+        {days.map((day) => (
+          <div key={day.day} className="admin-chart-day" title={`${day.posts} Beiträge, ${day.comments} Kommentare, ${day.polls} Umfragen, ${day.votes} Stimmen`}>
+            <div className="admin-chart-bars">
+              <i style={{ height: height(day.posts) }} />
+              <i style={{ height: height(day.comments) }} />
+              <i style={{ height: height(day.polls) }} />
+              <i style={{ height: height(day.votes) }} />
+            </div>
+            <span>{new Intl.DateTimeFormat("de-CH", { day: "2-digit", month: "2-digit" }).format(new Date(day.day))}</span>
+          </div>
+        ))}
+      </div>
+      <div className="admin-chart-legend">
+        <span style={{ "--legend": "#1f6f55" } as CSSProperties}>Beiträge</span>
+        <span style={{ "--legend": "#486a93" } as CSSProperties}>Kommentare</span>
+        <span style={{ "--legend": "#8a6b9b" } as CSSProperties}>Umfragen</span>
+        <span style={{ "--legend": "#c18a50" } as CSSProperties}>Stimmen</span>
+      </div>
+    </>
+  );
+}
+
+function ActivityList({ events }: { events: ActivityEvent[] }) {
+  if (!events.length) return <div className="admin-empty"><strong>Noch keine Aktivität</strong></div>;
+  return (
+    <div className="admin-activity-list">
+      {events.map((event) => (
+        <Link key={event.id} href={`/archivzugang/klasse/${event.class.id}`} className="admin-activity-item">
+          <span className="admin-activity-icon">{event.type.slice(0, 2)}</span>
+          <div className="min-w-0">
+            <strong>{event.title}</strong>
+            <p>{event.person.name} · {event.class.name}{event.detail ? ` · ${event.detail}` : ""}</p>
+          </div>
+          <time>{formatAdminDate(event.at)}</time>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function ClassTable({ classes }: { classes: ClassOverview[] }) {
+  if (!classes.length) return <div className="admin-empty"><strong>Keine passende Klasse</strong><span>Ändere die Suche oder Sortierung.</span></div>;
+  return (
+    <section className="admin-table">
+      <div className="admin-table-head"><span>Klasse</span><span>Status & Personen</span><span>Inhalte</span><span>Interaktion & Importe</span><span /></div>
+      {classes.map((klass) => (
+        <Link key={klass.id} href={`/archivzugang/klasse/${klass.id}`} className="admin-table-row">
+          <div className="admin-table-primary">
+            <Avatar name={klass.owner.name} url={klass.owner.avatarUrl} accent={klass.owner.accentColor} size={40} ring={false} />
+            <div className="min-w-0">
+              <h2>{klass.name}</h2>
+              <p>{klass.school || "Keine Schule"}{klass.gradYear ? ` · ${klass.gradYear}` : ""} · Owner {klass.owner.name}</p>
+            </div>
+          </div>
+          <div className="admin-table-metrics">
+            <span><strong>{klass._count.memberships}</strong> Personen</span>
+            <span>{klass.archivedAt ? "Archiviert" : "Aktiv"}</span>
+            <span>Code <strong>{klass.joinCode}</strong></span>
+          </div>
+          <div className="admin-table-metrics">
+            <span><strong>{klass._count.posts}</strong> gesamt</span>
+            <span>{klass.insights.quotes} Zitate</span>
+            <span>{klass.insights.notes} Notizen</span>
+            <span>{klass.insights.images} Bilder</span>
+            <span>{klass.insights.anonymousPosts} anonym</span>
+          </div>
+          <div>
+            <div className="admin-table-metrics">
+              <span>{klass.insights.likes} Likes</span>
+              <span>{klass.insights.comments} Kommentare</span>
+              <span>{klass.insights.pollVotes} Stimmen</span>
+              <span>{klass._count.importBatches} Importe</span>
+              {klass._count.importItems ? <span><strong>{klass._count.importItems}</strong> offen</span> : null}
+            </div>
+            <p className="admin-table-date mt-2">Zuletzt {formatAdminDate(klass.insights.lastActivityAt)}</p>
+          </div>
+          <span className="admin-row-arrow">→</span>
+        </Link>
+      ))}
+    </section>
+  );
+}
+
+function UserTable({ users, onUserSaved }: { users: UserOverview[]; onUserSaved: (user: AdminPerson) => void }) {
+  if (!users.length) return <div className="admin-empty"><strong>Keine passende Person</strong><span>Ändere den Suchbegriff.</span></div>;
+  return (
+    <section className="admin-table">
+      <div className="admin-table-head"><span>Person</span><span>Klassen</span><span>Aktivität</span><span>Letzter Vorgang</span><span /></div>
+      {users.map((user) => {
+        const firstMembership = user.memberships.find((membership) => !membership.leftAt) || user.memberships[0];
+        const href = firstMembership ? `/archivzugang/klasse/${firstMembership.class.id}/person/${firstMembership.id}` : null;
+        return (
+          <article key={user.id} className="admin-table-row">
+            <div className="admin-table-primary">
+              {href ? <Link href={href}><Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={40} ring={false} /></Link> : <Avatar name={user.name} url={user.avatarUrl} accent={user.accentColor} size={40} ring={false} />}
+              <div className="min-w-0">
+                <h3>{href ? <Link href={href}>{user.name}</Link> : user.name}</h3>
+                <p>{user.email || "Keine E-Mail"}</p>
+                <RenameUser user={user} onSaved={onUserSaved} />
+              </div>
+            </div>
+            <div className="admin-table-metrics">
+              {user.memberships.length ? user.memberships.map((membership) => (
+                <Link key={membership.id} href={`/archivzugang/klasse/${membership.class.id}/person/${membership.id}`} className="admin-badge">
+                  {membership.class.name} · {membership.role === "OWNER" ? "Owner" : membership.role === "MODERATOR" ? "Mod" : "Mitglied"}
+                </Link>
+              )) : <span>Ohne Klasse</span>}
+            </div>
+            <div className="admin-table-metrics">
+              <span><strong>{user._count.posts}</strong> Beiträge</span>
+              <span>{user._count.comments} Kommentare</span>
+              <span>{user._count.polls} Umfragen</span>
+              <span>{user._count.pollVotes} Stimmen</span>
+            </div>
+            <p className="admin-table-date">{user.lastActivityAt ? formatAdminDate(user.lastActivityAt) : "Noch keine Aktivität"}</p>
+            {href ? <Link href={href} className="admin-row-arrow" aria-label={`${user.name} öffnen`}>→</Link> : <span />}
+          </article>
+        );
+      })}
+    </section>
+  );
 }

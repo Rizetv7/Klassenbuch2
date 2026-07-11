@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/auth";
 import { getMembership } from "@/lib/classAccess";
@@ -15,11 +17,22 @@ type ImportEntry = {
   teacherId?: unknown;
 };
 
+type NormalizedEntry = {
+  rawName: string;
+  targetType: "STUDENT" | "TEACHER";
+  kind: "QUOTE" | "TEXT" | "IMAGE";
+  text: string | null;
+  context: string | null;
+  imageUrl: string | null;
+  subjectMembershipId: string | null;
+  teacherId: string | null;
+};
+
 function clean(value: unknown, max = 1000) {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
 }
 
-function normalizeEntry(entry: ImportEntry) {
+function normalizeEntry(entry: ImportEntry): NormalizedEntry | { error: string } {
   const rawName = clean(entry.rawName, 120);
   const targetType = entry.targetType === "TEACHER" ? "TEACHER" : "STUDENT";
   const kind = entry.kind === "IMAGE" || entry.kind === "TEXT" ? entry.kind : "QUOTE";
@@ -37,42 +50,37 @@ function normalizeEntry(entry: ImportEntry) {
   return { rawName, targetType, kind, text, context, imageUrl, subjectMembershipId, teacherId };
 }
 
-async function assertTarget(classId: string, subjectMembershipId: string | null, teacherId: string | null) {
-  if (subjectMembershipId) {
-    const subject = await prisma.membership.findUnique({ where: { id: subjectMembershipId } });
-    if (!subject || subject.classId !== classId || subject.leftAt) return null;
-    return { subjectMembershipId: subject.id, teacherId: null };
-  }
-  if (teacherId) {
-    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
-    if (!teacher || teacher.classId !== classId) return null;
-    return { subjectMembershipId: null, teacherId: teacher.id };
-  }
-  return { subjectMembershipId: null, teacherId: null };
+async function invalidTargetName(classId: string, entries: NormalizedEntry[]) {
+  const subjectIds = Array.from(new Set(entries.map((entry) => entry.subjectMembershipId).filter(Boolean))) as string[];
+  const teacherIds = Array.from(new Set(entries.map((entry) => entry.teacherId).filter(Boolean))) as string[];
+  const [subjects, teachers] = await Promise.all([
+    subjectIds.length
+      ? prisma.membership.findMany({
+          where: { id: { in: subjectIds }, classId, leftAt: null },
+          select: { id: true },
+        })
+      : Promise.resolve([]),
+    teacherIds.length
+      ? prisma.teacher.findMany({
+          where: { id: { in: teacherIds }, classId },
+          select: { id: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const validSubjects = new Set(subjects.map((subject) => subject.id));
+  const validTeachers = new Set(teachers.map((teacher) => teacher.id));
+  return entries.find((entry) =>
+    (entry.subjectMembershipId && !validSubjects.has(entry.subjectMembershipId))
+    || (entry.teacherId && !validTeachers.has(entry.teacherId))
+  )?.rawName ?? null;
 }
 
-async function createPostFromEntry(classId: string, userId: string, entry: {
-  kind: string;
-  text: string | null;
-  context: string | null;
-  imageUrl: string | null;
-  subjectMembershipId: string | null;
-  teacherId: string | null;
-}) {
-  return prisma.post.create({
-    data: {
-      classId,
-      authorId: userId,
-      board: "YEARBOOK",
-      kind: entry.kind,
-      text: entry.text,
-      context: entry.kind === "QUOTE" ? entry.context : null,
-      imageUrl: entry.imageUrl,
-      anonymous: false,
-      subjectMembershipId: entry.subjectMembershipId,
-      teacherId: entry.teacherId,
-    },
-  });
+function importSource(value: unknown, entries: NormalizedEntry[]) {
+  if (typeof value === "string" && value.trim()) return value.trim().slice(0, 120_000);
+  return entries.map((entry) => {
+    const content = entry.imageUrl || entry.text || "";
+    return `${entry.rawName} | ${entry.kind} | ${content}${entry.context ? ` | ${entry.context}` : ""}`;
+  }).join("\n").slice(0, 120_000);
 }
 
 export async function GET(
@@ -91,6 +99,11 @@ export async function GET(
     where: { classId: params.id },
     orderBy: { createdAt: "desc" },
     take: 100,
+    include: {
+      importBatch: {
+        select: { id: true, createdAt: true, anonymizedAt: true },
+      },
+    },
   });
 
   return NextResponse.json({ pending });
@@ -112,48 +125,67 @@ export async function POST(
   const rawEntries = Array.isArray(body.entries) ? body.entries.slice(0, 200) : [];
   if (rawEntries.length === 0) return NextResponse.json({ error: "Keine Import-Einträge gefunden." }, { status: 400 });
 
-  const entries = [];
+  const entries: NormalizedEntry[] = [];
   for (const raw of rawEntries) {
     const normalized = normalizeEntry(raw);
     if ("error" in normalized) return NextResponse.json({ error: normalized.error }, { status: 400 });
     entries.push(normalized);
   }
 
-  let imported = 0;
-  let pending = 0;
+  const invalidTarget = await invalidTargetName(params.id, entries);
+  if (invalidTarget) {
+    return NextResponse.json({ error: `Ungültige Zuordnung für ${invalidTarget}.` }, { status: 400 });
+  }
 
-  for (const entry of entries) {
-    const target = await assertTarget(params.id, entry.subjectMembershipId, entry.teacherId);
-    if (!target) return NextResponse.json({ error: `Ungültige Zuordnung für ${entry.rawName}.` }, { status: 400 });
-
-    if (target.subjectMembershipId || target.teacherId) {
-      await createPostFromEntry(params.id, userId, {
+  const batchId = randomUUID();
+  const assigned = entries.filter((entry) => entry.subjectMembershipId || entry.teacherId);
+  const unassigned = entries.filter((entry) => !entry.subjectMembershipId && !entry.teacherId);
+  const writes: Prisma.PrismaPromise<unknown>[] = [
+    prisma.importBatch.create({
+      data: {
+        id: batchId,
+        classId: params.id,
+        createdById: userId,
+        sourceText: importSource(body.sourceText, entries),
+        itemCount: entries.length,
+      },
+    }),
+  ];
+  if (assigned.length) {
+    writes.push(prisma.post.createMany({
+      data: assigned.map((entry) => ({
+        classId: params.id,
+        authorId: userId,
+        board: "YEARBOOK",
+        kind: entry.kind,
+        text: entry.text,
+        context: entry.kind === "QUOTE" ? entry.context : null,
+        imageUrl: entry.imageUrl,
+        anonymous: false,
+        subjectMembershipId: entry.subjectMembershipId,
+        teacherId: entry.teacherId,
+        importBatchId: batchId,
+      })),
+    }));
+  }
+  if (unassigned.length) {
+    writes.push(prisma.importItem.createMany({
+      data: unassigned.map((entry) => ({
+        classId: params.id,
+        createdById: userId,
+        importBatchId: batchId,
+        rawName: entry.rawName,
+        targetType: entry.targetType,
         kind: entry.kind,
         text: entry.text,
         context: entry.context,
         imageUrl: entry.imageUrl,
-        subjectMembershipId: target.subjectMembershipId,
-        teacherId: target.teacherId,
-      });
-      imported++;
-    } else {
-      await prisma.importItem.create({
-        data: {
-          classId: params.id,
-          createdById: userId,
-          rawName: entry.rawName,
-          targetType: entry.targetType,
-          kind: entry.kind,
-          text: entry.text,
-          context: entry.context,
-          imageUrl: entry.imageUrl,
-        },
-      });
-      pending++;
-    }
+      })),
+    }));
   }
+  await prisma.$transaction(writes);
 
-  return NextResponse.json({ imported, pending });
+  return NextResponse.json({ batchId, imported: assigned.length, pending: unassigned.length });
 }
 
 export async function PATCH(
@@ -173,12 +205,28 @@ export async function PATCH(
   const subjectMembershipId = clean(body.subjectMembershipId, 120);
   const teacherId = clean(body.teacherId, 120);
   if (!itemId) return NextResponse.json({ error: "Import-Eintrag fehlt." }, { status: 400 });
+  if (subjectMembershipId && teacherId) {
+    return NextResponse.json({ error: "Bitte nur eine Person auswählen." }, { status: 400 });
+  }
 
-  const item = await prisma.importItem.findUnique({ where: { id: itemId } });
+  const item = await prisma.importItem.findUnique({
+    where: { id: itemId },
+    include: { importBatch: { select: { id: true, anonymizedAt: true } } },
+  });
   if (!item || item.classId !== params.id) return NextResponse.json({ error: "Import-Eintrag nicht gefunden." }, { status: 404 });
 
-  const target = await assertTarget(params.id, subjectMembershipId, teacherId);
-  if (!target || (!target.subjectMembershipId && !target.teacherId)) {
+  const targetEntry: NormalizedEntry = {
+    rawName: item.rawName,
+    targetType: item.targetType === "TEACHER" ? "TEACHER" : "STUDENT",
+    kind: item.kind === "IMAGE" || item.kind === "TEXT" ? item.kind : "QUOTE",
+    text: item.text,
+    context: item.context,
+    imageUrl: item.imageUrl,
+    subjectMembershipId,
+    teacherId,
+  };
+  const invalidTarget = await invalidTargetName(params.id, [targetEntry]);
+  if (invalidTarget || (!subjectMembershipId && !teacherId)) {
     return NextResponse.json({ error: "Bitte eine gültige Person auswählen." }, { status: 400 });
   }
 
@@ -192,9 +240,10 @@ export async function PATCH(
         text: item.text,
         context: item.kind === "QUOTE" ? item.context : null,
         imageUrl: item.imageUrl,
-        anonymous: false,
-        subjectMembershipId: target.subjectMembershipId,
-        teacherId: target.teacherId,
+        anonymous: Boolean(item.importBatch?.anonymizedAt),
+        subjectMembershipId,
+        teacherId,
+        importBatchId: item.importBatchId,
       },
     }),
     prisma.importItem.delete({ where: { id: item.id } }),
