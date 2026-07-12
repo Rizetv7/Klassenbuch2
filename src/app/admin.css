@@ -50,7 +50,10 @@
 .admin-workspace {
   width: min(1480px, 100%);
   margin: 0 auto;
-  padding: 18px 24px 72px;
+  /* The installed archive app runs black-translucent, so its content sits
+     under the iOS status bar — add the top inset so nothing hides behind the
+     clock/battery, plus the side insets for landscape notches. */
+  padding: calc(18px + env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 72px max(24px, env(safe-area-inset-left));
 }
 
 .admin-shell .glass-card,
@@ -141,7 +144,8 @@
 
 .admin-header {
   position: sticky;
-  top: 10px;
+  /* Keep the sticky bar clear of the status bar once the page scrolls. */
+  top: calc(10px + env(safe-area-inset-top));
   z-index: 30;
   display: flex;
   min-height: 60px;
@@ -651,8 +655,8 @@
 }
 
 @media (max-width: 760px) {
-  .admin-workspace { padding: 8px 12px 50px; }
-  .admin-header { top: 4px; margin-bottom: 24px; }
+  .admin-workspace { padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 50px max(12px, env(safe-area-inset-left)); }
+  .admin-header { top: calc(4px + env(safe-area-inset-top)); margin-bottom: 24px; }
   .admin-header-context { display: none; }
   .admin-brand strong { font-size: 16px; }
   .admin-header .admin-button { min-height: 36px; padding: 7px 9px; }
