@@ -24,7 +24,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdf3f8",
+  // viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
+  // values on notch/home-indicator iPhones and iPads — without it every
+  // safe-area rule silently evaluates to 0 in standalone/PWA mode.
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3d7ea" },
+    { media: "(prefers-color-scheme: dark)", color: "#140d1c" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

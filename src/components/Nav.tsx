@@ -300,7 +300,7 @@ function BottomNav({ onOpenPost }: { onOpenPost: () => void }) {
   const isActive = useActive();
   return (
     <nav className="aq-only site-bottom-nav fixed inset-x-0 bottom-0 z-30 lg:hidden">
-      <div className="mx-auto max-w-md px-3 pb-4">
+      <div className="site-bottom-inner mx-auto max-w-md">
         <div className="dock site-bottom-dock flex items-center justify-around px-2.5 py-2">
           {MOBILE_ITEMS.map((it) => {
             if (it.kind === "post") {

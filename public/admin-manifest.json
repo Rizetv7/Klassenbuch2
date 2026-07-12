@@ -1,0 +1,15 @@
+{
+  "name": "Maturaziitig Archiv",
+  "short_name": "MZ Archiv",
+  "description": "Interner Archiv- und Verwaltungszugang der Maturaziitig.",
+  "start_url": "/archivzugang/uebersicht",
+  "scope": "/archivzugang",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2a9d8",
+  "theme_color": "#e845ad",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

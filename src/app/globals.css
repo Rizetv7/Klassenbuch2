@@ -1927,6 +1927,24 @@ body::before {
   isolation: isolate;
 }
 
+/* The floating dock must clear the home indicator and, in landscape on
+   iPad/iPhone, the side safe-areas — so its rounded pill never gets tucked
+   under the screen's own rounded corners. */
+.site-bottom-inner {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.35rem));
+}
+
+/* Content clearance below the floating dock + above the status bar, grown by
+   the real device insets (0 on non-notch devices, so nothing changes there). */
+@media (max-width: 1023px) {
+  .site-main {
+    padding-top: max(1.5rem, calc(env(safe-area-inset-top) + 0.6rem));
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+}
+
 .site-bottom-nav::before {
   content: "";
   position: absolute;
