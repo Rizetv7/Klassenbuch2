@@ -16,7 +16,8 @@ import {
   ResetPassword,
 } from "@/components/AdminConsole";
 import { AdminImportBatches, type AdminImportBatch } from "@/components/AdminImportBatches";
-import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { PageReveal } from "@/components/LoadingState";
+import { AdminLoading } from "@/components/AdminLoading";
 import { Avatar } from "@/components/Nav";
 import { AdminClassSettings } from "@/components/AdminClassSettings";
 
@@ -241,7 +242,7 @@ export default function InternalClassPage() {
     if (posts.loaded) await loadPosts(null, false);
   }
 
-  if (!summary && !error) return <PageLoading label="Klasse lädt" />;
+  if (!summary && !error) return <AdminLoading label="Klasse lädt" />;
 
   return (
     <PageReveal>

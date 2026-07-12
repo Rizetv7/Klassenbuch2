@@ -551,6 +551,97 @@
 .admin-empty strong { font-family: "Fraunces", Georgia, serif; font-size: 20px; }
 .admin-empty span { max-width: 480px; color: var(--admin-muted); font-size: 11px; line-height: 1.45; }
 
+/* ---- Loading (archive) ------------------------------------------------- */
+/* The Aquarell app fades in a soft glassy shimmer; the archive is a sharp
+   editorial grid, so its skeletons are hairline boxes with a slow ink-green
+   sweep — the same visual language as the real dashboard cards. */
+.admin-loading { animation: admin-fade-in 220ms ease-out both; }
+
+.admin-loading-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 24px;
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.admin-loading-head::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--admin-green);
+  animation: admin-dot-pulse 1.1s ease-in-out infinite;
+}
+
+.admin-skeleton {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 3px;
+  background: #f2f5f2;
+}
+.admin-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 32%, rgba(31, 111, 85, 0.14) 50%, transparent 68%);
+  transform: translateX(-100%);
+  animation: admin-skeleton-sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.admin-skeleton-stat { min-height: 104px; border-radius: 4px; }
+.admin-skeleton-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(31, 111, 85, 0.4);
+}
+.admin-skeleton-stat:nth-child(2n)::after { animation-delay: 0.18s; }
+.admin-skeleton-stat:nth-child(3n)::after { animation-delay: 0.32s; }
+
+.admin-skeleton-panel {
+  margin-top: 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  background: #fff;
+}
+.admin-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  border-bottom: 1px solid #e6eae6;
+}
+.admin-skeleton-row:last-child { border-bottom: 0; }
+.admin-skeleton-avatar { width: 40px; height: 40px; flex: 0 0 40px; }
+.admin-skeleton-lines { display: grid; flex: 1; gap: 8px; }
+.admin-skeleton-line { height: 10px; border-color: transparent; background: #eceff0; }
+
+@keyframes admin-skeleton-sweep {
+  to { transform: translateX(100%); }
+}
+@keyframes admin-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.65); }
+}
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-loading,
+  .admin-loading-head::before,
+  .admin-skeleton::after { animation: none; }
+}
+
 @media (max-width: 1120px) {
   .admin-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .admin-dashboard-grid { grid-template-columns: 1fr; }

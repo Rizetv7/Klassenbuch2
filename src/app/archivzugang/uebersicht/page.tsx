@@ -5,7 +5,8 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminHeader, AdminPerson, formatAdminDate, RenameUser } from "@/components/AdminConsole";
-import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { PageReveal } from "@/components/LoadingState";
+import { AdminLoading } from "@/components/AdminLoading";
 import { Avatar } from "@/components/Nav";
 
 type ClassOverview = {
@@ -152,7 +153,7 @@ export default function InternalOverviewPage() {
     } : current);
   }
 
-  if (!data && !error) return <PageLoading label="Interne Übersicht lädt" />;
+  if (!data && !error) return <AdminLoading label="Interne Übersicht lädt" />;
 
   return (
     <PageReveal>

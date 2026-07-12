@@ -9,7 +9,8 @@ import {
   AdminPostEntry,
   RenameUser,
 } from "@/components/AdminConsole";
-import { PageLoading, PageReveal } from "@/components/LoadingState";
+import { PageReveal } from "@/components/LoadingState";
+import { AdminLoading } from "@/components/AdminLoading";
 import { Avatar } from "@/components/Nav";
 
 type MemberData = {
@@ -75,7 +76,7 @@ export default function InternalPersonPage() {
     [kind, posts],
   );
 
-  if (!data && !error) return <PageLoading label="Person lädt" />;
+  if (!data && !error) return <AdminLoading label="Person lädt" />;
 
   if (!data) {
     return (
