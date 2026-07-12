@@ -114,6 +114,19 @@ textarea {
   touch-action: manipulation;
 }
 
+/* iOS Safari auto-zooms the whole page whenever you focus a text field whose
+   font-size is under 16px. Both design systems use smaller inputs, so on touch
+   devices we lift every text-entry control to 16px — the tap-to-type zoom never
+   fires, and pinch-zoom stays available (we don't touch maximum-scale). */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select,
+  .input {
+    font-size: 16px !important;
+  }
+}
+
 /* Static fallback behind the canvas. No objects or UI elements here. */
 body::before {
   content: "";
