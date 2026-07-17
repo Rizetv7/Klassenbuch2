@@ -302,32 +302,37 @@ export function ThemeMenu({
 
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true">
+          <div
+            className="theme-menu-layer fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="theme-menu-title"
+          >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={closeMenu} />
             <div
               className="theme-sheet relative w-full border border-white/40 sm:max-w-lg"
               style={{
                 background: "linear-gradient(180deg, rgb(var(--c-surface) / 0.4), rgb(var(--c-surface) / 0.22)), var(--page-bg)",
-                paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
               }}
             >
-              <div className="mx-auto mt-2.5 h-1.5 w-12 rounded-full bg-ink/15 sm:hidden" />
-              <div className="flex items-start justify-between px-5 pt-4 sm:pt-5">
+              <div className="mx-auto mt-2.5 h-1.5 w-12 shrink-0 rounded-full bg-ink/15 sm:hidden" />
+              <div className="theme-sheet-header flex items-start justify-between gap-4 px-5 pb-3 pt-4 sm:pt-5">
                 <div>
                   <p className="section-label">Erscheinungsbild</p>
-                  <h2 className="display text-3xl leading-none">Design</h2>
+                  <h2 id="theme-menu-title" className="display text-3xl leading-none">Design</h2>
                 </div>
                 <button
                   type="button"
                   onClick={closeMenu}
                   aria-label="Schliessen"
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white/30 text-ink/70 transition hover:bg-white/50 hover:rotate-90"
+                  autoFocus
+                  className="theme-sheet-close grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/45 bg-white/50 text-ink shadow-soft transition hover:bg-white/70 hover:rotate-90 active:scale-95"
                 >
-                  <IconClose size={18} />
+                  <IconClose size={20} />
                 </button>
               </div>
 
-              <div className="space-y-6 px-5 pb-2 pt-4">
+              <div className="theme-sheet-scroll space-y-6 px-5 pt-2">
                 {/* ============ DESIGNS: complete experiences ============ */}
                 <div>
                   <p className="mb-0.5 text-xs font-black uppercase text-ink/50">Designs</p>
